@@ -1,0 +1,247 @@
+/*
+ * Quota Mini Card
+ *
+ * This file is the final owner of the compact quota card shown inside the
+ * sideboard. Device rules may tune density here, but legacy activity/layout
+ * files must not redefine the component.
+ */
+
+.quota-mini-card {
+  --quota-mini-padding: 8px;
+  --quota-mini-gap: 5px;
+  --quota-mini-head-size: 14px;
+  --quota-mini-source-height: 30px;
+  --quota-mini-source-size: 14px;
+  --quota-mini-value-size: clamp(25px, 3vw, 40px);
+  --quota-mini-value-line: .95;
+  --quota-mini-detail-size: 13px;
+  --quota-mini-detail-line: 1.15;
+  --quota-mini-bar-height: 8px;
+  display: grid;
+  grid-template-rows:
+    minmax(0, auto)
+    var(--quota-mini-source-height)
+    minmax(0, auto)
+    minmax(0, auto)
+    var(--quota-mini-bar-height);
+  align-content: center;
+  gap: var(--quota-mini-gap);
+  padding: var(--quota-mini-padding);
+  overflow: hidden;
+}
+
+.quota-mini-head,
+.quota-mini-value-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.quota-mini-head > *,
+.quota-mini-value-row > * {
+  min-width: 0;
+}
+
+.quota-mini-head {
+  min-height: 0;
+  font-size: var(--quota-mini-head-size);
+  line-height: 1.1;
+}
+
+.quota-mini-head strong {
+  color: var(--side-accent);
+}
+
+.quota-mini-head span,
+.quota-mini-value-row span {
+  color: var(--side-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quota-mini-card select {
+  min-width: 0;
+  width: 100%;
+  height: var(--quota-mini-source-height);
+  min-height: var(--quota-mini-source-height);
+  padding: 3px 7px;
+  border: 1px solid var(--side-line);
+  border-radius: 2px;
+  background: rgba(7, 16, 21, .72);
+  color: var(--side-text);
+  font: inherit;
+  font-size: var(--quota-mini-source-size);
+  font-weight: 700;
+  text-overflow: ellipsis;
+}
+
+.quota-mini-value-row strong {
+  flex: 0 0 auto;
+  color: var(--side-accent);
+  font-size: var(--quota-mini-value-size);
+  line-height: var(--quota-mini-value-line);
+}
+
+.quota-mini-value-row span {
+  flex: 1 1 auto;
+  text-align: right;
+}
+
+.quota-mini-credit {
+  min-width: 0;
+  color: var(--side-muted);
+  font-size: var(--quota-mini-detail-size);
+  font-weight: 700;
+  line-height: var(--quota-mini-detail-line);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quota-mini-bar {
+  height: var(--quota-mini-bar-height);
+  border: 1px solid var(--side-line);
+  overflow: hidden;
+}
+
+.quota-mini-bar span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--side-accent);
+  transition: width .18s ease;
+}
+
+body.pc-console.mode-sideboard .quota-mini-card select {
+  border-color: rgba(255, 255, 255, .11);
+  border-radius: 7px;
+  background: rgba(5, 12, 16, .62);
+}
+
+body.pc-console.mode-sideboard .quota-mini-bar {
+  border-color: rgba(255, 255, 255, .10);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .07);
+}
+
+body.pc-console.mode-sideboard .quota-mini-bar span {
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--side-accent), #f7cc8f);
+}
+
+/* Phone sideboard readability. Tablet and e-ink overrides below win when a
+ * device carries both client classes. */
+body.phone-client:not(.eink-client) .quota-mini-head,
+body.phone-client:not(.eink-client) .quota-mini-value-row span,
+body.phone-client:not(.eink-client) .quota-mini-card select {
+  font-size: 17px;
+}
+
+body.phone-client:not(.eink-client) #quotaMiniReset { font-size: 12px; }
+
+/* ZenPad/tablet density. */
+body.tablet-client.mode-sideboard .quota-mini-card {
+  --quota-mini-padding: 4px 6px;
+  --quota-mini-gap: 2px;
+  --quota-mini-head-size: 12px;
+  --quota-mini-source-height: 26px;
+  --quota-mini-source-size: 12px;
+  --quota-mini-value-size: 24px;
+  --quota-mini-value-line: 24px;
+  --quota-mini-detail-size: 11px;
+  --quota-mini-detail-line: 12px;
+  --quota-mini-bar-height: 3px;
+  align-content: stretch;
+}
+
+body.tablet-client.mode-sideboard .quota-mini-value-row span {
+  min-width: 0;
+  font-size: 11px;
+  line-height: 12px;
+}
+
+body.tablet-client.mode-sideboard .quota-mini-credit {
+  min-height: var(--quota-mini-detail-line);
+  line-height: var(--quota-mini-detail-line);
+}
+
+/* BOOX / e-ink presentation. Values below reflect the previously computed
+ * cascade, without needing a chain of later !important overrides. */
+body.eink-client .quota-mini-card {
+  --quota-mini-padding: 9px;
+  --quota-mini-gap: 4px;
+  --quota-mini-head-size: 17px;
+  --quota-mini-source-height: 44px;
+  --quota-mini-source-size: 17px;
+  --quota-mini-value-size: clamp(30px, 4vw, 46px);
+  --quota-mini-value-line: 1;
+  --quota-mini-detail-size: 17px;
+  --quota-mini-detail-line: 1.2;
+  --quota-mini-bar-height: 10px;
+  border: 2px solid #000;
+  background: #fffef8;
+  color: #000;
+}
+
+body.eink-client .quota-mini-head,
+body.eink-client .quota-mini-value-row {
+  flex-wrap: wrap;
+}
+
+body.eink-client .quota-mini-head,
+body.eink-client .quota-mini-head span,
+body.eink-client .quota-mini-value-row span,
+body.eink-client .quota-mini-card select,
+body.eink-client .quota-mini-credit {
+  color: #000;
+}
+
+body.eink-client .quota-mini-head strong,
+body.eink-client .quota-mini-value-row strong {
+  color: #000;
+  font-weight: 900;
+}
+
+body.eink-client .quota-mini-card select {
+  border: 2px solid #000;
+  background: #fffef8;
+  line-height: 1.2;
+}
+
+body.eink-client .quota-mini-credit {
+  min-height: 1lh;
+}
+
+body.eink-client .quota-mini-bar {
+  border: 2px solid #000;
+}
+
+body.eink-client .quota-mini-bar span {
+  background: #000;
+  transition: none;
+}
+
+@container eink-card (max-width: 280px) {
+  body.eink-client #systemSideboardPage.dashboard-grid .quota-mini-card {
+    --quota-mini-padding: 8px;
+  }
+
+  body.eink-client #systemSideboardPage.dashboard-grid .quota-mini-value-row strong {
+    font-size: clamp(24px, 18cqw, 36px);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  body.eink-client #systemSideboardPage.dashboard-grid .quota-mini-head,
+  body.eink-client #systemSideboardPage.dashboard-grid .quota-mini-value-row {
+    align-items: stretch;
+  }
+
+  body.eink-client #systemSideboardPage.dashboard-grid .quota-mini-head > strong {
+    flex: 1 1 100%;
+  }
+}

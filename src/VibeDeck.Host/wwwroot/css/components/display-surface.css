@@ -1,0 +1,518 @@
+/* Display surface --------------------------------------------------------
+ * Owns remote-screen presentation: toolbar, source selector, keyboard input,
+ * stream surface, unavailable state, content rotation, and Display-specific
+ * phone/PC/fullscreen geometry. Application-shell and whole-page orientation
+ * remain in 10-core.css. */
+
+.display-view {
+  place-items: center;
+  position: relative;
+}
+
+.display-toolbar {
+  position: absolute;
+  z-index: 12;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 20px);
+  padding: 7px;
+  border: 1px solid rgba(143, 209, 255, .24);
+  border-radius: 12px;
+  background: rgba(8, 14, 20, .84);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .38);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Collapsed: only a translucent gear. Expanded: source select + keyboard. */
+.display-toolbar.is-collapsed {
+  gap: 0;
+  padding: 3px;
+  background: rgba(8, 14, 20, .28);
+  border-color: rgba(143, 209, 255, .12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.display-toolbar.is-collapsed .display-toolbar-extras {
+  display: none;
+}
+
+.display-toolbar-toggle {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(143, 209, 255, .22);
+  background: rgba(19, 29, 39, .42);
+  color: rgba(232, 241, 248, .78);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease, color .18s ease, opacity .18s ease;
+}
+
+.display-toolbar.is-collapsed .display-toolbar-toggle {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  background: rgba(19, 29, 39, .22);
+  border-color: rgba(143, 209, 255, .14);
+  color: rgba(232, 241, 248, .55);
+  opacity: .72;
+}
+
+.display-toolbar.is-collapsed .display-toolbar-toggle:hover,
+.display-toolbar.is-collapsed .display-toolbar-toggle:active {
+  opacity: 1;
+  color: rgba(232, 241, 248,.92);
+  background: rgba(19, 29, 39, .45);
+}
+
+.display-toolbar-gear {
+  display: block;
+  transform: translateY(-0.5px);
+}
+
+.display-toolbar-toggle[aria-expanded="true"] {
+  color: #071017;
+  background: var(--green);
+  border-color: var(--green);
+  opacity: 1;
+}
+
+.display-toolbar-extras {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.display-source-control {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.display-source-control select {
+  width: min(50vw, 360px);
+  min-width: 150px;
+  min-height: 38px;
+  color: var(--text);
+  background: rgba(19, 29, 39, .96);
+  border-color: rgba(143, 209, 255, .25);
+}
+
+.display-source-kind {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: var(--green);
+  background: rgba(112, 217, 139, .1);
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+body.physical-display-source .display-source-kind {
+  color: var(--yellow);
+  background: rgba(255, 210, 122, .12);
+}
+
+.remote-keyboard-button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  white-space: nowrap;
+}
+
+.remote-keyboard-button[aria-pressed="true"] {
+  color: #071017;
+  background: var(--green);
+  border-color: var(--green);
+}
+
+.remote-keyboard-input {
+  position: fixed;
+  z-index: -1;
+  left: 50%;
+  bottom: 0;
+  width: 2px;
+  height: 2px;
+  min-height: 0;
+  padding: 0;
+  opacity: .01;
+  border: 0;
+  resize: none;
+  font-size: 16px;
+}
+
+body.viewer-fullscreen.mode-display .display-toolbar {
+  position: fixed;
+  top: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top)));
+}
+
+.screen-media {
+  width: min(100%, 1280px);
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  background: #05070a;
+  border: 1px solid rgba(143, 209, 255, .14);
+  border-radius: 8px;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .3), 0 12px 40px rgba(0, 0, 0, .5);
+  transition: box-shadow 0.3s ease;
+}
+
+.screen-media:hover {
+  box-shadow: 0 0 0 1px rgba(143, 209, 255, .2), 0 16px 48px rgba(0, 0, 0, .6);
+}
+
+@media (max-width: 620px) {
+  .display-toolbar {
+    top: 6px;
+    gap: 5px;
+    padding: 5px;
+  }
+
+  .display-source-control > span,
+  .display-source-kind {
+    display: none;
+  }
+
+  .display-source-control select {
+    width: min(62vw, 300px);
+    min-width: 0;
+  }
+
+  .remote-keyboard-button {
+    padding-inline: 10px;
+  }
+}
+
+body.viewer-fullscreen.mode-display {
+  grid-template-rows: 1fr;
+  width: var(--viewer-width);
+  height: var(--viewer-height);
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+}
+
+body.viewer-fullscreen.mode-display main {
+  padding: 0;
+  background: #000;
+  width: var(--viewer-width);
+  height: var(--viewer-height);
+  overflow: hidden;
+}
+
+body.viewer-fullscreen.mode-display .screen-media {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  /* Letterbox instead of crop/stretch; keep full viewport box (safe-area is black margin). */
+  width: var(--viewer-width);
+  height: var(--viewer-height);
+  max-width: none;
+  aspect-ratio: auto;
+  object-fit: contain;
+  border: 0;
+  border-radius: 0;
+  transform: translate(-50%, -50%);
+}
+
+body.viewer-fullscreen.mode-display.rotate-90 .screen-media,
+body.viewer-fullscreen.mode-display.rotate-270 .screen-media {
+  width: var(--viewer-height);
+  height: var(--viewer-width);
+}
+
+body.rotate-90 .screen-media { transform: rotate(90deg); }
+body.viewer-fullscreen.mode-display.rotate-90 .screen-media { transform: translate(-50%, -50%) rotate(90deg); }
+body.rotate-180 .screen-media { transform: rotate(180deg); }
+body.viewer-fullscreen.mode-display.rotate-180 .screen-media { transform: translate(-50%, -50%) rotate(180deg); }
+body.rotate-270 .screen-media { transform: rotate(270deg); }
+body.viewer-fullscreen.mode-display.rotate-270 .screen-media { transform: translate(-50%, -50%) rotate(270deg); }
+
+#displaySettingsToggle {
+  display: none;
+}
+
+.display-empty-state {
+  min-height: min(52dvh, 430px);
+  width: min(100%, 720px);
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 32px;
+  border: 1px dashed rgba(143, 209, 255, .24);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(18, 29, 39, .88), rgba(8, 13, 19, .92));
+  color: var(--muted);
+  text-align: center;
+}
+
+.display-empty-state strong { color: var(--text); font-size: 22px; }
+.display-empty-state > span:not(.display-empty-icon) { max-width: 440px; line-height: 1.5; }
+.display-empty-icon { color: var(--blue); font-size: 42px; line-height: 1; }
+.display-empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 6px; }
+.display-empty-state button { min-width: 170px; background: var(--blue); color: #071017; font-weight: 800; }
+.display-empty-state button.secondary { background: transparent; color: var(--text); border-color: var(--border); }
+.display-empty-state button:disabled { cursor: wait; opacity: .65; }
+body:not(.device-trusted):not(.pc-console) .display-empty-actions { display: none; }
+body.phone-client:not(.pc-console) #installVirtualDisplay { display: none; }
+body.phone-client:not(.pc-console) #openSideboardFromEmpty { min-width: min(100%, 280px); }
+body.pc-console .display-empty-actions #installVirtualDisplay { order: -1; }
+.display-install-detail { min-height: 1.4em; max-width: 520px; color: var(--muted); line-height: 1.45; }
+
+.display-stream-state {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  width: min(calc(100% - 40px), 430px);
+  padding: 24px 28px;
+  border: 1px solid rgba(143, 209, 255, .24);
+  border-radius: 14px;
+  background: rgba(10, 17, 24, .9);
+  color: var(--muted);
+  text-align: center;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, .35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.display-stream-state strong {
+  color: var(--text);
+  font-size: 20px;
+}
+
+.display-stream-state > span:not(.display-stream-indicator) {
+  max-width: 360px;
+  line-height: 1.45;
+}
+
+.display-stream-state button {
+  min-width: 132px;
+  margin-top: 3px;
+}
+
+.display-stream-indicator {
+  width: 26px;
+  height: 26px;
+  border: 3px solid rgba(143, 209, 255, .2);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: display-stream-spin .9s linear infinite;
+}
+
+body.mode-display.stream-online .display-stream-state,
+body.display-unavailable .display-stream-state {
+  display: none;
+}
+
+body.mode-display:not(.stream-online):not(.display-unavailable) .display-view .screen-media {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes display-stream-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .display-stream-indicator { animation: none; }
+}
+
+body.display-unavailable .display-view .screen-media { display: none; }
+body.display-unavailable .driver-state { display: none; }
+
+#streamFps,
+#streamQuality {
+  width: 72px;
+}
+
+body.pc-console.mode-display .screen-media {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: 100%;
+  aspect-ratio: auto;
+  object-fit: contain;
+}
+
+body.phone-client.mode-display .screen-media {
+  width: 100%;
+  max-width: none;
+  border-radius: 4px;
+}
+
+html.phone-force-landscape body.force-landscape.viewer-fullscreen.mode-display {
+  width: 100dvh;
+  height: 100dvw;
+  overflow: hidden;
+  grid-template-rows: 1fr;
+}
+
+html.phone-force-landscape body.force-landscape.viewer-fullscreen.mode-display main {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Logical landscape box after CSS rotate; matches the viewer variable geometry. */
+html.phone-force-landscape body.force-landscape.viewer-fullscreen.mode-display .screen-media {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+html.phone-force-landscape body.force-landscape.viewer-fullscreen.mode-display .display-toolbar {
+  position: fixed;
+  top: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Portrait Display stays readable instead of becoming a tiny 16:9 strip. */
+body.phone-client.viewport-portrait.mode-display .display-view.active {
+  width: 100%;
+  align-content: start;
+  justify-items: stretch;
+  gap: 8px;
+}
+
+body.phone-client.viewport-portrait.mode-display .display-view.active::after {
+  content: var(--i18n-portrait-hint, "直式適合看資訊板 / 額度；副螢幕建議橫向全螢幕。");
+  color: var(--quiet);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: center;
+  padding: 0 8px 4px;
+}
+
+body.phone-client.viewport-portrait.mode-display .screen-media {
+  width: 100%;
+  max-width: none;
+  height: auto;
+  max-height: min(52dvh, calc((100dvw - 16px) * 9 / 16));
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #05070a;
+}
+
+/* Phone preview leaves chrome room outside fullscreen. */
+body.phone-client.device-trusted.mode-display .display-view.active {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  place-items: center;
+}
+
+body.phone-client.device-trusted.mode-display .screen-media {
+  width: min(100%, 100dvw);
+  max-height: min(72dvh, 100%);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+}
+
+/* Fullscreen phone Display must beat the non-fullscreen max-height rules. */
+body.phone-client.device-trusted.viewer-fullscreen.mode-display .screen-media {
+  width: var(--viewer-width);
+  height: var(--viewer-height);
+  max-width: none;
+  max-height: none;
+  aspect-ratio: auto;
+  object-fit: contain;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body.phone-client.device-trusted.mode-display .display-view.active::after {
+  content: var(--i18n-touch-hint, "單指操作 PC 滑鼠 · 連點兩下放大畫面");
+  color: var(--quiet);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: center;
+  padding: 6px 8px 0;
+}
+
+body.display-unavailable.phone-client.device-trusted.mode-display .display-view.active::after,
+body.phone-client.viewer-fullscreen.mode-display .display-view.active::after {
+  display: none;
+}
+
+/* Tablet Display keeps source controls readable without turning the toolbar
+ * into a second app-shell layout system. */
+body.tablet-client.mode-display .display-toolbar:not(.is-collapsed) {
+  width: min(calc(100% - 20px), 720px);
+  max-width: calc(100% - 20px);
+}
+
+body.tablet-client.mode-display .display-toolbar:not(.is-collapsed) .display-toolbar-extras {
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+body.tablet-client.mode-display .display-source-control {
+  flex: 1 1 260px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+body.tablet-client.mode-display .display-source-control select {
+  width: 100%;
+  min-width: 0;
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 620px) {
+  body.tablet-client.mode-display .display-toolbar:not(.is-collapsed) {
+    align-items: flex-start;
+  }
+
+  body.tablet-client.mode-display .display-toolbar:not(.is-collapsed) .display-toolbar-extras {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    width: 100%;
+  }
+
+  body.tablet-client.mode-display .display-source-control {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  body.tablet-client.mode-display .display-source-control select {
+    max-width: none;
+  }
+}

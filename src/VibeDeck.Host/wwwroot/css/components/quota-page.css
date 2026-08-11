@@ -1,0 +1,1626 @@
+/* Full quota page ----------------------------------------------------------
+ * Final owner for quota-page structure and responsive presentation. */
+
+.quota-view {
+  width: min(100%, 860px);
+  justify-self: center;
+  align-self: center;
+  min-height: 0;
+}
+
+.quota-shell {
+  --quota-accent: #70d98b;
+  --quota-blue: #66c5e8;
+  --quota-ink: #eff7f1;
+  --quota-muted: rgba(239,247,241,.62);
+  --quota-panel: rgba(14, 22, 23, .76);
+  --quota-top-gap: 10px;
+  --quota-title-size: clamp(18px, 3.6vw, 28px);
+  --quota-meta-size: clamp(10px, 1.45vw, 13px);
+  --quota-tab-gap: 5px;
+  --quota-tab-min-height: 28px;
+  --quota-tab-padding: 5px 11px;
+  --quota-account-gap: 12px;
+  --quota-account-padding: 14px;
+  --quota-email-size: clamp(13px, 2vw, 17px);
+  --quota-pair-gap: 14px;
+  --quota-provider-gap: 10px;
+  --quota-provider-title-size: clamp(12px, 1.8vw, 15px);
+  --quota-window-gap: 5px 8px;
+  --quota-window-label-size: clamp(10px, 1.45vw, 12px);
+  --quota-window-value-size: clamp(13px, 2vw, 18px);
+  --quota-credit-size: 17px;
+  --quota-credit-line: 1.2;
+  --quota-footer-gap: 10px;
+  --quota-footer-padding-top: 10px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  width: 100%;
+  min-height: 360px;
+  padding: 12px;
+  overflow: hidden;
+  color: var(--quota-ink);
+  background:
+    radial-gradient(circle at 62% 52%, rgba(77, 207, 255, .16), transparent 28%),
+    linear-gradient(135deg, rgba(6, 12, 15, .96), rgba(20, 27, 25, .96));
+  background-blend-mode: multiply;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 8px;
+}
+
+.quota-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--quota-top-gap);
+  align-items: end;
+}
+
+.quota-left {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.quota-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.quota-title strong {
+  font-size: var(--quota-title-size);
+  line-height: 1;
+}
+
+.quota-title span,
+.quota-status {
+  color: var(--quota-muted);
+  font-size: var(--quota-meta-size);
+}
+
+.quota-tabs {
+  display: flex;
+  gap: var(--quota-tab-gap);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.quota-tabs::-webkit-scrollbar { display: none; }
+
+.quota-tab {
+  min-height: var(--quota-tab-min-height);
+  padding: var(--quota-tab-padding);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 999px;
+  background: rgba(255,255,255,.055);
+  color: rgba(239,247,241,.72);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.quota-tab.active {
+  border-color: rgba(112,217,139,.48);
+  background: rgba(112,217,139,.2);
+  color: var(--quota-ink);
+}
+
+.quota-help { min-width: 0; }
+.quota-help:empty { display: none; }
+
+.quota-help-block {
+  border: 1px solid rgba(112, 217, 139, .22);
+  border-radius: 8px;
+  background: rgba(8, 14, 16, .72);
+  color: var(--quota-muted);
+  font-size: clamp(11px, 1.5vw, 13px);
+  line-height: 1.45;
+  overflow: hidden;
+}
+
+.quota-help-summary,
+body.phone-client:not(.eink-client) .quota-mobile-account-manager > summary,
+body.pc-console.mode-quota .quota-desktop-account-manager > summary,
+body.eink-client.mode-quota .quota-eink-account-manager > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 800;
+}
+
+.quota-help-summary {
+  gap: 10px;
+  min-height: 36px;
+  padding: 8px 12px;
+  color: var(--quota-ink);
+  font-size: clamp(12px, 1.7vw, 14px);
+  user-select: none;
+}
+
+.quota-help-summary::-webkit-details-marker,
+body.phone-client:not(.eink-client) .quota-mobile-account-manager > summary::-webkit-details-marker,
+body.pc-console.mode-quota .quota-desktop-account-manager > summary::-webkit-details-marker,
+body.eink-client.mode-quota .quota-eink-account-manager > summary::-webkit-details-marker { display: none; }
+
+.quota-help-summary::after {
+  content: "▸";
+  flex: 0 0 auto;
+  color: var(--quota-muted);
+  font-size: 12px;
+  transition: transform .12s ease;
+}
+
+.quota-help-block[open] > .quota-help-summary::after { transform: rotate(90deg); }
+
+.quota-help-summary-label {
+  min-width: 0;
+}
+
+.quota-help-summary-hint {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border: 1px solid rgba(112, 217, 139, .35);
+  border-radius: 999px;
+  background: rgba(112, 217, 139, .12);
+  color: var(--quota-accent);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.quota-help-body {
+  padding: 0 12px 10px;
+  border-top: 1px solid rgba(255, 255, 255, .08);
+}
+
+.quota-help-block ol {
+  margin: 8px 0 0;
+  padding-left: 1.2em;
+}
+
+.quota-help-block li + li,
+.quota-setup-list li + li { margin-top: 4px; }
+body.eink-client .quota-help-summary::after { transition: none; }
+
+.quota-setup-card {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.quota-setup-title {
+  font-size: clamp(15px, 2.4vw, 18px);
+  font-weight: 800;
+  color: var(--quota-ink);
+}
+
+.quota-setup-list {
+  margin: 0;
+  padding-left: 1.15em;
+  color: var(--quota-muted);
+  font-size: clamp(11px, 1.5vw, 13px);
+  line-height: 1.45;
+}
+
+.quota-setup-list b { color: var(--quota-accent); }
+
+.quota-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  min-height: 0;
+  align-content: start;
+}
+
+.quota-account-page {
+  display: grid;
+  min-height: 0;
+}
+
+.quota-account-switcher {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  justify-self: end;
+  color: var(--quota-muted);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.quota-page-button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 999px;
+  background: rgba(255,255,255,.06);
+  color: var(--quota-ink);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.quota-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.quota-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(239,247,241,.34);
+}
+
+.quota-dot.active {
+  width: 14px;
+  background: var(--quota-accent);
+}
+
+.quota-account-card {
+  display: grid;
+  grid-template-rows: auto auto auto auto auto;
+  gap: var(--quota-account-gap);
+  min-height: 0;
+  padding: var(--quota-account-padding);
+  border: 1px solid rgba(255,255,255,.12);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.025)),
+    var(--quota-panel);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+  overflow: hidden;
+}
+
+body:not(.eink-client) .quota-toolbox button[data-quota-action$="-delete"] {
+  border-color: rgba(255, 133, 133, .22);
+  background: rgba(96, 31, 38, .10);
+  color: #ffb4b4;
+}
+
+body:not(.eink-client) .quota-toolbox button[data-quota-action$="-delete"]:hover {
+  border-color: rgba(255, 133, 133, .38);
+  background: rgba(112, 37, 45, .18);
+  color: #ffd0d0;
+}
+
+.quota-account-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.quota-check {
+  width: 15px;
+  height: 15px;
+  border: 1px solid rgba(239,247,241,.72);
+  background: rgba(255,255,255,.05);
+}
+
+.quota-account-email {
+  font-size: var(--quota-email-size);
+  font-weight: 800;
+}
+
+.quota-pill {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2f9cea, #176ed4);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.quota-active-badge {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(70, 210, 137, .18);
+  border: 1px solid rgba(112, 236, 166, .55);
+  color: #8ff0b6;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.quota-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--quota-pair-gap);
+  min-height: 0;
+}
+
+.quota-pair.single { grid-template-columns: 1fr; }
+
+.quota-provider {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  gap: var(--quota-provider-gap);
+  min-width: 0;
+}
+
+.quota-provider-title {
+  color: rgba(239,247,241,.9);
+  font-size: var(--quota-provider-title-size);
+  font-weight: 800;
+}
+
+.quota-window {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto;
+  gap: var(--quota-window-gap);
+  min-width: 0;
+}
+
+.quota-window span {
+  color: rgba(239,247,241,.72);
+  font-size: var(--quota-window-label-size);
+  font-weight: 700;
+}
+
+.quota-window b {
+  color: var(--quota-accent);
+  font-size: var(--quota-window-value-size);
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.quota-bar {
+  grid-column: 1 / -1;
+  height: 5px;
+  background: rgba(255,255,255,.14);
+  overflow: hidden;
+  border-radius: 999px;
+}
+
+.quota-bar i {
+  display: block;
+  width: 0%;
+  height: 100%;
+  background: var(--quota-accent);
+  border-radius: inherit;
+}
+
+.quota-window small {
+  grid-column: 1 / -1;
+  color: var(--quota-muted);
+  font-size: clamp(9px, 1.25vw, 11px);
+}
+
+.quota-credit-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: rgba(239,247,241,.84);
+  font-size: var(--quota-credit-size);
+  line-height: var(--quota-credit-line);
+  font-weight: 800;
+}
+
+.quota-footer {
+  display: grid;
+  grid-template-columns: minmax(0, auto) 1fr auto;
+  gap: var(--quota-footer-gap);
+  align-items: center;
+  padding-top: var(--quota-footer-padding-top);
+  border-top: 1px dashed rgba(255,255,255,.14);
+}
+
+.quota-time {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.075);
+  color: var(--quota-muted);
+  font-size: clamp(10px, 1.35vw, 12px);
+  white-space: nowrap;
+}
+
+.quota-toolbox {
+  justify-self: end;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 999px;
+  background: rgba(255,255,255,.06);
+}
+
+.quota-toolbox button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(239,247,241,.82);
+  font-size: 14px;
+}
+
+body:not(.eink-client) .quota-toolbox button {
+  width: auto;
+  min-width: 28px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.quota-toolbox button:hover { background: rgba(255,255,255,.1); }
+.quota-toolbox button:disabled { cursor: wait; opacity: .48; }
+
+.quota-more-actions {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.quota-more-actions > summary {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 999px;
+  background: rgba(255,255,255,.06);
+  color: var(--quota-ink);
+  cursor: pointer;
+  list-style: none;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.quota-more-actions > summary::-webkit-details-marker { display: none; }
+
+.quota-more-actions > div {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 80;
+  min-width: 170px;
+  padding: 6px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 8px;
+  background: #111a1d;
+  box-shadow: 0 12px 30px rgba(0,0,0,.42);
+}
+
+.quota-more-actions > div button {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 34px;
+  padding: 7px 10px !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  border-radius: 6px;
+  background: rgba(255,255,255,.05) !important;
+  color: var(--quota-ink) !important;
+  text-align: left;
+  white-space: normal !important;
+}
+
+.quota-more-actions > div button.is-danger {
+  border-color: rgba(255, 133, 133, .35) !important;
+  background: rgba(96, 31, 38, .16) !important;
+  color: #ffd0d0 !important;
+}
+
+body.phone-client:not(.eink-client) .quota-more-actions > summary {
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.quota-action-status {
+  min-height: 20px;
+  color: var(--quota-muted);
+  font-size: clamp(9px, 1.2vw, 11px);
+  line-height: 1.35;
+}
+
+.quota-local-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px 8px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.045);
+  color: rgba(239,247,241,.78);
+}
+
+.quota-local-card strong,
+.quota-local-card span {
+  font-size: 12px;
+}
+
+.quota-local-card b {
+  color: var(--quota-blue);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Viewer / deck-window contract. */
+body:is(.viewer-fullscreen, .dashboard-viewer).mode-quota {
+  grid-template-rows: 1fr;
+  min-height: var(--viewer-height);
+}
+
+body:is(.viewer-fullscreen, .dashboard-viewer, .deck-window).mode-quota .quota-shell {
+  --quota-account-gap: 8px;
+  --quota-account-padding: 12px 14px;
+  --quota-provider-gap: 7px;
+}
+
+body:is(.viewer-fullscreen, .dashboard-viewer).mode-quota .quota-shell {
+  --quota-window-gap: 3px 8px;
+  --quota-footer-padding-top: 8px;
+}
+
+body.deck-window.mode-quota .quota-shell {
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100vh;
+  min-height: 0;
+}
+
+body.deck-window.mode-quota .quota-grid,
+body.deck-window.mode-quota .quota-account-page {
+  height: 100%;
+  min-height: 0;
+  align-content: stretch;
+}
+
+body.deck-window.mode-quota .quota-account-card {
+  height: 100%;
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+}
+
+body.deck-window.mode-quota .quota-pair { align-items: stretch; }
+
+body.deck-window.mode-quota .quota-pair.single {
+  width: min(100%, 760px);
+  align-self: center;
+}
+
+body.deck-window.mode-quota .quota-provider { align-content: center; }
+
+body.deck-window.mode-quota .quota-title strong,
+body.deck-window.mode-quota .quota-window b { line-height: 1.08; }
+
+body.deck-window.mode-quota .quota-footer {
+  grid-template-columns: auto auto minmax(0, 1fr);
+  justify-items: start;
+}
+
+body.deck-window.mode-quota .quota-toolbox { justify-self: start; }
+
+/* Desktop console quota fills the console content slot. */
+body.pc-console.mode-quota .quota-shell {
+  --quota-title-size: clamp(28px, 2.4vw, 34px);
+  --quota-meta-size: 13px;
+  --quota-tab-min-height: 34px;
+  --quota-tab-padding: 7px 13px;
+  --quota-account-gap: 14px;
+  --quota-account-padding: 16px;
+  --quota-email-size: 17px;
+  --quota-provider-title-size: 15px;
+  --quota-window-label-size: 12px;
+  --quota-window-value-size: 22px;
+  --quota-credit-size: 18px;
+  height: 100%;
+  min-height: 0;
+  gap: 14px;
+  padding: 16px;
+  border-color: rgba(143, 209, 255, .13);
+  border-radius: 14px;
+  box-shadow:
+    0 18px 54px rgba(0, 0, 0, .28),
+    inset 0 1px 0 rgba(255, 255, 255, .03);
+}
+
+body.pc-console.mode-quota .quota-tab { font-size: 13px; }
+
+body.pc-console.mode-quota .quota-tab.active {
+  border-color: rgba(112, 217, 139, .42);
+  background: linear-gradient(180deg, rgba(112, 217, 139, .20), rgba(112, 217, 139, .11));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035);
+}
+
+body.pc-console.mode-quota .quota-account-card {
+  border-color: rgba(255, 255, 255, .105);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 84% 18%, rgba(112, 217, 139, .055), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .018)),
+    var(--quota-panel);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .05),
+    0 10px 30px rgba(0, 0, 0, .14);
+}
+
+body.pc-console.mode-quota .quota-page-button {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+}
+
+body.pc-console.mode-quota .quota-toolbox button {
+  min-height: 32px;
+  padding: 6px 10px;
+}
+
+body.pc-console.mode-quota .quota-window small { font-size: 12px; }
+
+body.pc-console.mode-quota .quota-codex-switcher.is-compact-desktop {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+body.pc-console.mode-quota .quota-desktop-account-manager {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .11);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .018));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025);
+}
+
+body.pc-console.mode-quota .quota-desktop-account-manager > summary {
+  min-height: 40px;
+  padding: 9px 12px;
+  color: var(--quota-ink);
+  font-size: 14px;
+}
+
+body.pc-console.mode-quota .quota-desktop-account-manager > summary::after {
+  content: "＋";
+  flex: 0 0 auto;
+  font-size: 18px;
+  line-height: 1;
+}
+
+body.pc-console.mode-quota .quota-desktop-account-manager[open] > summary {
+  border-bottom: 1px solid rgba(255, 255, 255, .12);
+}
+
+body.pc-console.mode-quota .quota-desktop-account-manager[open] > summary::after { content: "−"; }
+
+body.pc-console.mode-quota .quota-desktop-account-manager .quota-codex-switch-row { padding: 10px; }
+
+/* Tablet landscape quota: reading first, account management second. */
+body.tablet-client.viewport-landscape.mode-quota .quota-view {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  align-self: stretch;
+}
+
+body.tablet-client.viewport-landscape.mode-quota .quota-account-card,
+body.tablet-client.viewport-landscape.mode-quota .quota-account-card > *,
+body.tablet-client.viewport-landscape.mode-quota .quota-pair,
+body.tablet-client.viewport-landscape.mode-quota .quota-provider,
+body.tablet-client.viewport-landscape.mode-quota .quota-footer {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body.tablet-client.viewport-landscape.mode-quota .quota-shell {
+  --quota-provider-gap: 5px 14px;
+  --quota-window-gap: 3px 8px;
+  --quota-credit-size: 13px;
+  min-height: 0;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+body.tablet-client.viewport-landscape.mode-quota .quota-provider {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+body.tablet-client.viewport-landscape.mode-quota .quota-provider-title { grid-column: 1 / -1; }
+
+body.tablet-client.viewport-landscape.mode-quota .quota-window {
+  align-content: start;
+}
+
+body.tablet-client.viewport-landscape.mode-quota .quota-credit-row {
+  min-width: 0;
+  line-height: 1.2;
+}
+
+body.tablet-client.viewport-landscape.mode-quota .quota-toolbox { flex-wrap: nowrap; }
+
+body.tablet-client.viewport-landscape.mode-quota .quota-toolbox button {
+  min-height: 32px;
+  padding-inline: 9px;
+}
+
+body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota :is(main, .quota-view.active, .quota-shell) {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota .quota-shell {
+  --quota-account-gap: 6px;
+  --quota-account-padding: 10px 12px;
+  --quota-footer-gap: 6px;
+  --quota-footer-padding-top: 6px;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota :is(.quota-grid, .quota-account-page) {
+  height: 100%;
+  min-height: 0;
+}
+
+body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota .quota-codex-switcher { display: none; }
+
+body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota .quota-account-card {
+  display: grid;
+  grid-template-rows: auto max-content auto auto auto;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota :is(.quota-pair, .quota-provider) { min-height: max-content; }
+
+body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota .quota-footer {
+  grid-template-columns: minmax(0, auto) 1fr auto;
+}
+
+/* Generic portrait contract. */
+body.viewport-portrait .quota-view {
+  width: 100%;
+  justify-self: stretch;
+  align-self: start;
+}
+
+body.viewport-portrait .quota-shell {
+  --quota-title-size: clamp(18px, 6.5vw, 30px);
+  --quota-meta-size: clamp(11px, 3.3vw, 14px);
+  --quota-tab-gap: 6px;
+  --quota-tab-min-height: 32px;
+  --quota-tab-padding: 7px 12px;
+  --quota-account-gap: 14px;
+  --quota-email-size: clamp(15px, 4.8vw, 22px);
+  --quota-pair-gap: 16px;
+  --quota-provider-gap: 12px;
+  --quota-provider-title-size: clamp(14px, 4.2vw, 18px);
+  --quota-window-gap: 6px 8px;
+  --quota-window-label-size: clamp(11px, 3.4vw, 14px);
+  --quota-window-value-size: clamp(16px, 5vw, 22px);
+  --quota-credit-line: 1.25;
+  --quota-footer-gap: 8px;
+  grid-template-rows: auto auto;
+  align-content: start;
+  min-height: auto;
+  height: auto;
+  overflow: visible;
+  padding: 12px 12px calc(18px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom))) 12px;
+}
+
+body.viewport-portrait .quota-top {
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+body.viewport-portrait .quota-status { justify-self: start; }
+
+body.viewport-portrait .quota-title {
+  flex-wrap: wrap;
+  white-space: normal;
+  align-items: center;
+}
+
+body.viewport-portrait .quota-grid { overflow: visible; }
+
+body.viewport-portrait .quota-account-card {
+  overflow: visible;
+}
+
+body.viewport-portrait .quota-account-head {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: start;
+}
+
+body.viewport-portrait .quota-check { grid-row: 1; }
+
+body.viewport-portrait .quota-account-email {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.2;
+}
+
+body.viewport-portrait .quota-account-switcher {
+  grid-column: 2 / -1;
+  grid-row: 2;
+  justify-self: start;
+}
+
+body.viewport-portrait .quota-pill {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+}
+
+body.viewport-portrait .quota-pair {
+  grid-template-columns: 1fr;
+}
+
+body.viewport-portrait .quota-window small {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.2;
+}
+
+body.viewport-portrait .quota-credit-row {
+  flex-wrap: wrap;
+}
+
+body.viewport-portrait .quota-footer {
+  grid-template-columns: 1fr;
+  justify-items: start;
+}
+
+body.viewport-portrait .quota-toolbox {
+  justify-self: start;
+  flex-wrap: wrap;
+}
+
+body.viewport-portrait .quota-action-status { white-space: normal; }
+
+body:is(.viewer-fullscreen, .dashboard-viewer).mode-quota.viewport-portrait main { overflow-y: auto; }
+
+body:is(.viewer-fullscreen, .dashboard-viewer).mode-quota.viewport-portrait .quota-view.active {
+  width: 100%;
+  height: auto;
+  min-height: var(--viewer-height);
+  align-self: start;
+  align-content: start;
+  overflow-y: auto;
+}
+
+body:is(.viewer-fullscreen, .dashboard-viewer).mode-quota.viewport-portrait .quota-shell {
+  align-content: start;
+  min-height: var(--viewer-height);
+  height: auto;
+  overflow: visible;
+  padding: calc(10px + var(--safe-area-inset-top, env(safe-area-inset-top))) calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right))) calc(18px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom))) calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left)));
+}
+
+/* Phone quota ------------------------------------------------------------- */
+body.phone-client:not(.device-trusted):not(.pc-console) .quota-view {
+  display: none !important;
+}
+
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-quota .quota-shell,
+body.phone-client.device-trusted.viewport-landscape.mode-quota .quota-shell {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+}
+
+body.phone-client.viewport-portrait .quota-view {
+  max-width: none;
+}
+
+body.phone-client.viewport-portrait .quota-shell {
+  min-height: 0;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+body.phone-client.viewport-portrait .quota-top {
+  gap: 8px;
+}
+
+body.phone-client.viewport-portrait:not(.eink-client) .quota-account-card { border-radius: 10px; }
+
+body.phone-client.viewport-portrait:not(.eink-client) .quota-top {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+body.phone-client:not(.eink-client) .quota-toolbox {
+  justify-self: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  border-radius: 8px;
+}
+
+body.phone-client:not(.eink-client) .quota-toolbox button {
+  flex: 1 1 calc(50% - 4px);
+  min-width: min(128px, 100%);
+  min-height: 40px;
+  padding: 7px 10px;
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+body.phone-client:not(.eink-client) .quota-tab,
+body.phone-client:not(.eink-client) .quota-page-button { min-height: 36px; }
+
+body.phone-client:not(.eink-client) .quota-page-button {
+  width: 32px;
+  height: 36px;
+}
+
+body.phone-client:not(.tablet-client):not(.eink-client).viewport-landscape.mode-quota:is(.dashboard-viewer, .viewer-fullscreen) .quota-account-switcher {
+  margin-inline-end: 56px;
+}
+
+body.phone-client:not(.tablet-client):not(.eink-client).viewport-landscape.mode-quota:is(.dashboard-viewer, .viewer-fullscreen) .quota-toolbox {
+  margin-inline-end: 56px;
+}
+
+/* Phone landscape has plenty of horizontal room but very little vertical room.
+ * Keep the primary account actions on one visible row instead of inheriting the
+ * portrait-friendly 50% button widths that can push Delete below the viewport. */
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-quota:not(.eink-client) main,
+body.phone-client.device-trusted.viewport-landscape.mode-quota:not(.eink-client) main {
+  overflow-x: hidden;
+  overflow-y: auto;
+  align-content: start;
+  -webkit-overflow-scrolling: touch;
+}
+
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-quota:not(.eink-client) .quota-footer,
+body.phone-client.device-trusted.viewport-landscape.mode-quota:not(.eink-client) .quota-footer {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-quota:not(.eink-client) .quota-footer > span:nth-child(2),
+body.phone-client.device-trusted.viewport-landscape.mode-quota:not(.eink-client) .quota-footer > span:nth-child(2) {
+  display: none;
+}
+
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-quota:not(.eink-client) .quota-toolbox,
+body.phone-client.device-trusted.viewport-landscape.mode-quota:not(.eink-client) .quota-toolbox {
+  justify-self: end;
+  flex-wrap: nowrap;
+  width: auto;
+  max-width: 100%;
+}
+
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-quota:not(.eink-client) .quota-toolbox button,
+body.phone-client.device-trusted.viewport-landscape.mode-quota:not(.eink-client) .quota-toolbox button {
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 9px;
+  white-space: nowrap;
+}
+
+body.phone-client:not(.eink-client) .quota-codex-select { min-height: 40px; }
+
+body.phone-client:not(.eink-client) .quota-codex-switcher.is-compact-mobile {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+body.phone-client:not(.eink-client) .quota-codex-switcher.is-compact-mobile .quota-action-status:empty {
+  display: none;
+}
+
+body.phone-client:not(.eink-client) .quota-mobile-account-manager {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .035);
+}
+
+body.phone-client:not(.eink-client) .quota-mobile-account-manager > summary {
+  min-height: 44px;
+  padding: 9px 11px;
+  font-size: 14px;
+}
+
+body.phone-client:not(.eink-client) .quota-mobile-account-manager > summary::after {
+  content: "＋";
+  font-size: 18px;
+  line-height: 1;
+}
+
+body.phone-client:not(.eink-client) .quota-mobile-account-manager[open] > summary {
+  border-bottom: 1px solid rgba(255, 255, 255, .12);
+}
+
+body.phone-client:not(.eink-client) .quota-mobile-account-manager[open] > summary::after { content: "−"; }
+
+body.phone-client:not(.eink-client) .quota-mobile-account-manager .quota-codex-switch-row { padding: 10px; }
+
+body.phone-client:not(.eink-client) #quotaSummary,
+body.phone-client:not(.eink-client) #quotaUpdated,
+body.phone-client:not(.eink-client) .quota-help-block,
+body.phone-client:not(.eink-client) .quota-help-block li,
+body.phone-client:not(.eink-client) .quota-help-summary-hint,
+body.phone-client:not(.eink-client) .quota-action-status,
+body.phone-client:not(.eink-client) .quota-account-switcher,
+body.phone-client:not(.eink-client) .quota-pill,
+body.phone-client:not(.eink-client) .quota-active-badge,
+body.phone-client:not(.eink-client) .quota-window small,
+body.phone-client:not(.eink-client) .quota-time { font-size: 12px; }
+
+.quota-time.quota-stale {
+  border: 1px solid rgba(242, 180, 95, .62);
+  color: #f2b45f;
+}
+
+.quota-source-detail {
+  padding: 10px 12px;
+  border: 1px solid rgba(242, 180, 95, .28);
+  border-radius: 10px;
+  background: rgba(242, 180, 95, .08);
+  color: #f2c27a;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+body.phone-client:not(.eink-client) .quota-window span { font-size: 12px; }
+
+body.phone-client:not(.eink-client) .quota-credit-row {
+  font-size: var(--eink-dashboard-min-font);
+  line-height: 1.2;
+}
+
+body.mode-quota .quota-help { display: none; }
+
+/* Phone quota follows the usable viewport rather than desktop card minima. */
+@media (max-width: 960px) {
+  body.phone-client:not(.eink-client).mode-quota main {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    align-content: start;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.phone-client:not(.eink-client).mode-quota .quota-view {
+    width: 100%;
+    max-width: none;
+    height: auto;
+    min-height: 0;
+    justify-self: stretch;
+    align-self: start;
+  }
+
+  body.phone-client:not(.eink-client).mode-quota .quota-shell {
+    min-height: 0;
+    height: auto;
+    grid-template-rows: auto auto;
+    align-content: start;
+    overflow: visible;
+  }
+
+  body.phone-client:not(.eink-client).mode-quota .quota-grid,
+  body.phone-client:not(.eink-client).mode-quota .quota-account-page,
+  body.phone-client:not(.eink-client).mode-quota .quota-account-card {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  body.phone-client:not(.eink-client).mode-quota .quota-grid { grid-auto-rows: max-content; }
+
+  body.phone-client:not(.eink-client).mode-quota .quota-account-card {
+    display: block;
+    min-height: max-content;
+    align-self: start;
+  }
+
+  body.phone-client:not(.eink-client).mode-quota .quota-account-card > * + * { margin-top: 10px; }
+}
+
+@media (max-width: 960px) and (orientation: landscape) {
+  body.phone-client:not(.eink-client).mode-quota header {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    padding-top: calc(6px + var(--safe-area-inset-top, env(safe-area-inset-top)));
+    padding-bottom: 6px;
+  }
+
+  body.phone-client:not(.eink-client).mode-quota .brand { display: none; }
+
+  body.phone-client:not(.eink-client).mode-quota .top-controls {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+    width: 100%;
+  }
+
+  body.phone-client:not(.eink-client).mode-quota .utility-controls { gap: 5px; }
+
+  body.phone-client:not(.eink-client).mode-quota .utility-controls button {
+    min-height: 36px;
+    padding-inline: 8px;
+  }
+
+  body.phone-client:not(.eink-client).mode-quota main { padding-top: 8px; }
+}
+
+/* Quota account source switcher ------------------------------------------ */
+.quota-codex-switcher { grid-template-rows: auto auto auto; }
+
+.quota-codex-select {
+  flex: 1 1 190px;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 8px;
+  background: rgba(0,0,0,.22);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+}
+
+/* BOOX / color E Ink quota ----------------------------------------------- */
+body.eink-client .quota-shell {
+  --quota-accent: #171714;
+  --quota-blue: #24241f;
+  --quota-ink: #000;
+  --quota-muted: #222;
+  --quota-panel: #fffef8;
+  --quota-title-size: clamp(25px, 3.2vw, 38px);
+  --quota-tab-min-height: 44px;
+  --quota-account-gap: 16px;
+  --quota-account-padding: 18px;
+  --quota-window-value-size: clamp(28px, 7vw, 40px);
+  --quota-credit-size: var(--eink-dashboard-min-font);
+  min-width: 0;
+  max-width: 100%;
+  min-height: 0;
+  height: auto;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 14px;
+  padding: 18px;
+  background: #f5f2e7;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden auto;
+  -webkit-overflow-scrolling: touch;
+  font-size: 18px;
+}
+
+body.eink-client :is(.quota-top, .quota-account-card, .quota-account-head, .quota-codex-switch-row) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body.eink-client .quota-top {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+body.eink-client .quota-left,
+body.eink-client .quota-top .dashboard-view-controls,
+body.eink-client .quota-status {
+  grid-column: 1;
+  justify-self: start;
+  width: 100%;
+}
+
+body.eink-client :is(.quota-title, .quota-status, .quota-account-email, .quota-account-switcher, .quota-action-status),
+body.eink-client .quota-title span,
+body.eink-client .quota-window small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+body.eink-client .quota-title {
+  flex-wrap: wrap;
+  white-space: normal;
+}
+
+body.eink-client .quota-tabs {
+  width: 100%;
+  max-width: 100%;
+}
+
+body.eink-client .quota-account-head {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: start;
+}
+
+body.eink-client .quota-account-email {
+  color: #000;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+body.eink-client .quota-account-switcher {
+  grid-column: 2 / -1;
+  grid-row: 2;
+  justify-self: start;
+  color: #515148;
+  white-space: normal;
+  font-size: 16px;
+}
+
+body.eink-client .quota-pill {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  font-size: 16px;
+}
+
+body.eink-client :is(.quota-pair, .quota-footer) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+body.eink-client .quota-footer { justify-items: start; }
+
+body.eink-client .quota-window b {
+  color: #000;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+body.eink-client .quota-bar {
+  height: 14px;
+  border: 2px solid #000;
+  border-radius: 0;
+  background: #e8e3d3;
+}
+
+body.eink-client .quota-bar i {
+  border-radius: 0;
+  background: #000;
+}
+
+body.eink-client .quota-dot.active {
+  border-radius: 0;
+  background: #315b50;
+}
+
+body.eink-client .quota-credit-row {
+  color: #000;
+}
+
+body.eink-client .quota-help-block {
+  border: 3px solid #24241f;
+  border-radius: 0;
+  background: #fffef8;
+  color: #171714;
+  font-size: clamp(15px, 2.1vw, 18px);
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+body.eink-client .quota-help-summary {
+  --eink-control-min-height: 48px;
+  padding: 12px 14px;
+  color: #171714;
+  font-size: clamp(16px, 2.2vw, 20px);
+}
+
+body.eink-client .quota-help-summary-hint {
+  border: 2px solid #24241f;
+  border-radius: 0;
+  background: #f2f0e8;
+  color: #171714;
+  font-size: 16px;
+}
+
+body.eink-client .quota-help-body {
+  padding: 0 14px 14px;
+  border-top: 2px solid #24241f;
+}
+
+body.eink-client .quota-help-block ol {
+  margin: 10px 0 0;
+  padding-left: 1.35em;
+}
+
+body.eink-client .quota-help-block li {
+  color: #171714;
+  font-weight: 600;
+}
+
+body.eink-client .quota-help-block li + li { margin-top: 8px; }
+
+body.eink-client .quota-setup-card {
+  gap: 14px;
+  padding: 16px 18px;
+  border: 3px solid #24241f;
+  background: #fffef8;
+}
+
+body.eink-client .quota-setup-title {
+  color: #171714;
+  font-size: clamp(18px, 2.6vw, 24px);
+}
+
+body.eink-client .quota-setup-list {
+  color: #24241f;
+  font-size: clamp(15px, 2.1vw, 18px);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+body.eink-client .quota-setup-list b {
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+body.eink-client .quota-setup-card .quota-footer {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 2px solid #24241f;
+}
+
+body.eink-client .quota-setup-card .quota-time {
+  color: #171714;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+body.eink-client .quota-toolbox {
+  justify-self: start;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+body.eink-client .quota-toolbox button {
+  flex: 1 1 152px;
+  width: auto;
+  min-width: 0;
+  min-height: 48px;
+  height: auto;
+  padding: 6px 12px;
+  border: 3px solid #24241f;
+  font-size: 20px;
+  font-weight: 800;
+  white-space: normal;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+body.eink-client .quota-page-button {
+  width: 44px;
+  height: 44px;
+  border: 3px solid #24241f;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+body.eink-client .quota-codex-switch-row { align-items: stretch; }
+
+body.eink-client .quota-codex-select {
+  --eink-control-min-height: 44px;
+  flex: 1 1 100%;
+  width: 100%;
+  border: 3px solid #000;
+  border-radius: 4px;
+  background: #fffef8;
+  color: #000;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+body.eink-client .quota-codex-switch-row .quota-toolbox { flex: 1 1 100%; }
+
+body.eink-client .quota-action-status {
+  color: #000;
+  font-size: 16px;
+  line-height: 1.45;
+  text-shadow: none;
+}
+
+body.eink-client .quota-time.quota-stale {
+  border-color: #24241f;
+  color: #171714;
+  text-decoration: underline;
+  text-decoration-style: double;
+}
+
+@media (orientation: portrait), (max-width: 760px) {
+  body.eink-client .quota-pair { grid-template-columns: 1fr; }
+}
+
+body.eink-client:is(.dashboard-viewer, .viewer-immersive, .viewer-fullscreen) .quota-view.active,
+body.eink-client.mode-quota .quota-shell {
+  height: auto;
+  min-height: 100dvh;
+  overflow: visible;
+}
+
+body.eink-client.mode-quota .quota-shell {
+  grid-template-rows: auto auto auto;
+  align-content: start;
+}
+
+body.eink-client.mode-quota .quota-grid,
+body.eink-client.mode-quota .quota-account-page,
+body.eink-client.mode-quota .quota-account-card {
+  height: auto;
+  min-height: 0;
+  align-content: start;
+  overflow: visible;
+}
+
+body.eink-client.mode-quota .quota-account-card {
+  display: block;
+  grid-template-rows: auto auto auto auto auto;
+  min-height: max-content;
+  align-self: start;
+}
+
+body.eink-client.mode-quota .quota-account-card > * + * { margin-top: 16px; }
+body.eink-client.mode-quota .quota-pair { min-height: max-content; }
+
+body.eink-client.mode-quota .quota-eink-overview {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-self: start;
+  gap: 14px;
+  padding: 18px;
+}
+
+body.eink-client.mode-quota .quota-eink-overview > * {
+  flex: 0 0 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+body.eink-client.mode-quota .quota-eink-overview-head {
+  display: grid;
+  gap: 10px;
+}
+
+body.eink-client.mode-quota .quota-eink-overview-head > .quota-account-switcher {
+  grid-column: auto;
+  grid-row: auto;
+  justify-self: start;
+}
+
+body.eink-client.mode-quota .quota-eink-usage {
+  display: block;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+body.eink-client.mode-quota .quota-eink-usage .quota-provider-title {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 22px;
+}
+
+body.eink-client.mode-quota .quota-eink-usage .quota-window {
+  gap: 6px 12px;
+  padding: 14px 0;
+  border-top: 2px solid #000;
+}
+
+body.eink-client.mode-quota .quota-eink-usage .quota-provider-title + .quota-window { border-top: 0; }
+
+body.eink-client.mode-quota .quota-eink-usage .quota-window b { font-size: clamp(36px, 6vw, 48px); }
+
+body.eink-client.mode-quota .quota-eink-credit {
+  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 2px solid #000;
+  font-size: 20px;
+}
+
+body.eink-client.mode-quota .quota-eink-overview-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 2px solid #000;
+}
+
+body.eink-client.mode-quota .quota-eink-overview-footer .quota-toolbox { width: auto; }
+
+body.eink-client.mode-quota .quota-eink-overview-footer .quota-toolbox button {
+  flex: 0 1 auto;
+  width: auto;
+  padding: 6px 14px;
+}
+
+/* Quota cards keep their primary refresh action in the lower-right corner.
+   Lift the fixed viewer exit control above that action on E-Ink layouts so
+   the two independent controls never compete for the same touch target. */
+body.eink-client.viewport-landscape.mode-quota:is(.dashboard-viewer, .viewer-fullscreen) .exit-viewer {
+  bottom: calc(76px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
+}
+
+body.eink-client.mode-quota .quota-eink-account-manager {
+  margin: 0;
+  border: 2px solid #000;
+  background: #f2f0e8;
+}
+
+body.eink-client.mode-quota .quota-eink-account-manager > summary {
+  --eink-control-min-height: 52px;
+  padding: 12px 14px;
+  color: #000;
+  font-size: 20px;
+}
+
+body.eink-client.mode-quota .quota-eink-account-manager > summary::after {
+  content: "＋";
+  font-size: 26px;
+  line-height: 1;
+}
+
+body.eink-client.mode-quota .quota-eink-account-manager[open] > summary {
+  border-bottom: 2px solid #000;
+}
+
+body.eink-client.mode-quota .quota-eink-account-manager[open] > summary::after { content: "−"; }
+
+body.eink-client.mode-quota .quota-eink-account-controls {
+  min-width: 0;
+  padding: 14px;
+}
+
+body.eink-client.mode-quota .quota-eink-account-controls .quota-codex-switch-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+body.eink-client.mode-quota .quota-eink-account-controls .quota-toolbox {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+body.eink-client.mode-quota .quota-eink-account-controls .quota-toolbox button {
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 12px;
+}
+
+@container eink-card (max-width: 280px) {
+  body.eink-client #systemSideboardPage.dashboard-grid .quota-window b {
+    font-size: clamp(24px, 18cqw, 36px);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}

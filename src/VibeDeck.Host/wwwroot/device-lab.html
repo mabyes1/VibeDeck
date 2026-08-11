@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>VibeDeck Device Lab</title>
+  <link rel="stylesheet" href="/device-lab.css?v=1">
+  <script>
+    if (location.hostname !== "localhost") {
+      location.replace(`http://localhost:5000/device-lab.html${location.search}${location.hash}`);
+    }
+  </script>
+</head>
+<body>
+  <header class="lab-header">
+    <div class="lab-brand">
+      <span>VIBEDECK</span>
+      <div>
+        <h1 data-i18n="title">裝置版面測試</h1>
+        <p data-i18n="subtitle">使用真正產品頁面，以實機 CSS viewport 快速檢查跑版。</p>
+      </div>
+    </div>
+    <div class="lab-controls">
+      <label>
+        <span data-i18n="device">裝置</span>
+        <select id="deviceSelect">
+          <option value="boox-go-color-7">BOOX Go Color 7</option>
+          <option value="asus-zenpad-p024">ASUS ZenPad 8.0 P024</option>
+          <option value="galaxy-s23">Samsung Galaxy S23</option>
+          <option value="iphone-xs">iPhone XS</option>
+        </select>
+      </label>
+      <label>
+        <span data-i18n="orientation">方向</span>
+        <select id="orientationSelect">
+          <option value="portrait" data-i18n="portrait">直向</option>
+          <option value="landscape" data-i18n="landscape">橫向</option>
+        </select>
+      </label>
+      <label>
+        <span data-i18n="page">頁面</span>
+        <select id="modeSelect">
+          <option value="sideboard" data-i18n="sideboard">資訊板</option>
+          <option value="quota" data-i18n="quota">額度</option>
+          <option value="display" data-i18n="display">副螢幕</option>
+          <option value="setup" data-i18n="setup">裝置設定</option>
+        </select>
+      </label>
+      <label>
+        <span data-i18n="trustState">配對狀態</span>
+        <select id="trustStateSelect">
+          <option value="paired" data-i18n="paired">已配對</option>
+          <option value="unpaired" data-i18n="unpaired">未配對</option>
+          <option value="pending" data-i18n="pending">等待 PC 核准</option>
+          <option value="local" data-i18n="local">本機控制</option>
+        </select>
+      </label>
+      <label>
+        <span data-i18n="language">語言</span>
+        <select id="languageSelect">
+          <option value="zh-Hant">繁體中文</option>
+          <option value="en">English</option>
+          <option value="ja">日本語</option>
+        </select>
+      </label>
+      <label>
+        <span data-i18n="scale">顯示比例</span>
+        <select id="scaleSelect">
+          <option value="auto" data-i18n="fit">自動符合</option>
+          <option value="1">100%</option>
+          <option value="0.75">75%</option>
+          <option value="0.5">50%</option>
+        </select>
+      </label>
+      <button id="reloadPreview" type="button" data-i18n="reload">重新載入</button>
+    </div>
+  </header>
+
+  <main class="lab-stage" id="labStage">
+    <div class="device-scaler" id="deviceScaler">
+      <section class="device-frame" id="deviceFrame" aria-label="Device preview">
+        <div class="device-frame-head">
+          <strong id="deviceName">BOOX Go Color 7</strong>
+          <span id="deviceMetrics">1054 × 794 CSS px</span>
+        </div>
+        <div class="device-screen" id="deviceScreen">
+          <iframe id="previewFrame" title="VibeDeck device preview"></iframe>
+          <span class="device-camera" aria-hidden="true"></span>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="lab-status">
+    <span id="layoutStatus" class="status-badge checking" data-i18n="checking">檢查中</span>
+    <span id="layoutDetail">等待頁面載入。</span>
+    <span id="deviceSource"></span>
+  </footer>
+
+  <script src="/device-lab.js?v=5" defer></script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap3 rescap">
+  <Identity Name="VibeDeck.Dev" Publisher="CN=VibeDeck Dev" Version="1.0.0.0" />
+  <Properties>
+    <DisplayName>VibeDeck Notifications</DisplayName>
+    <PublisherDisplayName>VibeDeck Development</PublisherDisplayName>
+    <Description>VibeDeck Windows 通知橋接</Description>
+    <Logo>Assets\icon-192.png</Logo>
+  </Properties>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.14393.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+  <Resources>
+    <Resource Language="zh-TW" />
+  </Resources>
+  <Applications>
+    <Application Id="App" Executable="VibeDeck.Notifications.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        AppListEntry="default"
+        DisplayName="VibeDeck Windows 通知"
+        Description="VibeDeck Windows 通知 Companion"
+        BackgroundColor="#111820"
+        Square44x44Logo="Assets\icon-192.png"
+        Square150x150Logo="Assets\icon-192.png" />
+      <Extensions>
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="vibedeck-notifications" />
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+    <uap3:Capability Name="userNotificationListener" />
+  </Capabilities>
+</Package>

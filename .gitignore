@@ -1,0 +1,53 @@
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo
+*.log
+certs/
+outputs/
+artifacts/
+workers/**/.wrangler/
+
+# Driver build output
+driver/**/x64/
+driver/**/Debug/
+driver/**/Release/
+driver/**/*.cat
+driver/**/*.cer
+driver/**/*.pfx
+
+captures/
+
+# External samples fetched by scripts/fetch-idd-sample.ps1
+third_party/Windows-driver-samples/
+
+# Local inspection / temp dumps (never publish)
+scratch/
+test-results/
+*.user.json
+driver/*-capture.png
+
+# Local secrets templates may live under docs; real secrets stay out of git
+.env
+.env.*
+!.env.example
+
+# Design captures that may contain real account emails / personal UI
+docs/design/phone-quotas-tabs-account1.png
+docs/design/phone-quotas-tabs-account2.png
+docs/design/phone-quotas-tabs-final-account1.png
+docs/design/phone-quotas-tabs-final-account2.png
+docs/design/phone-quotas-card.png
+docs/design/phone-quotas-viewer.png
+docs/design/phone-quotas-tabs-codex.png
+docs/design/phone-quotas-codex-pager.png
+docs/design/quota-dashboard-viewer.png
+docs/design/quota-landscape-*.png
+docs/design/quota-portrait-*.png
+
+# Release-signing private keys must never enter the repository. The real key
+# lives outside the working tree; this is a backstop against an accidental copy.
+*.pem
+!**/testdata/*.pem

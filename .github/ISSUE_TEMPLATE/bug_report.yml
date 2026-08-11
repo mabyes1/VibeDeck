@@ -1,0 +1,62 @@
+name: Bug report
+description: Report something that is broken or behaves unexpectedly.
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a VibeDeck problem. Please avoid posting pairing tokens, API keys, tunnel secrets, or other credentials.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected instead.
+      placeholder: Tell us what you saw and what you expected to happen.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Display / streaming
+        - Sideboard / information board
+        - AI quota
+        - Custom Decks
+        - Pairing / connection
+        - Remote access
+        - Windows installation / update
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Device and environment
+      description: Include Windows version, secondary device, browser/PWA, and connection type when relevant.
+      placeholder: "Example: Windows 11 + Galaxy S23 + Chrome PWA + Wi-Fi"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Additional details
+      description: Add screenshots, logs, or other context if useful. Remove private information first.
+

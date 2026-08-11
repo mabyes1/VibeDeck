@@ -1,0 +1,50 @@
+name = "vibedeck-connect-code"
+main = "src/worker.mjs"
+compatibility_date = "2026-07-18"
+workers_dev = false
+
+routes = [
+  { pattern = "vibedeck.pp.ua/*", zone_name = "vibedeck.pp.ua" }
+]
+
+[vars]
+PUBLIC_BASE_DOMAIN = "vibedeck.pp.ua"
+CODE_TTL_SECONDS = "600"
+CLOUDFLARE_ACCOUNT_ID = "29ccf932b04b89e6c0290dc3a1416bd8"
+CLOUDFLARE_ZONE_ID = "d51e3a0fee8c26312579264e375e5e39"
+
+# Provisioning abuse controls.
+# PROVISION_REQUIRE_PROOF: "1" makes proof-of-work mandatory for unclaimed
+# installation ids (flip once shipped hosts all send proofs). While "0",
+# proofless clients still work but only inside the small legacy budget below.
+PROVISION_REQUIRE_PROOF = "0"
+PROVISION_PROOF_DIFFICULTY = "20"
+PROVISION_LEGACY_PER_IP = "2"
+PROVISION_LEGACY_GLOBAL_PER_DAY = "25"
+PROVISION_PER_IP = "3"
+PROVISION_PER_PREFIX = "6"
+PROVISION_PER_ASN = "20"
+PROVISION_GLOBAL_ALARM = "100"
+PROVISION_GLOBAL_HARD_CAP = "400"
+# CONNECT_REGISTER_REQUIRE_AUTH: "1" makes installationId+provisioningSecret
+# mandatory on POST /api/connect-codes (flip once shipped hosts all send them).
+CONNECT_REGISTER_REQUIRE_AUTH = "0"
+# Optional secret for signing proof-of-work challenges; set via
+#   wrangler secret put PROVISION_PROOF_SECRET
+# When absent, a key derived from CLOUDFLARE_API_TOKEN is used.
+
+[[durable_objects.bindings]]
+name = "CONNECTION_CODES"
+class_name = "ConnectionCodeBroker"
+
+[[durable_objects.bindings]]
+name = "INSTALLATIONS"
+class_name = "InstallationBroker"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ConnectionCodeBroker"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["InstallationBroker"]

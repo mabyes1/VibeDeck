@@ -1,0 +1,169 @@
+/* Access and onboarding gates -------------------------------------------
+ * Owns the remote Host authentication dialog, iOS install hint, and the
+ * mobile HTTP -> HTTPS blocking path. App-shell state classes are set by JS;
+ * this file owns only their presentation. */
+
+.host-auth-gate {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(9, 14, 21, .92);
+  backdrop-filter: blur(14px);
+}
+
+.host-auth-card {
+  width: min(420px, 100%);
+  display: grid;
+  gap: 12px;
+  padding: 28px;
+  border: 1px solid rgba(143, 209, 255, .24);
+  border-radius: 16px;
+  background: #111820;
+  color: #f5f7fb;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .42);
+}
+
+.host-auth-card h1,
+.host-auth-card p {
+  margin: 0;
+}
+
+.host-auth-card p,
+.host-auth-card small {
+  color: #aebdca;
+  line-height: 1.5;
+}
+
+.host-auth-kicker {
+  color: #8fd1ff;
+  font: 700 12px/1.2 var(--mono);
+  letter-spacing: .12em;
+}
+
+.host-auth-card label {
+  margin-top: 8px;
+  color: #d9e5ef;
+  font-size: 13px;
+}
+
+.host-auth-card input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(143, 209, 255, .28);
+  border-radius: 8px;
+  background: #0b1118;
+  color: #fff;
+  font: inherit;
+}
+
+.host-auth-card button {
+  border: 0;
+  cursor: pointer;
+}
+
+.host-auth-card .host-auth-error {
+  min-height: 1.5em;
+  color: #ff9e9e;
+}
+
+.ios-home-tip {
+  display: none;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(143, 209, 255, .22);
+  border-radius: 10px;
+  background: rgba(8, 14, 20, .55);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+body.ios-client.phone-client:not(.device-trusted) .ios-home-tip,
+body.ios-client.phone-client:not(.standalone-app) .ios-home-tip.show-install {
+  display: block;
+}
+
+body.ios-client.phone-client.device-trusted.standalone-app .ios-home-tip {
+  display: none;
+}
+
+#mobileHttpsGate {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  padding: calc(24px + var(--safe-area-inset-top, env(safe-area-inset-top))) 20px calc(24px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
+  background: #0d131a;
+  color: #f5f7fb;
+  overflow: auto;
+}
+
+body.mobile-http-blocked #mobileHttpsGate {
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  max-width: 100%;
+}
+
+body.mobile-http-blocked > header,
+body.mobile-http-blocked > main,
+body.mobile-http-blocked > .exit-viewer {
+  display: none !important;
+}
+
+#mobileHttpsGate h1 {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.15;
+}
+
+#mobileHttpsGate p {
+  margin: 0;
+  color: #b9c4d0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+#mobileHttpsGate ol {
+  margin: 0;
+  padding-left: 1.2em;
+  color: #dce7f4;
+  line-height: 1.5;
+}
+
+#mobileHttpsGate .gate-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+#mobileHttpsGate a,
+#mobileHttpsGate button {
+  display: grid;
+  place-items: center;
+  min-height: 48px;
+  border-radius: 10px;
+  border: 0;
+  font-size: 16px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+#mobileHttpsGate .gate-primary {
+  background: #70d98b;
+  color: #0a1311;
+}
+
+#mobileHttpsGate .gate-secondary {
+  background: #223040;
+  color: #f5f7fb;
+  border: 1px solid rgba(143, 209, 255, .22);
+}
+
+#mobileHttpsGate .gate-note {
+  font-size: 13px;
+  color: #7f91a5;
+}

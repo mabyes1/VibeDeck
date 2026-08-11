@@ -1,0 +1,522 @@
+/* Global view navigation and utility-control owner. */
+
+.top-controls {
+  order: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.view-switcher {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 8px;
+  background: rgba(9, 14, 20, .36);
+}
+
+.view-switcher::-webkit-scrollbar,
+.utility-controls::-webkit-scrollbar {
+  display: none;
+}
+
+.view-switcher .mode-button {
+  flex: 0 0 auto;
+  min-width: max-content;
+  min-height: 34px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  white-space: nowrap;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.view-switcher .custom-deck-tab {
+  min-width: 0;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mode-button.active {
+  background: var(--text);
+  color: var(--surface);
+  border-color: var(--text);
+  box-shadow: 0 0 10px rgba(143, 209, 255, .22);
+}
+
+.utility-controls {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+}
+
+.utility-controls > * {
+  flex: 0 0 auto;
+}
+
+.utility-controls button,
+.utility-controls select,
+.utility-controls .status {
+  white-space: nowrap;
+}
+
+.utility-controls .locale-control {
+  margin-left: auto;
+}
+
+.locale-control {
+  display: inline-flex;
+  align-items: center;
+}
+
+.locale-control select {
+  min-height: 34px;
+  max-width: 136px;
+  padding: 0 8px;
+  border: 1px solid rgba(143, 209, 255, .22);
+  border-radius: 7px;
+  background: rgba(9, 14, 20, .55);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .035);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #d64545;
+}
+
+.dot.online {
+  background: #27ae60;
+  box-shadow: 0 0 0 0 rgba(39, 174, 96, .5);
+  animation: dot-pulse 2.4s ease-out infinite;
+}
+
+@keyframes dot-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(39, 174, 96, .55); }
+  70% { box-shadow: 0 0 0 7px rgba(39, 174, 96, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
+}
+
+body.phone-client #keepAwake,
+body.phone-client #fullscreen {
+  min-height: 36px;
+}
+
+/* LCD touch clients use the same dark visual language as the content cards.
+ * Reserve the stark black/white selection treatment for E-Ink. */
+body.phone-client:not(.eink-client) .view-switcher .mode-button.active {
+  background: linear-gradient(180deg, rgba(143, 209, 255, .20), rgba(112, 217, 139, .10));
+  color: var(--text);
+  box-shadow:
+    inset 0 0 0 1px rgba(143, 209, 255, .24),
+    inset 0 1px 0 rgba(255, 255, 255, .055),
+    0 5px 16px rgba(0, 0, 0, .20);
+}
+
+body.phone-client:not(.eink-client).viewport-portrait.mode-display #einkModeToggle,
+body.phone-client:not(.eink-client).viewport-portrait.mode-display #refresh,
+body.phone-client:not(.eink-client).viewport-portrait.mode-display #displaySettingsToggle {
+  min-height: 34px;
+  height: 34px;
+}
+
+body.pc-console:not(.deck-window) #einkModeToggle,
+body.pc-console:not(.deck-window) #keepAwake,
+body.pc-console:not(.deck-window) #fullscreen {
+  display: none !important;
+}
+
+/* Desktop console keeps the primary navigation visually calm. The generic
+ * active state is intentionally stronger for touch clients; on desktop a
+ * softer glass treatment preserves hierarchy without flashing a white tab in
+ * an otherwise dark application shell. */
+body.pc-console:not(.deck-window) .view-switcher {
+  border-color: rgba(143, 209, 255, .12);
+  background: linear-gradient(180deg, rgba(20, 30, 40, .72), rgba(9, 14, 20, .58));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025);
+}
+
+body.pc-console:not(.deck-window) .view-switcher .mode-button.active {
+  background: linear-gradient(180deg, rgba(143, 209, 255, .18), rgba(112, 217, 139, .10));
+  color: var(--text);
+  box-shadow:
+    inset 0 0 0 1px rgba(143, 209, 255, .24),
+    inset 0 1px 0 rgba(255, 255, 255, .06),
+    0 4px 14px rgba(0, 0, 0, .18);
+}
+
+body.pc-console:not(.deck-window) .locale-control select {
+  border-color: rgba(143, 209, 255, .14);
+  background: rgba(11, 18, 25, .72);
+}
+
+/* PC console keeps the global reconnect action available on every product
+   surface. Stream status still belongs to Display; routine product
+   maintenance still belongs to Setup. */
+body.pc-console:not(.deck-window):not(.mode-display) .utility-controls .status {
+  display: none !important;
+}
+
+body.pc-console:not(.deck-window):not(.mode-setup) #productUpdate,
+body.pc-console:not(.deck-window):not(.mode-setup) #productUpdateStatus {
+  display: none !important;
+}
+
+body.pc-console:not(.deck-window):not(.mode-setup) #productUpdate:is(
+  [data-update-state="available"],
+  [data-update-state="checking"],
+  [data-update-state="downloading"],
+  [data-update-state="ready"],
+  [data-update-state="launching"],
+  [data-update-state="failed"]
+) {
+  display: inline-flex !important;
+}
+
+@media (max-width: 760px) {
+  .top-controls {
+    width: 100%;
+  }
+
+  .view-switcher {
+    display: flex;
+    width: 100%;
+  }
+
+  body.pc-console .view-switcher {
+    display: flex;
+  }
+
+  .view-switcher .mode-button {
+    width: auto;
+  }
+
+  .utility-controls {
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+
+  .utility-controls select,
+  .utility-controls button {
+    width: auto;
+  }
+}
+
+body.phone-client.viewport-portrait .top-controls {
+  gap: 8px;
+}
+
+body.phone-client.viewport-portrait .view-switcher {
+  width: 100%;
+}
+
+body.phone-client.viewport-portrait .view-switcher .mode-button {
+  min-height: 40px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+body.phone-client.viewport-portrait .utility-controls {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+body.phone-client.viewport-portrait .utility-controls button {
+  min-width: 0;
+  padding-inline: 6px;
+  font-size: 12px;
+}
+
+body.phone-client.viewport-portrait #rotation,
+body.phone-client.viewport-portrait:not(.eink-client) #fullscreen {
+  display: none;
+}
+
+body.phone-client.viewport-portrait .utility-controls .status {
+  min-height: 32px;
+  font-size: 12px;
+}
+
+body.phone-client.viewport-portrait.display-unavailable .utility-controls .status {
+  display: none;
+}
+
+/* Trusted phone dashboards keep only product-level escape hatches visible. */
+body.phone-client.device-trusted:not(.mode-display) .utility-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+body.phone-client.device-trusted:not(.mode-display) .utility-controls > * {
+  display: none;
+}
+
+body.phone-client.device-trusted:not(.mode-display) .utility-controls .locale-control,
+body.phone-client.device-trusted:not(.mode-display) .utility-controls #refresh,
+body.phone-client.device-trusted:not(.mode-display) .utility-controls #fullscreen {
+  display: inline-flex;
+  width: auto;
+  flex: 0 0 auto;
+}
+
+body.phone-client.device-trusted:not(.mode-display) .utility-controls #refresh {
+  min-height: 36px;
+}
+
+body.phone-client.device-trusted:not(.mode-display) .locale-control select {
+  min-height: 44px;
+  max-width: 148px;
+}
+
+body.ios-client.phone-client .utility-controls #keepAwake {
+  display: inline-flex;
+}
+
+body.phone-client #keepAwake.active {
+  background: rgba(112, 217, 139, .22);
+  border-color: rgba(112, 217, 139, .5);
+  color: #9dffb8;
+}
+
+body.phone-client.device-trusted.mode-display #displaySettingsToggle {
+  display: inline-flex;
+}
+
+@media (max-width: 1100px) {
+  body.phone-client.device-trusted:not(.eink-client) .utility-controls #fullscreen {
+    display: inline-flex;
+  }
+}
+
+/* Logical landscape chrome keeps the same two-row navigation/utility contract.
+   Unknown Custom Deck names stay inside the horizontally scrollable nav row. */
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted .top-controls,
+body.phone-client.device-trusted.viewport-landscape .top-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: 6px;
+  width: 100%;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted .view-switcher,
+body.phone-client.device-trusted.viewport-landscape .view-switcher {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  justify-self: stretch;
+}
+
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted .view-switcher .mode-button,
+body.phone-client.device-trusted.viewport-landscape .view-switcher .mode-button {
+  width: auto;
+  flex: 0 0 auto;
+  padding-inline: 12px;
+}
+
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted .view-switcher .custom-deck-tab,
+body.phone-client.device-trusted.viewport-landscape .view-switcher .custom-deck-tab {
+  min-width: 0;
+  max-width: 170px;
+}
+
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls,
+body.phone-client.device-trusted.viewport-landscape .utility-controls {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  max-width: 100%;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 6px;
+  justify-self: stretch;
+}
+
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls .locale-control,
+body.phone-client.device-trusted.viewport-landscape .utility-controls .locale-control {
+  margin-left: auto;
+}
+
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls > *,
+body.phone-client.device-trusted.viewport-landscape .utility-controls > * {
+  display: initial;
+  width: auto;
+  max-width: none;
+  flex: 0 0 auto;
+}
+
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls select,
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls button,
+body.phone-client.device-trusted.viewport-landscape .utility-controls select,
+body.phone-client.device-trusted.viewport-landscape .utility-controls button {
+  width: auto;
+  min-width: 0;
+  min-height: 36px;
+  padding-inline: 10px;
+}
+
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls #fullscreen,
+body.phone-client.device-trusted.viewport-landscape .utility-controls #fullscreen,
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls .locale-control,
+body.phone-client.device-trusted.viewport-landscape .utility-controls .locale-control {
+  display: inline-flex;
+}
+
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls #fullscreen,
+body.phone-client.device-trusted.viewport-landscape .utility-controls #fullscreen {
+  max-width: 140px;
+  white-space: nowrap;
+}
+
+/* Tablet Display keeps view navigation and utilities on separate full rows. */
+body.tablet-client.device-trusted.viewport-landscape.mode-display .top-controls {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: stretch;
+}
+
+body.tablet-client.device-trusted.viewport-landscape.mode-display .view-switcher,
+body.tablet-client.device-trusted.viewport-landscape.mode-display .utility-controls {
+  width: 100%;
+  max-width: none;
+  justify-self: stretch;
+}
+
+body.tablet-client.device-trusted.viewport-landscape.mode-display .view-switcher .mode-button {
+  flex: 1 1 0;
+  text-align: center;
+}
+
+body.tablet-client.device-trusted.viewport-landscape.mode-display .utility-controls {
+  flex-wrap: nowrap;
+}
+
+/* Device-type override stays contextual. Reconnect remains globally
+   discoverable because it refreshes Host, trust, display, Sideboard and
+   quota state rather than only the active stream. */
+body.phone-client.device-trusted.mode-display:not(.display-settings-open):not(.eink-client) #einkModeToggle {
+  display: none;
+}
+
+/* E-ink control chrome. */
+body.eink-client .status {
+  min-height: 48px;
+  padding: 8px 14px;
+  border: 3px solid #000;
+  border-radius: 4px;
+  background: #fffef8;
+  color: #000;
+  font-size: clamp(22px, 4vw, 32px);
+  font-weight: 900;
+  letter-spacing: .04em;
+  box-shadow: none;
+}
+
+body.eink-client .status .dot,
+body.eink-client .status .dot.online {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #000;
+  background: #000;
+  box-shadow: none;
+  animation: none;
+}
+
+body.eink-client .mode-button {
+  min-height: 42px;
+  height: 42px;
+  border: 2px solid #24241f;
+  border-radius: 2px;
+  color: #171714;
+  background: #f2f0e8;
+  box-shadow: none;
+  transition: none;
+}
+
+body.eink-client #einkModeToggle,
+body.eink-client #displaySettingsToggle,
+body.eink-client #refresh {
+  min-height: 42px;
+  height: 42px;
+}
+
+body.eink-client #einkModeToggle.active {
+  background: #24241f;
+  color: #f2f0e8;
+  border-color: #24241f;
+}
+
+body.eink-client .top-controls,
+body.eink-client .utility-controls {
+  min-width: 0;
+}
+
+body.eink-client .utility-controls {
+  flex-wrap: nowrap;
+}
+
+body.eink-client.phone-client.device-trusted:not(.mode-display) .utility-controls #einkModeToggle {
+  display: inline-flex;
+}
+
+body.eink-client.phone-client.device-trusted:not(.mode-display) .utility-controls #einkModeToggle,
+body.eink-client.phone-client.device-trusted:not(.mode-display) .utility-controls #fullscreen {
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 3px solid #000;
+  border-radius: 3px;
+  background: #fffef8;
+  color: #000;
+  font-size: 20px;
+  font-weight: 900;
+}

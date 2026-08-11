@@ -1,0 +1,25 @@
+{
+  "id": "/?pwa=vibedeck-v52",
+  "name": "VibeDeck",
+  "short_name": "VibeDeck",
+  "description": "スマホを PC のサブディスプレイ、情報ボード、AI 利用枠ダッシュボードにします。",
+  "lang": "ja",
+  "dir": "ltr",
+  "start_url": "/index.html?source=pwa&lang=ja&v=52",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone", "browser"],
+  "orientation": "any",
+  "background_color": "#f2f0e8",
+  "theme_color": "#f2f0e8",
+  "categories": ["productivity", "utilities"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "/icons/vibedeck.svg?v=1", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "情報ボード", "short_name": "ボード", "url": "/index.html?mode=sideboard&source=pwa&lang=ja&v=52", "icons": [{ "src": "/icons/vibedeck.svg?v=1", "sizes": "any", "type": "image/svg+xml" }] },
+    { "name": "AI 利用枠", "short_name": "利用枠", "url": "/index.html?mode=quota&source=pwa&lang=ja&v=52", "icons": [{ "src": "/icons/vibedeck.svg?v=1", "sizes": "any", "type": "image/svg+xml" }] },
+    { "name": "ディスプレイ", "short_name": "表示", "url": "/index.html?mode=display&source=pwa&lang=ja&v=52", "icons": [{ "src": "/icons/vibedeck.svg?v=1", "sizes": "any", "type": "image/svg+xml" }] }
+  ]
+}

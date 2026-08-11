@@ -1,0 +1,289 @@
+/*
+ * Activity Feed
+ *
+ * Final owner of the merged Work Pulse / Windows notification card inside the
+ * sideboard. Shared dashboard primitives such as .side-panel and .feed-heading
+ * remain shared; all activity-specific geometry, density and device behavior
+ * belongs here.
+ */
+
+.activity-feed-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 7px;
+  overflow: hidden;
+}
+
+.activity-feed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.activity-feed-filters {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+.activity-feed-filters button {
+  min-height: 30px;
+  padding: 3px 10px;
+  border: 1px solid var(--side-line);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--side-muted);
+  font: inherit;
+  font-weight: 700;
+}
+
+.activity-feed-filters button.active {
+  border-color: var(--side-accent);
+  background: var(--side-accent);
+  color: #071015;
+}
+
+.activity-feed-filter-select {
+  display: none;
+}
+
+.activity-feed-list {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0 4px 0 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  list-style: none;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.activity-feed-item {
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--side-line);
+  background: rgba(7, 16, 21, .46);
+}
+
+body.pc-console.mode-sideboard .activity-feed-filters button {
+  border-radius: 7px;
+}
+
+body.pc-console.mode-sideboard .activity-feed-item {
+  border-color: rgba(255, 255, 255, .09);
+  border-radius: 7px;
+  background: linear-gradient(90deg, rgba(126, 217, 232, .035), rgba(7, 16, 21, .34) 42%);
+}
+
+body.pc-console.mode-sideboard .activity-feed-item:hover {
+  border-color: rgba(126, 217, 232, .20);
+  background: linear-gradient(90deg, rgba(126, 217, 232, .07), rgba(7, 16, 21, .42) 46%);
+}
+
+.activity-feed-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--side-muted);
+  font-size: 13px;
+}
+
+.activity-feed-meta time {
+  margin-left: auto;
+}
+
+.activity-source {
+  flex: 0 0 auto;
+  color: var(--side-accent);
+  font-weight: 800;
+}
+
+.activity-feed-text {
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+  color: var(--side-text);
+  line-height: 1.28;
+}
+
+.activity-feed-empty {
+  align-self: center;
+  padding: 12px 0;
+  color: var(--side-muted);
+  text-align: center;
+}
+
+/* Phone dashboard readability. The separate mobile overview preview remains
+   owned by phone-dashboard.css. */
+body.phone-client:not(.eink-client) .activity-feed-filters button,
+body.phone-client:not(.eink-client) .activity-feed-meta,
+body.phone-client:not(.eink-client) .activity-feed-text,
+body.phone-client:not(.eink-client) .activity-feed-empty {
+  font-size: 17px;
+}
+
+/* Trusted tablet sideboard density. */
+body.tablet-client:not(.eink-client).mode-sideboard .activity-feed-card {
+  gap: 4px;
+}
+
+body.tablet-client:not(.eink-client).mode-sideboard .activity-feed-filters button {
+  min-height: 30px;
+  padding: 2px 8px;
+  font-size: 13px;
+}
+
+body.tablet-client:not(.eink-client).mode-sideboard .activity-feed-item {
+  padding: 4px 6px;
+}
+
+body.tablet-client:not(.eink-client).mode-sideboard .activity-feed-meta {
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+body.tablet-client:not(.eink-client).mode-sideboard .activity-feed-text,
+body.tablet-client:not(.eink-client).mode-sideboard .activity-feed-empty {
+  font-size: 15px;
+  line-height: 1.22;
+}
+
+body.tablet-client:not(.eink-client).mode-sideboard .activity-feed-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* E-ink uses explicit high-contrast controls and a select instead of the
+   three inline filter buttons. */
+body.eink-client #systemSideboardPage.dashboard-grid .activity-feed-card {
+  padding: 9px;
+  border: 2px solid #000;
+  background: #fffef8;
+  color: #000;
+}
+
+body.eink-client .activity-feed-head {
+  flex-wrap: wrap;
+}
+
+body.eink-client .activity-feed-filters {
+  display: none;
+}
+
+body.eink-client .activity-feed-filter-select {
+  --eink-control-min-height: 44px;
+  display: block;
+  flex: 0 1 180px;
+  width: min(180px, 48%);
+  min-width: 120px;
+  padding: 4px 34px 4px 10px;
+  border: 2px solid #000;
+  border-radius: 2px;
+  background: #fffef8;
+  color: #000;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+body.eink-client .activity-feed-list {
+  scrollbar-width: auto;
+}
+
+body.eink-client .activity-feed-item {
+  border: 2px solid #000;
+  background: #fffef8;
+  color: #000;
+}
+
+body.eink-client .activity-feed-meta,
+body.eink-client .activity-feed-empty {
+  color: #000;
+  font-size: var(--eink-dashboard-min-font);
+  line-height: 1.2;
+}
+
+body.eink-client .activity-feed-text {
+  min-height: 1lh;
+  color: #000;
+  font-size: clamp(22px, 2.9vw, 32px);
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+body.eink-client .activity-source {
+  padding: 1px 5px;
+  border: 2px solid #000;
+  color: #000;
+  font-weight: 900;
+}
+
+body.eink-client .activity-from {
+  min-height: 1lh;
+  line-height: 1.2;
+}
+
+body.eink-client .activity-feed-list::-webkit-scrollbar {
+  width: 12px;
+}
+
+body.eink-client .activity-feed-list::-webkit-scrollbar-track {
+  border-left: 2px solid #000;
+  background: #fffef8;
+}
+
+body.eink-client .activity-feed-list::-webkit-scrollbar-thumb {
+  border: 2px solid #fffef8;
+  background: #000;
+}
+
+body.eink-client.viewport-portrait .activity-feed-meta {
+  font-size: 16px;
+  line-height: 1.15;
+}
+
+body.eink-client.viewport-portrait .activity-feed-text {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 20px;
+  line-height: 1.18;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+body.eink-client.viewport-portrait .activity-feed-item {
+  padding: 5px 7px;
+}
+
+body.eink-client.viewport-portrait .activity-feed-list {
+  gap: 5px;
+}
+
+@container eink-card (max-width: 280px) {
+  body.eink-client #systemSideboardPage.dashboard-grid .activity-feed-card {
+    padding: 8px;
+  }
+
+  body.eink-client #systemSideboardPage.dashboard-grid .activity-feed-head {
+    align-items: stretch;
+  }
+
+  body.eink-client #systemSideboardPage.dashboard-grid .activity-feed-head > .feed-heading {
+    flex: 1 1 100%;
+  }
+
+  body.eink-client #systemSideboardPage.dashboard-grid .activity-feed-filter-select {
+    width: 100%;
+    max-width: none;
+  }
+}

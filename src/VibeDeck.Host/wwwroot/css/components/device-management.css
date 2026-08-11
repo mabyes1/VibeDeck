@@ -1,0 +1,306 @@
+/* Trusted-device management owner. */
+
+.device-management-panel {
+  order: 3;
+  grid-column: 1 / -1;
+}
+
+.driver-state,
+.wake-state,
+.trust-state,
+.device-state,
+.app-state {
+  color: var(--muted);
+  font-size: 13px;
+  grid-column: 1 / -1;
+}
+
+.driver-state {
+  order: 5;
+}
+
+.wake-state.good,
+.driver-state.good,
+.app-state.good,
+.stream-capability-state.good,
+.trust-state.good {
+  color: #8de6a6;
+}
+
+.wake-state.warn,
+.driver-state.warn,
+.app-state.warn,
+.stream-capability-state.warn,
+.trust-state.warn {
+  color: #ffd27a;
+}
+
+.trusted-devices {
+  display: grid;
+  gap: 8px;
+  margin-top: 2px;
+  padding: 10px;
+  border: 1px solid rgba(143,209,255,.18);
+  border-radius: 8px;
+  background: rgba(255,255,255,.035);
+}
+
+.trusted-devices-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.trusted-devices-head strong {
+  color: #e8f2ff;
+  font-size: 13px;
+}
+
+.trusted-devices-head #refreshTrustedDevices,
+.trusted-devices-head .device-management-more > summary {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.trusted-devices-head #openNewDevicePanel {
+  min-width: 0;
+  width: max-content;
+  max-width: 100%;
+  height: 34px;
+  min-height: 34px;
+  padding: 0 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  letter-spacing: 0;
+}
+
+.trusted-devices-head button[data-clear-trusted-devices] {
+  border-color: rgba(255, 115, 115, .5);
+  border-radius: 6px;
+  color: #ffb4b4;
+  font-size: 12px;
+}
+
+.device-management-more {
+  position: relative;
+}
+
+.device-management-more > summary {
+  border: 1px solid #3a4a5f;
+  background: #223040;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  list-style: none;
+}
+
+.device-management-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.device-management-more > div {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: max(150px, max-content);
+  max-width: min(280px, 80vw);
+  padding: 6px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 8px;
+  background: #111922;
+  box-shadow: 0 12px 30px rgba(0,0,0,.35);
+}
+
+.device-management-more > div button {
+  width: 100%;
+  height: auto;
+  min-height: 34px;
+  min-width: 0;
+  padding: 7px 10px;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.trusted-device-list {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.trusted-device-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 6px;
+  background: rgba(10,16,24,.28);
+}
+
+.trusted-device-main {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.trusted-device-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.trusted-device-name-row strong {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.trusted-device-status {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 999px;
+  color: #8d9aa8;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.trusted-device-row.is-connected {
+  border-color: rgba(112, 217, 139, .58);
+  background: rgba(24, 72, 45, .28);
+}
+
+.trusted-device-row.is-connected .trusted-device-status {
+  border-color: #70d98b;
+  color: #baf4c9;
+  font-weight: 800;
+}
+
+.trusted-device-main strong {
+  color: #f5f7fb;
+  font-size: 13px;
+}
+
+.trusted-device-main span,
+.trusted-devices-empty {
+  color: #b9c4d0;
+  font-size: 12px;
+}
+
+.trusted-device-row button {
+  min-height: 30px;
+  padding: 6px 9px;
+  font-size: 12px;
+}
+
+body.pc-console.mode-setup .trusted-devices {
+  border-color: rgba(143, 209, 255, .13);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(143, 209, 255, .025), rgba(255, 255, 255, .012)),
+    rgba(9, 15, 21, .48);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .025),
+    0 10px 28px rgba(0, 0, 0, .10);
+}
+
+body.pc-console.mode-setup .trusted-device-row {
+  border-color: rgba(255, 255, 255, .085);
+  border-radius: 9px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, .026), rgba(255, 255, 255, .010));
+}
+
+body.pc-console.mode-setup .trusted-device-row:hover {
+  border-color: rgba(143, 209, 255, .18);
+  background: linear-gradient(90deg, rgba(143, 209, 255, .045), rgba(255, 255, 255, .014));
+}
+
+body.pc-console.mode-setup .trusted-device-row.is-connected {
+  border-color: rgba(112, 217, 139, .38);
+  background: linear-gradient(90deg, rgba(112, 217, 139, .09), rgba(16, 30, 25, .34) 44%, rgba(255, 255, 255, .012));
+  box-shadow: inset 3px 0 0 rgba(112, 217, 139, .72);
+}
+
+body.pc-console.mode-setup .driver-state:not(:empty) {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: max-content;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 1px solid rgba(143, 209, 255, .14);
+  border-radius: 999px;
+  background: rgba(143, 209, 255, .045);
+  color: var(--muted);
+  line-height: 1.25;
+}
+
+body.pc-console.mode-setup .driver-state:not(:empty)::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 12%, transparent);
+}
+
+body.pc-console.mode-setup .driver-state.good {
+  border-color: rgba(112, 217, 139, .22);
+  background: rgba(112, 217, 139, .055);
+  color: #8de6a6;
+}
+
+body.pc-console.mode-setup .driver-state.warn {
+  border-color: rgba(255, 210, 122, .24);
+  background: rgba(255, 210, 122, .055);
+  color: #ffd27a;
+}
+
+.trusted-device-more > summary {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 17px;
+}
+
+.trusted-device-more > div button {
+  border-color: rgba(255, 115, 115, .5);
+  color: #ffb4b4;
+}
+
+.trusted-device-more:not([open]) > :not(summary) {
+  display: none !important;
+}
+
+body.pc-console:not(.mode-setup) header .device-management-panel,
+body.phone-client .device-management-panel,
+body.eink-client .device-management-panel {
+  display: none;
+}
+
+body.phone-client:not(.device-trusted) .trusted-devices {
+  display: none;
+}

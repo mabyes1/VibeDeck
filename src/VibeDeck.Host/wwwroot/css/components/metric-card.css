@@ -1,0 +1,271 @@
+/*
+ * Metric card component
+ *
+ * Owns the CPU, memory, GPU, VRAM, disk, and network card family from
+ * structure through device-specific density. Page grid placement remains in
+ * layout files; cross-cutting transient effects may decorate the card without
+ * owning its geometry or typography.
+ */
+
+/* Structural grouping only: metric cards participate directly in the
+ * system dashboard grid rather than creating a nested layout box. */
+#systemSideboardPage.dashboard-grid > .metric-grid {
+  display: contents;
+}
+
+.metric-card {
+  --metric-card-padding: 8px;
+  --metric-card-row-gap: 3px;
+  --metric-card-column-gap: 6px;
+  --metric-title-size: 16px;
+  --metric-title-line: 1.15;
+  --metric-value-size: clamp(21px, 3.7vw, 32px);
+  --metric-value-line: 1;
+  --metric-sub-size: clamp(9px, 1.35vw, 12px);
+  --metric-sub-line: 1.2;
+  --metric-bar-height: 4px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, auto) minmax(0, auto) var(--metric-bar-height);
+  gap: var(--metric-card-row-gap) var(--metric-card-column-gap);
+  align-content: center;
+  align-items: center;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--metric-card-padding);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 8px;
+  background: rgba(255,255,255,.03);
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: transform .2s cubic-bezier(.4, 0, .2, 1), box-shadow .2s ease, border-color .2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(143,209,255,.22);
+  box-shadow: 0 6px 20px rgba(0,0,0,.32);
+}
+
+body.pc-console.mode-sideboard .metric-card {
+  border-color: rgba(255, 255, 255, .095);
+  border-radius: 10px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .014)),
+    rgba(10, 17, 22, .72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .03),
+    0 7px 20px rgba(0, 0, 0, .10);
+}
+
+body.pc-console.mode-sideboard .metric-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(143, 209, 255, .23);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .04),
+    0 10px 24px rgba(0, 0, 0, .20);
+}
+
+.metric-card .side-kicker {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  font-size: var(--metric-title-size);
+  line-height: var(--metric-title-line);
+}
+
+.metric-value {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: var(--metric-value-size);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  line-height: var(--metric-value-line);
+  letter-spacing: -.03em;
+  white-space: nowrap;
+}
+
+.metric-sub {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+  color: rgba(247,242,232,.68);
+  font-size: var(--metric-sub-size);
+  line-height: var(--metric-sub-line);
+}
+
+.mini-bar {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  align-self: end;
+  height: var(--metric-bar-height);
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.1);
+}
+
+.mini-bar span {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--grad-accent);
+  transition: width .6s cubic-bezier(.4, 0, .2, 1);
+}
+
+body.deck-window.mode-sideboard .metric-value {
+  line-height: 1.08;
+}
+
+body.phone-client:not(.eink-client).viewport-portrait .metric-card {
+  min-height: 76px;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+body.phone-client:not(.eink-client).viewport-portrait .metric-value {
+  font-size: clamp(22px, 7vw, 30px);
+}
+
+body.phone-client:not(.eink-client).viewport-portrait .metric-sub {
+  overflow: visible;
+  font-size: 11px;
+  text-overflow: unset;
+  white-space: normal;
+}
+
+body.tablet-client.mode-sideboard #systemSideboardPage.dashboard-grid .metric-card {
+  --metric-card-padding: 4px 6px;
+  --metric-card-row-gap: 1px;
+  --metric-card-column-gap: 5px;
+  --metric-title-size: 14px;
+  --metric-title-line: 16px;
+  --metric-value-size: 22px;
+  --metric-value-line: 22px;
+  --metric-sub-size: 11px;
+  --metric-sub-line: 12px;
+  --metric-bar-height: 3px;
+  grid-template-rows: var(--metric-title-line) minmax(var(--metric-sub-line), 1fr) var(--metric-bar-height);
+  align-content: stretch;
+  align-items: center;
+}
+
+body.tablet-client.viewport-portrait.mode-sideboard #systemSideboardPage.dashboard-grid .metric-card {
+  --metric-card-padding: 6px 8px;
+  --metric-card-row-gap: 2px;
+  --metric-title-size: 15px;
+  --metric-title-line: 18px;
+  --metric-value-size: 25px;
+  --metric-value-line: 25px;
+  --metric-sub-size: 13px;
+  --metric-sub-line: 15px;
+  --metric-bar-height: 4px;
+  grid-template-rows: var(--metric-title-line) minmax(var(--metric-sub-line), 1fr) var(--metric-bar-height);
+}
+
+body.tablet-client.viewport-portrait.mode-sideboard #systemSideboardPage.dashboard-grid .metric-sub {
+  display: block;
+  min-height: var(--metric-sub-line);
+  max-height: calc(var(--metric-sub-line) * 2);
+  line-height: var(--metric-sub-line);
+}
+
+body.tablet-client.dashboard-viewer.mode-sideboard #systemSideboardPage.dashboard-grid .metric-card {
+  grid-template-rows: 20px minmax(0, 1fr) 4px;
+  align-items: center;
+}
+
+body.tablet-client.dashboard-viewer.mode-sideboard #systemSideboardPage.dashboard-grid .metric-value {
+  grid-row: 1;
+}
+
+body.tablet-client.dashboard-viewer.mode-sideboard #systemSideboardPage.dashboard-grid .metric-sub {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  align-self: center;
+  font-size: 12px;
+  line-height: 14px;
+}
+
+body.tablet-client.dashboard-viewer.mode-sideboard #systemSideboardPage.dashboard-grid .mini-bar {
+  grid-row: 3;
+  align-self: end;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .metric-card {
+  --metric-card-padding: 6px 8px;
+  --metric-card-row-gap: 2px;
+  --metric-card-column-gap: 8px;
+  --metric-title-size: 17px;
+  --metric-title-line: 20px;
+  --metric-value-size: clamp(30px, 3.4vw, 40px);
+  --metric-value-line: 40px;
+  --metric-sub-size: 16px;
+  --metric-sub-line: 19px;
+  --metric-bar-height: 6px;
+  min-height: 0;
+  height: auto;
+  grid-template-rows: var(--metric-title-line) minmax(var(--metric-sub-line), 1fr) var(--metric-bar-height);
+  align-content: stretch;
+  padding: var(--metric-card-padding);
+  gap: var(--metric-card-row-gap) var(--metric-card-column-gap);
+  overflow: hidden;
+  border-width: 2px;
+}
+
+body.eink-client.viewport-portrait #systemSideboardPage.dashboard-grid .metric-card {
+  --metric-value-size: clamp(28px, 6vw, 36px);
+  --metric-value-line: 36px;
+  --metric-sub-size: 16px;
+  --metric-sub-line: 19px;
+  --metric-bar-height: 5px;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .metric-value {
+  color: #000;
+  font-family: inherit;
+  font-size: var(--metric-value-size);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--metric-value-line);
+  letter-spacing: -.03em;
+}
+
+body.eink-client.viewport-landscape #systemSideboardPage.dashboard-grid .metric-value {
+  align-self: center;
+  transform: none;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .metric-sub {
+  min-height: 1lh;
+  color: #000;
+  font-size: var(--metric-sub-size);
+  line-height: var(--metric-sub-line);
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .mini-bar {
+  height: var(--metric-bar-height);
+  border: 2px solid #000;
+  border-radius: 0;
+  background: #e8e3d3;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .mini-bar span {
+  border-radius: 0;
+  background: #000;
+  transition: none;
+}
+
+@container eink-card (max-width: 280px) {
+  body.eink-client #systemSideboardPage.dashboard-grid .metric-card {
+    padding: 8px;
+  }
+
+  body.eink-client #systemSideboardPage.dashboard-grid .metric-value {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}

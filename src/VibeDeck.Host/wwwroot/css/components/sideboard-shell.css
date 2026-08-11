@@ -1,0 +1,793 @@
+/*
+ * Sideboard shell component
+ *
+ * Owns the sideboard canvas, header strip, and dashboard grid geometry across
+ * desktop, deck-window, tablet, and e-ink clients. Card internals are owned by
+ * their component files; transient effects may decorate the shell without
+ * redefining its layout contract.
+ */
+
+.sideboard-shell {
+  --side-accent: #f2b45f;
+  --side-accent-2: #7ed9e8;
+  --side-good: #91dd98;
+  --side-warn: #ffd27a;
+  --side-bg: #071015;
+  --side-panel: rgba(17, 25, 30, .88);
+  --side-line: rgba(255, 255, 255, .16);
+  --side-title-size: clamp(16px, 3.4vw, 28px);
+  --side-title-line: 1;
+  --side-kicker-size: clamp(9px, 1.2vw, 11px);
+  --side-kicker-line: 1;
+  --side-big-size: clamp(54px, 10.4vw, 84px);
+  --side-big-line: .88;
+  --side-summary-size: clamp(10px, 1.5vw, 13px);
+  --side-summary-line: 1.25;
+  --side-feed-size: clamp(10px, 1.45vw, 13px);
+  --side-feed-line: 1.25;
+  --skin-image:
+    radial-gradient(circle at 58% 54%, rgba(255, 204, 86, .30) 0 2%, transparent 12%),
+    linear-gradient(158deg, transparent 45%, rgba(55, 204, 255, .34) 46% 47%, transparent 48%),
+    linear-gradient(23deg, transparent 58%, rgba(244, 86, 177, .26) 59% 60%, transparent 61%),
+    linear-gradient(135deg, #06111b 0%, #0b2634 52%, #071017 100%);
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(190px, 1.05fr) minmax(260px, 1.38fr) minmax(190px, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  min-height: 360px;
+  padding: 12px;
+  overflow: hidden;
+  color: #f7f2e8;
+  background: var(--side-bg);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 8px;
+}
+
+.sideboard-shell::before,
+.sideboard-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.sideboard-shell::before {
+  background-image: var(--skin-image);
+  background-position: center;
+  background-size: cover;
+  opacity: .68;
+  transform: scale(1.015);
+}
+
+.sideboard-shell::after {
+  background:
+    linear-gradient(90deg, rgba(3,6,8,.76), rgba(3,6,8,.48) 44%, rgba(3,6,8,.74)),
+    radial-gradient(circle at 50% 42%, rgba(0,0,0,.08), rgba(0,0,0,.58) 72%);
+}
+
+.sideboard-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.sideboard-shell.skin-dial {
+  --side-accent: #7ed9e8;
+  --side-accent-2: #f2b45f;
+  --side-bg: #061116;
+  --skin-image:
+    radial-gradient(circle at 80% 24%, rgba(236, 239, 203, .28) 0 4%, transparent 5%),
+    radial-gradient(circle at 18% 40%, transparent 0 16%, rgba(126, 217, 232, .30) 17% 18%, transparent 19% 28%, rgba(242, 180, 95, .16) 29% 30%, transparent 31%),
+    linear-gradient(145deg, #07181c 0%, #17343a 50%, #071116 100%);
+}
+
+.sideboard-shell.skin-focus {
+  --side-accent: #91dd98;
+  --side-accent-2: #e0d5aa;
+  --side-bg: #0c130e;
+  --side-panel: rgba(25, 36, 25, .88);
+  --skin-image:
+    radial-gradient(ellipse at 18% 38%, rgba(84, 208, 111, .30) 0 9%, transparent 28%),
+    radial-gradient(ellipse at 76% 62%, rgba(64, 177, 108, .20) 0 12%, transparent 31%),
+    linear-gradient(145deg, #061009 0%, #0c2518 48%, #07100b 100%);
+}
+
+.sideboard-top {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+/* Sideboard frame + built-in dashboard typography. Component cards own their
+ * internals; this file owns the frame and the shared labels around them. */
+.sideboard-view {
+  width: min(100%, 920px);
+  justify-self: center;
+  align-self: center;
+}
+
+.side-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.side-title strong {
+  font-size: var(--side-title-size);
+  line-height: var(--side-title-line);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.side-title span {
+  color: rgba(247,242,232,.68);
+  font-size: clamp(10px, 1.5vw, 13px);
+}
+
+.skin-picker {
+  display: flex;
+  gap: 5px;
+}
+
+.skin-picker button {
+  min-width: 34px;
+  min-height: 30px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,.08);
+  color: rgba(247,242,232,.78);
+}
+
+.skin-picker button.active {
+  background: var(--side-accent);
+  color: #071015;
+  border-color: var(--side-accent);
+}
+
+.side-panel {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  padding: 8px;
+  border: 1px solid var(--side-line);
+  background: var(--side-panel);
+  overflow: hidden;
+}
+
+.side-load {
+  align-content: center;
+  gap: 8px;
+  border-right: 1px solid rgba(255,255,255,.22);
+}
+
+/* The large load number is reserved for an actual bottleneck. Idle systems
+ * get a quiet animated companion; multiple warnings rotate in the same spot. */
+.side-load-normal,
+.side-load-alert {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 5px;
+  min-height: 0;
+  text-align: center;
+}
+
+.side-load-normal > strong,
+.side-load-alert > strong {
+  color: var(--side-accent);
+  font-size: clamp(19px, 2.3vw, 30px);
+  line-height: 1.05;
+}
+
+.side-load-normal > span,
+.side-load-alert > span {
+  color: var(--side-muted);
+  font-size: clamp(12px, 1.4vw, 17px);
+}
+
+.side-load-alert > strong,
+.side-load-alert > span { color: var(--side-warn); }
+
+.side-kicker {
+  color: rgba(247,242,232,.68);
+  font-size: var(--side-kicker-size);
+  line-height: var(--side-kicker-line);
+  text-transform: uppercase;
+}
+
+.side-big {
+  color: var(--side-accent);
+  font-size: var(--side-big-size);
+  font-weight: 800;
+  line-height: var(--side-big-line);
+  letter-spacing: 0;
+}
+
+.side-error {
+  color: var(--side-warn);
+  font-size: clamp(10px, 1.5vw, 13px);
+  line-height: 1.25;
+}
+
+.side-summary {
+  display: grid;
+  gap: 4px;
+  color: rgba(247,242,232,.78);
+  font-size: var(--side-summary-size);
+  line-height: var(--side-summary-line);
+}
+
+.side-feed {
+  grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 6px;
+}
+
+.feed-list {
+  display: grid;
+  gap: 4px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+  color: rgba(247,242,232,.82);
+  font-size: var(--side-feed-size);
+  line-height: var(--side-feed-line);
+}
+
+.process-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+}
+
+.process-list li > span {
+  min-width: 0;
+}
+
+.process-list li > b {
+  white-space: nowrap;
+}
+
+.dashboard-feed-card {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.feed-heading {
+  color: var(--side-accent-2);
+  font-size: clamp(10px, 1.4vw, 12px);
+  text-transform: uppercase;
+}
+
+.sideboard-subpage {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+#systemSideboardPage.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  min-height: 680px;
+  isolation: isolate;
+}
+
+#systemSideboardPage.dashboard-grid > .custom-cards-grid {
+  display: contents;
+}
+
+#systemSideboardPage.dashboard-grid [data-dashboard-key] {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  overflow: hidden;
+}
+
+/* E-Ink cards may be resized by the persisted dashboard layout. Component
+ * owners use this named container to keep narrow cards internally readable. */
+body.eink-client #systemSideboardPage.dashboard-grid [data-dashboard-key] {
+  container-type: inline-size;
+  container-name: eink-card;
+}
+
+#systemSideboardPage.dashboard-grid .dashboard-card-hidden {
+  display: none !important;
+}
+
+body:is(.viewer-fullscreen, .dashboard-viewer).mode-sideboard {
+  grid-template-rows: 1fr;
+  min-height: var(--viewer-height);
+}
+
+body.deck-window.mode-sideboard .side-title strong {
+  line-height: 1.08;
+}
+
+body.deck-window.mode-sideboard .side-big {
+  line-height: 1;
+}
+
+body.deck-window.mode-sideboard .sideboard-shell {
+  height: 100vh;
+  min-height: 0;
+}
+
+body.deck-window.mode-sideboard .sideboard-shell::before {
+  transform: none;
+}
+
+body.pc-console.mode-sideboard .sideboard-shell,
+body.pc-console.mode-sideboard #systemSideboardPage.dashboard-grid,
+body.deck-window.mode-sideboard #systemSideboardPage.dashboard-grid {
+  height: 100%;
+  min-height: 0;
+}
+
+/* Desktop visual hierarchy. Keep the dashboard geometry untouched, but give
+ * the canvas and its primary cards enough depth to read as product surfaces
+ * instead of a collection of equally loud bordered boxes. */
+body.pc-console.mode-sideboard .sideboard-shell {
+  border-color: rgba(143, 209, 255, .14);
+  border-radius: 14px;
+  box-shadow:
+    0 18px 54px rgba(0, 0, 0, .28),
+    inset 0 1px 0 rgba(255, 255, 255, .035);
+}
+
+body.pc-console.mode-sideboard:not(.dashboard-edit-mode) .side-panel {
+  border-color: rgba(255, 255, 255, .105);
+  border-radius: 10px;
+  background:
+    linear-gradient(145deg, rgba(24, 34, 39, .88), rgba(11, 18, 23, .90)),
+    var(--side-panel);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .035),
+    0 8px 24px rgba(0, 0, 0, .12);
+}
+
+body.pc-console.mode-sideboard:not(.dashboard-edit-mode) [data-dashboard-key="system-load"] {
+  box-shadow:
+    inset 3px 0 0 rgba(242, 180, 95, .82),
+    inset 0 1px 0 rgba(255, 255, 255, .035),
+    0 8px 24px rgba(0, 0, 0, .12);
+}
+
+body.pc-console.mode-sideboard:not(.dashboard-edit-mode) [data-dashboard-key="activity-feed"] {
+  box-shadow:
+    inset 3px 0 0 rgba(126, 217, 232, .72),
+    inset 0 1px 0 rgba(255, 255, 255, .035),
+    0 8px 24px rgba(0, 0, 0, .12);
+}
+
+body.pc-console.mode-sideboard:not(.dashboard-edit-mode) [data-dashboard-key="quota-mini"] {
+  box-shadow:
+    inset 3px 0 0 rgba(242, 180, 95, .68),
+    inset 0 1px 0 rgba(255, 255, 255, .035),
+    0 8px 24px rgba(0, 0, 0, .12);
+}
+
+body.pc-console.mode-sideboard #systemSideboardPage.dashboard-grid,
+body.deck-window.mode-sideboard #systemSideboardPage.dashboard-grid {
+  overflow: hidden;
+}
+
+/* Tablet owns the real dashboard grid; the phone fallback must not replace it. */
+body.tablet-client.mode-sideboard .sideboard-shell {
+  --side-kicker-size: 14px;
+  --side-kicker-line: 1.1;
+  --side-summary-size: 14px;
+  --side-summary-line: 1.2;
+  --side-feed-size: 14px;
+  --side-feed-line: 1.2;
+  height: auto;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-self: stretch;
+  padding: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)))
+    calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right, 0px)))
+    calc(10px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))
+    calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left, 0px)));
+}
+
+body.tablet-client.mode-sideboard .sideboard-shell.dashboard-editing {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+body.tablet-client:is(.dashboard-viewer, .viewer-immersive).mode-sideboard .sideboard-top {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+body.tablet-client.mode-sideboard #systemSideboardPage.dashboard-grid {
+  grid-template-rows: repeat(10, minmax(0, 1fr));
+  gap: 5px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  align-self: stretch;
+  overflow: hidden;
+}
+
+body.tablet-client.mode-sideboard {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+body.tablet-client.mode-sideboard main,
+body.tablet-client.mode-sideboard .sideboard-view.active {
+  display: grid;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  align-self: stretch;
+  overflow: hidden;
+}
+
+body.tablet-client.mode-sideboard .sideboard-view.active {
+  max-width: 100%;
+}
+
+body.tablet-client.mode-sideboard .mobile-overview {
+  display: none;
+}
+
+body.tablet-client:not(.eink-client).mode-sideboard:not(.dashboard-edit-mode) .skin-picker {
+  display: none;
+}
+
+body.pc-console.mode-sideboard:not(.dashboard-edit-mode) .skin-picker {
+  display: none;
+}
+
+body.tablet-client:not(.eink-client).mode-sideboard #systemSideboardPage.dashboard-grid > [data-dashboard-key] {
+  padding: 5px 6px;
+  border-radius: 5px;
+}
+
+body.tablet-client:not(.eink-client).mode-sideboard #systemSideboardPage.dashboard-grid .side-load {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-content: center;
+  gap: 3px;
+}
+
+body.tablet-client:not(.eink-client).mode-sideboard #sideLoadStatus,
+body.tablet-client:not(.eink-client).mode-sideboard #sideLoadAlertTitle {
+  font-size: clamp(17px, 2.2vw, 22px);
+  line-height: 1.05;
+}
+
+body.tablet-client:not(.eink-client).mode-sideboard #systemSideboardPage.dashboard-grid .side-feed {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 3px;
+}
+
+body.tablet-client:not(.eink-client).mode-sideboard #systemSideboardPage.dashboard-grid .feed-list {
+  gap: 2px;
+  min-height: 0;
+}
+
+body.tablet-client:not(.eink-client).mode-sideboard #systemSideboardPage.dashboard-grid .feed-list li {
+  min-width: 0;
+  padding: 1px 0;
+}
+
+/* Narrow phone sideboard is a dedicated compact overview. */
+@media (max-width: 1100px) {
+  body.phone-client:not(.tablet-client):not(.eink-client).mode-sideboard .sideboard-top,
+  body.phone-client:not(.tablet-client):not(.eink-client).mode-sideboard #dashboardEditBar,
+  body.phone-client:not(.tablet-client):not(.eink-client).mode-sideboard #systemSideboardPage,
+  body.phone-client:not(.tablet-client):not(.eink-client).mode-sideboard #customSideboardPage {
+    display: none !important;
+  }
+
+  body.phone-client:not(.tablet-client):not(.eink-client).mode-sideboard .sideboard-shell {
+    display: block;
+    height: auto;
+    min-height: 0;
+    padding: 0;
+    overflow: visible;
+  }
+}
+
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-sideboard .sideboard-shell,
+body.phone-client.device-trusted.viewport-landscape.mode-sideboard .sideboard-shell,
+html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-sideboard .mobile-overview,
+body.phone-client.device-trusted.viewport-landscape.mode-sideboard .mobile-overview {
+  width: 100%;
+  max-width: none;
+}
+
+body.phone-client.viewport-portrait .sideboard-view {
+  width: 100%;
+  max-width: none;
+  justify-self: stretch;
+  align-self: start;
+}
+
+body.phone-client.viewport-portrait .sideboard-shell {
+  --side-title-size: clamp(20px, 6.4vw, 28px);
+  --side-title-line: 1.1;
+  --side-big-size: clamp(40px, 14vw, 64px);
+  --side-big-line: .92;
+  --side-summary-size: 13px;
+  --side-summary-line: 1.35;
+  --side-feed-size: 13px;
+  --side-feed-line: 1.35;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+  grid-auto-rows: auto;
+  gap: 10px;
+  min-height: 0;
+  height: auto;
+  overflow: visible;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+/* E-Ink portrait read mode is a fixed 10-row dashboard. Real BOOX Chromium
+ * does not reliably resolve the nested percentage-height chain used by the
+ * generic viewer shell, even though desktop emulation does. Anchor the read
+ * surface to the measured viewport height instead; edit mode remains
+ * scrollable and keeps its own explicit grid height contract. */
+body.eink-client.viewport-portrait.mode-sideboard:not(.dashboard-edit-mode) .sideboard-view.active {
+  height: var(--viewer-height, 100dvh);
+  min-height: 0;
+  align-self: stretch;
+}
+
+body.eink-client.viewport-portrait.mode-sideboard:not(.dashboard-edit-mode) .sideboard-shell {
+  grid-template-rows: auto minmax(0, 1fr);
+  height: var(--viewer-height, 100dvh);
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.phone-client.viewport-portrait .sideboard-shell::before {
+  opacity: .42;
+  transform: none;
+}
+
+body.phone-client.viewport-portrait .sideboard-top {
+  grid-column: 1;
+  align-items: start;
+}
+
+body.phone-client.viewport-portrait:not(.eink-client) .sideboard-top {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+body.phone-client.viewport-portrait .side-title {
+  display: grid;
+  gap: 4px;
+  white-space: normal;
+}
+
+body.phone-client.viewport-portrait .side-title strong {
+  white-space: normal;
+}
+
+body.phone-client.viewport-portrait .side-title span {
+  white-space: normal;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+body.phone-client.viewport-portrait .side-load {
+  border-right: 0;
+  border-bottom: 0;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+body.phone-client.viewport-portrait .side-feed {
+  grid-template-rows: none;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  overflow: visible;
+}
+
+body.phone-client.viewport-portrait .feed-list {
+  overflow: visible;
+  gap: 6px;
+}
+
+body.phone-client.viewport-portrait .feed-list li {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+@media (max-width: 960px) {
+  body.ios-client.phone-client:not(.eink-client).dashboard-viewer.mode-sideboard .sideboard-shell {
+    padding-top: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+    padding-right: calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right, 0px)));
+    padding-bottom: calc(8px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+    padding-left: calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left, 0px)));
+  }
+}
+
+@media (max-width: 760px) {
+  .sideboard-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+  }
+}
+
+/* E-ink uses the same shell contract with a paper surface and denser grid. */
+body.eink-client .sideboard-shell {
+  --side-line: #000;
+  --side-panel: #fffef8;
+  --side-accent: #000;
+  --side-accent-2: #000;
+  --side-title-size: clamp(24px, 4vw, 34px);
+  --side-title-line: 1.1;
+  --side-big-size: clamp(52px, 14vw, 72px);
+  --side-big-line: .95;
+  --side-feed-size: 16px;
+  --side-feed-line: 1.4;
+  grid-template-columns: 1fr;
+  align-content: start;
+  min-width: 0;
+  max-width: 100%;
+  height: var(--viewer-height, 100dvh);
+  min-height: var(--viewer-height, 100dvh);
+  padding: 10px 14px 12px;
+  color: #000;
+  background: #f5f2e7;
+  font-size: 18px;
+  border: 0;
+  border-radius: 0;
+}
+
+body.eink-client .sideboard-shell::before,
+body.eink-client .sideboard-shell::after {
+  display: none;
+}
+
+body.eink-client .sideboard-shell.dashboard-editing {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+body.eink-client .sideboard-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 100%;
+  min-height: 0;
+  padding: 2px 0 8px;
+  border-bottom: 2px solid #24241f;
+}
+
+body.eink-client .skin-picker {
+  display: none;
+}
+
+body.eink-client .side-load,
+body.eink-client .side-feed {
+  grid-column: 1 / -1;
+  max-width: 100%;
+}
+
+body.eink-client .side-title {
+  display: grid;
+  flex: 1 1 220px;
+  gap: 4px;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+body.eink-client .side-title strong {
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  padding-top: 2px;
+}
+
+body.eink-client .side-title span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  border: 2px solid #000;
+  background: #fffef8;
+  color: #000;
+  font-size: var(--eink-dashboard-min-font);
+  line-height: 1.2;
+  text-shadow: none;
+}
+
+body.eink-client:is(.dashboard-viewer, .viewer-immersive) .side-title strong {
+  line-height: 1.25;
+  padding-top: 0;
+}
+
+body.eink-client .side-load {
+  align-content: start;
+  padding: 16px;
+  overflow: visible;
+}
+
+body.eink-client .side-summary {
+  overflow: visible;
+  white-space: normal;
+}
+
+body.eink-client .side-summary span {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .side-kicker,
+body.eink-client #systemSideboardPage.dashboard-grid .side-summary span {
+  min-height: calc(1lh + 2px);
+  line-height: 1.2;
+}
+
+body.eink-client .side-feed {
+  grid-template-rows: none;
+  align-content: start;
+  gap: 10px;
+  padding: 16px;
+  overflow: visible;
+}
+
+body.eink-client .feed-list {
+  color: #000;
+  gap: 8px;
+  overflow: visible;
+  text-shadow: none;
+}
+
+body.eink-client .feed-list li,
+body.eink-client .feed-list span {
+  color: #000;
+  text-shadow: none;
+}
+
+body.eink-client .feed-list li {
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 1px solid #777;
+  background: transparent;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+body.eink-client:is(.dashboard-viewer, .viewer-immersive) .sideboard-shell,
+body.eink-client.viewer-fullscreen.mode-sideboard .sideboard-shell {
+  padding: 12px 14px 28px;
+}
+
+body.eink-client:is(.viewer-fullscreen, .dashboard-viewer, .viewer-immersive).mode-sideboard .sideboard-shell {
+  min-height: 0;
+  height: auto;
+  overflow: visible;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body.eink-client.viewport-portrait #systemSideboardPage.dashboard-grid {
+  grid-template-rows: repeat(10, minmax(0, 1fr));
+}

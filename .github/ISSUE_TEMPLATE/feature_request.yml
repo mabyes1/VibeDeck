@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest a useful new job, workflow, or improvement for VibeDeck.
+title: "[Idea] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: use_case
+    attributes:
+      label: What would you like VibeDeck to do?
+      description: Describe the actual use case rather than only the implementation you have in mind.
+      placeholder: What are you trying to accomplish with the spare screen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_workaround
+    attributes:
+      label: How do you handle this today?
+      placeholder: Describe the current workaround, if any.
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: Suggested direction
+      description: Optional. Share an interface or implementation idea if you already have one.
+
+  - type: textarea
+    id: device
+    attributes:
+      label: Target device or scenario
+      placeholder: "Example: old Android tablet, BOOX e-paper device, laptop browser"
+

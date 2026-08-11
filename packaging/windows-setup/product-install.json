@@ -1,0 +1,6 @@
+{
+  "product": "VibeDeck",
+  "channel": "setup",
+  "launchMode": "signed-in-user",
+  "webUiUrl": "http://127.0.0.1:5000"
+}

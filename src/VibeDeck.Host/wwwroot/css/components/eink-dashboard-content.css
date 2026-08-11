@@ -1,0 +1,302 @@
+/* Final E-Ink dashboard content owner. Component files provide base card
+ * styles; this layer owns the readable paper treatment and one-screen fit. */
+
+body.eink-client :is(.custom-sideboard-page, .custom-cards-grid, .custom-sources-manager) {
+  gap: 16px;
+}
+
+body.eink-client .custom-source-meta,
+body.eink-client .custom-source-health,
+body.eink-client .custom-card-source,
+body.eink-client .custom-card-footer,
+body.eink-client .custom-feed-text,
+body.eink-client .custom-feed-meta {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+body.eink-client .custom-cards-top,
+body.eink-client .custom-manager-header,
+body.eink-client .custom-source-row,
+body.eink-client .custom-source-actions,
+body.eink-client .custom-source-form-actions {
+  flex-wrap: wrap;
+}
+
+body.eink-client .custom-cards-toolbar,
+body.eink-client .custom-source-actions,
+body.eink-client .custom-source-form-actions {
+  flex: 1 1 100%;
+  justify-content: flex-start;
+}
+
+body.eink-client .custom-cards-toolbar button,
+body.eink-client .custom-manager-header button,
+body.eink-client .custom-source-actions button,
+body.eink-client .custom-source-form-actions button {
+  flex: 1 1 112px;
+  min-width: 0;
+}
+
+body.eink-client :is(.custom-card, .custom-empty-state, .custom-sources-manager, .custom-credential-panel, .custom-source-row, .custom-feed-item) {
+  background: #fffef8;
+  border: 3px solid #000;
+  border-radius: 4px;
+  box-shadow: none;
+}
+
+body.eink-client .custom-card {
+  min-height: 190px;
+  padding: 16px;
+}
+
+body.eink-client :is(.custom-card-title, .custom-status-value, .custom-metric-value),
+body.eink-client :is(.custom-cards-title, .custom-manager-header) strong {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+body.eink-client .custom-card-freshness {
+  border: 2px solid #000;
+  color: #000;
+  font-size: 16px;
+}
+
+body.eink-client :is(.custom-feed-list, .custom-key-value-list) {
+  gap: 10px;
+  font-size: 18px;
+}
+
+body.eink-client .custom-feed-item {
+  border-left: 10px solid #000;
+  padding: 10px;
+}
+
+body.eink-client .custom-progress {
+  height: 14px;
+  border: 2px solid #000;
+  background: #e8e3d3;
+}
+
+body.eink-client .custom-progress span {
+  background: #000;
+}
+
+body.eink-client :is(.custom-source-form input, .custom-source-form select, .custom-credential-panel textarea) {
+  --eink-control-min-height: 48px;
+  min-height: 48px;
+  border: 3px solid #000;
+  border-radius: 4px;
+  background: #fffef8;
+  color: #000;
+  font-size: 18px;
+}
+
+body.eink-client .custom-card-settings {
+  border: 3px solid #000;
+  background: #fffef8;
+  color: #000;
+}
+
+body.eink-client .custom-settings-header strong,
+body.eink-client .custom-settings-header span {
+  color: #000;
+}
+
+body.eink-client .custom-settings-header strong {
+  font-size: 20px;
+}
+
+body.eink-client .custom-settings-header span {
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+body.eink-client .custom-card-settings-form label,
+body.eink-client .custom-card-settings-form .custom-settings-help {
+  color: #000;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+body.eink-client .custom-card-settings-form select,
+body.eink-client .custom-card-settings-form input[type="number"] {
+  --eink-control-min-height: 48px;
+  min-height: 48px;
+  border: 3px solid #000;
+  border-radius: 4px;
+  background: #fffef8;
+  color: #000;
+  font-size: 18px;
+}
+
+body.eink-client .custom-card-settings-form .custom-settings-check {
+  min-height: 48px;
+  align-items: center;
+}
+
+body.eink-client .custom-card-settings-form .custom-settings-check input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+}
+
+body.eink-client.viewport-portrait .custom-card-settings-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* One-screen E-Ink dashboard: reserve explicit rows so the load heading and
+ * summary stay inside the card without requiring specificity warfare. */
+body.eink-client #systemSideboardPage.dashboard-grid :is(.side-load, .side-feed, .custom-card) {
+  min-height: 0;
+  height: auto;
+  padding: 10px;
+  overflow: hidden;
+  border-width: 2px;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .side-load {
+  grid-template-rows: auto minmax(44px, auto) minmax(0, 1fr);
+  align-content: stretch;
+  gap: 4px;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .side-load :is(.side-load-normal, .side-load-alert) {
+  min-height: 44px;
+  align-content: start;
+  gap: 2px;
+  overflow: hidden;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .side-load :is(.side-load-normal, .side-load-alert) > :is(strong, span) {
+  line-height: 1.1;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .side-feed {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: stretch;
+  gap: 6px;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .feed-list {
+  gap: 3px;
+  overflow: hidden;
+  font-size: var(--eink-dashboard-min-font);
+  line-height: 1.25;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .feed-list li {
+  padding: 3px 0;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .custom-cards-grid {
+  display: contents;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid :is(.custom-card-header, .custom-card-footer) {
+  flex: 0 0 auto;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .side-load .side-big {
+  align-self: center;
+  font-size: clamp(42px, 7vw, 62px);
+  line-height: .9;
+}
+
+@container eink-card (max-width: 280px) {
+  body.eink-client #systemSideboardPage.dashboard-grid .side-load .side-big {
+    font-size: clamp(32px, 28cqw, 56px);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .side-load .side-summary {
+  gap: 1px;
+  min-height: 0;
+  overflow: hidden;
+  font-size: var(--eink-dashboard-min-font);
+  line-height: 1.15;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .side-load .side-summary span {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* sideError is intentionally empty while the collector is healthy. The
+ * shared E-Ink minimum-line contract must not reserve a fourth ghost row for
+ * that empty span, otherwise the two-row portrait status card squeezes its
+ * status copy into the summary box. */
+body.eink-client #systemSideboardPage.dashboard-grid .side-load .side-summary .side-error:empty {
+  display: none;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .custom-card-message-feed {
+  gap: 5px;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .custom-card-message-feed .custom-card-title {
+  font-size: 23px;
+  line-height: 1.05;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .custom-card-message-feed :is(.custom-card-source, .custom-card-footer, .custom-card-freshness) {
+  font-size: var(--eink-dashboard-min-font);
+  line-height: 1.15;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .custom-card-message-feed .custom-card-freshness {
+  padding: 2px 4px;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .custom-feed-list {
+  min-height: 0;
+  gap: 5px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .custom-feed-item {
+  padding: 6px 7px;
+  border-width: 2px 2px 2px 7px;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .custom-feed-list::-webkit-scrollbar {
+  width: 12px;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .custom-feed-list::-webkit-scrollbar-track {
+  border-left: 2px solid #000;
+  background: #fffef8;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .custom-feed-list::-webkit-scrollbar-thumb {
+  border: 2px solid #fffef8;
+  background: #000;
+}
+
+/* Work Pulse copy is the E-Ink readability baseline. */
+body.eink-client #systemSideboardPage.dashboard-grid :is(.side-kicker, .feed-heading, .side-summary, .custom-card-source, .custom-card-footer, .custom-card-freshness, .custom-feed-meta, .custom-card-empty) {
+  border: 2px solid #000;
+  background: #fffef8;
+  color: #000;
+  font-size: var(--eink-dashboard-min-font);
+  line-height: 1.2;
+}
+
+body.eink-client #systemSideboardPage.dashboard-grid .custom-feed-text {
+  font-size: clamp(22px, 2.9vw, 32px);
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+body.eink-client :is(.side-load-normal, .side-load-alert) > :is(strong, span) {
+  color: #000;
+  font-size: var(--eink-dashboard-min-font);
+}

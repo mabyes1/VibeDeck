@@ -1,0 +1,24 @@
+    :root {
+      color-scheme: dark;
+      --font-ui: "Outfit", "Segoe UI", Roboto, "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", "Noto Sans CJK TC", system-ui, sans-serif;
+      --mono: "Share Tech Mono", "Cascadia Mono", "Roboto Mono", Consolas, "SFMono-Regular", monospace;
+      font-family: var(--font-ui);
+      background: #101820;
+      color: #f5f7fb;
+      --surface: #17212c;
+      --surface-2: #1d2a36;
+      --surface-3: #223040;
+      --line: rgba(143, 209, 255, .16);
+      --text: #f5f7fb;
+      --muted: #b9c4d0;
+      --quiet: #7f91a5;
+      --green: #70d98b;
+      --yellow: #ffd27a;
+      --blue: #8fd1ff;
+      --viewer-width: 100dvw;
+      --viewer-height: 100dvh;
+      /* premium gradient tokens */
+      --grad-accent: linear-gradient(90deg, #8fd1ff 0%, #70d98b 100%);
+}
+
+[hidden] { display: none !important; }

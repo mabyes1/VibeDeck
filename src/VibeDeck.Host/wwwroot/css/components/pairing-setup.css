@@ -1,0 +1,759 @@
+/* Pairing / connection surface --------------------------------------------
+ * Owns QR pairing, connection status/actions, endpoint repair, and the
+ * narrow-phone setup geometry around the new-device panel. */
+
+/* Untrusted-phone rescue / onboarding. */
+body.eink-client .connect-panel { display: none; }
+
+.phone-pair-rescue {
+  display: none;
+  margin: 0 0 10px;
+  width: min(100%, 420px);
+  padding: 22px 18px;
+  border: 1px solid rgba(255, 210, 122, .35);
+  border-radius: 12px;
+  background: rgba(40, 28, 8, .72);
+  color: #ffe6b0;
+  gap: 12px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, .3);
+}
+
+.phone-pair-rescue small {
+  color: #d7af5b;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+body:not(.device-trusted):not(.pc-console) .phone-pair-rescue { display: grid; }
+body.eink-client.device-trusted .phone-pair-rescue { display: none; }
+
+.phone-pair-rescue strong {
+  color: #fff4d6;
+  font-size: 24px;
+}
+
+.phone-pair-rescue > span {
+  color: #f2dca9;
+  line-height: 1.55;
+}
+
+.phone-pair-rescue .phone-pair-benefit {
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 230, 176, .2);
+  color: #d6c397;
+  font-size: 13px;
+}
+
+.pairing-locale-control {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  color: #f2dca9;
+  font-weight: 800;
+}
+
+.pairing-locale-control select {
+  min-width: 0;
+  min-height: 46px;
+  padding: 8px 12px;
+  border: 2px solid rgba(255, 255, 255, .34);
+  border-radius: 8px;
+  background: #fffdf4;
+  color: #171714;
+  font: inherit;
+  font-size: 17px;
+}
+
+body.eink-client .pairing-locale-control select {
+  --eink-control-min-height: 52px;
+  border: 3px solid #171714;
+  border-radius: 3px;
+  font-size: 20px;
+}
+
+.phone-pair-rescue input,
+.phone-pair-rescue textarea {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 8px;
+  background: rgba(0,0,0,.28);
+  color: #fff;
+  padding: 10px;
+  font-size: 14px;
+}
+
+.phone-pair-rescue button {
+  min-height: 50px;
+  border: 0;
+  border-radius: 10px;
+  background: #70d98b;
+  color: #0a1311;
+  font-weight: 800;
+}
+
+body.eink-client .phone-pair-rescue small,
+body.eink-client .phone-pair-rescue strong,
+body.eink-client .phone-pair-rescue > span,
+body.eink-client .phone-pair-rescue [data-pair-progress-detail],
+body.eink-client .phone-pair-rescue [data-pair-progress-label] {
+  font-size: 16px;
+}
+
+.pair-success-banner {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  margin: 0 0 10px;
+  padding: 14px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(112, 217, 139, .45);
+  background: rgba(12, 36, 24, .94);
+  color: #d8ffe4;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.pair-success-banner.show {
+  display: grid;
+  gap: 8px;
+}
+
+.pair-success-banner strong {
+  font-size: 18px;
+  color: #8dffb0;
+}
+
+body.eink-client .pair-success-banner { display: none; }
+
+.pending-pairings {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 2px solid var(--green);
+  background: rgba(112, 217, 139, .1);
+}
+
+.pending-pairing-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  background: var(--surface-2);
+}
+
+.pending-pairing-row > div {
+  display: grid;
+  gap: 3px;
+}
+
+.pending-pairing-row span,
+.pending-pairing-row b {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pending-pairing-row [data-pair-approve] {
+  background: var(--green);
+  color: #071015;
+}
+
+.connect-panel {
+  order: initial;
+  grid-column: auto;
+  display: grid;
+  grid-template-columns: minmax(230px, 280px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  padding: 16px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.018)),
+    rgba(8, 13, 19, .28);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+/* The new-device disclosure embeds the pairing panel as content, so the
+ * Pairing owner also owns the embedded-panel reset. */
+.new-device-panel .connect-panel {
+  order: initial;
+  grid-column: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.new-device-panel:not([open]) > .new-device-panel-content {
+  display: none !important;
+}
+
+.connect-qr {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 10px;
+  align-items: start;
+  align-content: start;
+  justify-items: center;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  background: rgba(8, 12, 18, .36);
+}
+
+.connect-qr span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.connect-panel img {
+  width: 100%;
+  max-width: 252px;
+  aspect-ratio: 1;
+  background: #fff;
+  border-radius: 7px;
+  padding: 10px;
+  align-self: start;
+}
+
+.connect-copy {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.connect-title {
+  display: grid;
+  gap: 3px;
+}
+
+.connect-title strong {
+  color: var(--text);
+  font-size: 22px;
+  line-height: 1.05;
+}
+
+.connect-title span {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.certificate-install-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.device-connection-code {
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid rgba(141, 230, 166, .34);
+  border-radius: 8px;
+  background: rgba(47, 207, 114, .06);
+}
+
+.device-connection-code strong {
+  color: #dff8e6;
+  font-size: 15px;
+}
+
+.device-connection-code p,
+.device-connection-code small {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.device-connection-code p code {
+  color: #dff8e6;
+  font-family: var(--mono);
+  font-size: 1em;
+  user-select: all;
+}
+
+.device-connection-code-value {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.device-connection-code output {
+  min-width: 184px;
+  min-height: 1.2em;
+  color: #fff;
+  font-family: var(--mono);
+  font-size: clamp(24px, 2.4vw, 34px);
+  font-weight: 800;
+  letter-spacing: .11em;
+  line-height: 1.2;
+  overflow: visible;
+}
+
+.device-connection-code button {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid rgba(141, 230, 166, .42);
+  border-radius: 6px;
+  background: rgba(47, 207, 114, .12);
+  color: #dff8e6;
+  font-weight: 700;
+}
+
+body.phone-client .device-connection-code {
+  display: none;
+}
+
+.pairing-guide {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pairing-progress {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.pairing-progress > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pairing-progress > div strong {
+  color: #dce7f4;
+  font-size: 12px;
+}
+
+.pairing-progress > div b {
+  color: #8fd1ff;
+  font-family: var(--mono);
+}
+
+.pairing-progress progress {
+  width: 100%;
+  height: 9px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+  appearance: none;
+}
+
+.pairing-progress progress::-webkit-progress-bar {
+  background: rgba(255,255,255,.08);
+  border-radius: 999px;
+}
+
+.pairing-progress progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #579fd4, #8fd1ff);
+  border-radius: 999px;
+  transition: width .25s ease;
+}
+
+.pairing-progress.idle > div {
+  justify-content: flex-start;
+}
+
+.pairing-progress.idle [data-pair-progress-label],
+.pairing-progress.idle progress {
+  display: none;
+}
+
+.pairing-progress.complete progress::-webkit-progress-value {
+  background: #2fcf72;
+}
+
+.pairing-progress.complete > div b,
+.pairing-progress.complete > div strong {
+  color: #8de6a6;
+}
+
+.pairing-step {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 9px;
+  align-items: start;
+  min-width: 0;
+  min-height: 76px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 7px;
+  background: rgba(255,255,255,.035);
+}
+
+.pairing-step b {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: #dce7f4;
+  font-size: 12px;
+}
+
+.pairing-step strong {
+  color: #f5f7fb;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.pairing-step span {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.pairing-step.active {
+  border-color: rgba(143,209,255,.34);
+  background: rgba(143,209,255,.08);
+}
+
+.pairing-step.done b {
+  background: #2fcf72;
+  color: #102018;
+}
+
+.connect-status {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 6px 10px;
+  padding: 10px;
+  border-radius: 6px;
+  background: rgba(255,255,255,.035);
+}
+
+.connect-status span {
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.connect-status span:empty {
+  display: none;
+}
+
+.connect-links {
+  border-top: 1px solid rgba(255,255,255,.08);
+  padding-top: 10px;
+}
+
+.connect-links summary {
+  cursor: pointer;
+  color: #dce7f4;
+  font-size: 13px;
+  list-style-position: inside;
+}
+
+.connect-link-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.advanced-cert-title {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.public-endpoint-panel {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.public-endpoint-panel label,
+.public-endpoint-panel small,
+.public-endpoint-status,
+.public-endpoint-id {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.public-endpoint-status,
+.public-endpoint-id {
+  margin: 0;
+}
+
+.public-endpoint-id code {
+  color: #dce7f4;
+  font-size: 12px;
+  user-select: all;
+}
+
+.public-endpoint-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 6px;
+}
+
+.public-endpoint-controls input {
+  min-width: 0;
+  min-height: 34px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: #eef6ff;
+  background: rgba(0,0,0,.22);
+  font: inherit;
+  font-size: 12px;
+}
+
+.public-endpoint-controls button {
+  min-height: 34px;
+  white-space: nowrap;
+}
+
+body.phone-client .public-endpoint-panel {
+  display: none;
+}
+
+.connect-copy a {
+  color: var(--blue);
+  overflow-wrap: anywhere;
+}
+
+/* Phone trust states: trusted clients no longer need pairing chrome; untrusted
+ * clients keep only the compact connection status needed to request trust. */
+body.phone-client.device-trusted .connect-panel {
+  display: none;
+}
+
+body.phone-client:not(.device-trusted) .connect-panel {
+  grid-template-columns: 1fr;
+  padding: 12px;
+  gap: 10px;
+}
+
+body.phone-client:not(.device-trusted) .connect-qr,
+body.phone-client:not(.device-trusted) .pairing-guide,
+body.phone-client:not(.device-trusted) .connect-title,
+body.phone-client:not(.device-trusted) .connect-links {
+  display: none;
+}
+
+/* PC pairing states. */
+body.pc-console .connect-panel {
+  grid-template-columns: 1fr;
+}
+
+body.pc-console:not(.pairing-active) .connect-qr,
+body.pc-console:not(.pairing-active) .pairing-guide,
+body.pc-console:not(.pairing-active) .connect-status,
+body.pc-console:not(.pairing-active) #httpsCertLink {
+  display: none;
+}
+
+body.pc-console.pairing-active .connect-panel {
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+body.trusted-public-endpoint #certificateSetupTitle,
+body.trusted-public-endpoint #httpsCertLink,
+body.trusted-public-endpoint #androidCertLink,
+body.trusted-public-endpoint #androidCertHelp {
+  display: none;
+}
+
+body.pc-console.pairing-active:not(.pairing-needs-advanced) .connect-links {
+  display: none;
+}
+
+body.pc-console.pairing-active.pairing-needs-advanced .connect-links {
+  border-color: var(--yellow);
+}
+
+body.pc-console .connect-copy {
+  gap: 12px;
+}
+
+body.pc-console .connect-title strong {
+  font-size: 24px;
+}
+
+body.pc-console .connect-title span {
+  font-size: 15px;
+}
+
+@media (max-width: 720px) {
+  .public-endpoint-controls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .public-endpoint-controls input {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .connect-panel {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  body.pc-console.pairing-active .connect-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .connect-qr {
+    grid-template-columns: 118px minmax(0, 1fr);
+    grid-template-rows: auto;
+    align-items: center;
+    justify-items: start;
+    padding: 10px;
+  }
+
+  .connect-panel img {
+    max-width: 118px;
+    padding: 6px;
+  }
+
+  .connect-qr span {
+    text-align: left;
+    font-size: 13px;
+  }
+
+  .connect-title strong {
+    font-size: 20px;
+  }
+
+  .pairing-guide {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .pairing-step {
+    min-height: 0;
+    padding: 10px;
+  }
+
+  .connect-status { grid-template-columns: 1fr; }
+
+}
+
+@media (max-width: 420px) {
+  .connect-qr {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .connect-qr span {
+    text-align: center;
+  }
+}
+
+/* Phone setup: desktop pairing geometry must never leak into a narrow screen. */
+body.phone-client.mode-setup .new-device-panel,
+body.phone-client.mode-setup .new-device-panel-content,
+body.phone-client.mode-setup .new-device-panel .connect-panel,
+body.phone-client.mode-setup .new-device-panel .connect-qr,
+body.phone-client.mode-setup .new-device-panel .connect-copy {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+body.phone-client.mode-setup .new-device-panel *,
+body.phone-client.mode-setup .new-device-panel *::before,
+body.phone-client.mode-setup .new-device-panel *::after {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body.phone-client.mode-setup .new-device-panel pre,
+body.phone-client.mode-setup .new-device-panel code,
+body.phone-client.mode-setup .new-device-panel a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+body.phone-client.mode-setup .new-device-panel-content {
+  overflow: hidden;
+}
+
+body.phone-client.mode-setup .new-device-panel .connect-panel {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+body.phone-client.mode-setup .new-device-panel .connect-qr {
+  grid-template-columns: minmax(96px, 132px) minmax(0, 1fr);
+  grid-template-rows: auto;
+  align-items: center;
+  justify-items: start;
+}
+
+body.phone-client.mode-setup .new-device-panel .connect-panel img {
+  width: 100%;
+  max-width: 132px;
+}
+
+body.phone-client.mode-setup .new-device-panel .connect-copy,
+body.phone-client.mode-setup .new-device-panel .connect-title,
+body.phone-client.mode-setup .new-device-panel .pairing-guide {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+body.phone-client:not(.eink-client).mode-setup summary,
+body.phone-client:not(.eink-client).mode-setup button,
+body.phone-client:not(.eink-client).mode-setup input:not([type="hidden"]),
+body.phone-client:not(.eink-client).mode-setup select {
+  min-height: 34px;
+}
+
+body:not(.eink-client) #newDeviceConnectPanel > summary {
+  min-height: 34px;
+  height: 34px;
+}
+
+@media (max-width: 480px) {
+  body.phone-client.mode-setup .new-device-panel-content {
+    padding: 10px;
+  }
+
+  body.phone-client.mode-setup .new-device-panel .connect-panel {
+    padding: 0;
+  }
+
+  body.phone-client.mode-setup .new-device-panel .connect-qr {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+
+  body.phone-client.mode-setup .new-device-panel .connect-panel img {
+    max-width: min(240px, 100%);
+  }
+
+  body.phone-client.mode-setup .new-device-panel .connect-qr span {
+    text-align: center;
+  }
+}

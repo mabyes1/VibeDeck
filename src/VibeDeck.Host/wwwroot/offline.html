@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111820">
+  <title>VibeDeck 離線</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: #111820;
+      color: #f5f7fb;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    main {
+      display: grid;
+      gap: 16px;
+      width: min(100%, 360px);
+      text-align: center;
+    }
+
+    .phone-character {
+      font-size: 0;
+      margin: 0 auto 8px;
+      position: relative;
+      width: 80px;
+      height: 140px;
+    }
+
+    .phone-body {
+      width: 80px;
+      height: 140px;
+      background: #2a3441;
+      border-radius: 16px;
+      border: 3px solid #4a5568;
+      position: relative;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .phone-screen {
+      position: absolute;
+      top: 16px;
+      left: 8px;
+      right: 8px;
+      bottom: 24px;
+      background: #1a2332;
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+    }
+
+    .phone-eyes {
+      display: flex;
+      gap: 14px;
+      position: relative;
+      top: -6px;
+    }
+
+    .eye {
+      width: 12px;
+      height: 12px;
+      background: #8fd1ff;
+      border-radius: 50%;
+      animation: blink 4s ease-in-out infinite;
+    }
+
+    .eye:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .phone-mouth {
+      width: 20px;
+      height: 10px;
+      border: 3px solid #8fd1ff;
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      margin: 4px auto 0;
+      animation: wobble-mouth 4s ease-in-out infinite;
+    }
+
+    .phone-notch {
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 4px;
+      background: #4a5568;
+      border-radius: 2px;
+    }
+
+    .phone-home {
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 16px;
+      height: 4px;
+      background: #4a5568;
+      border-radius: 2px;
+    }
+
+    /* Wifi signal waves dying */
+    .wifi-dead {
+      position: absolute;
+      top: -20px;
+      right: -24px;
+      font-size: 20px;
+      animation: flicker 1.5s ease-in-out infinite;
+    }
+
+    /* Little tears */
+    .tear {
+      position: absolute;
+      width: 4px;
+      height: 8px;
+      background: #8fd1ff;
+      border-radius: 0 0 4px 4px;
+      opacity: 0;
+      animation: cry 3s ease-in-out infinite;
+    }
+
+    .tear-left {
+      left: 24px;
+      top: 52px;
+      animation-delay: 0.5s;
+    }
+
+    .tear-right {
+      right: 24px;
+      top: 52px;
+      animation-delay: 1.2s;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+      color: #f5f7fb;
+    }
+
+    .subtitle {
+      margin: 0;
+      font-size: 14px;
+      color: #8899aa;
+      line-height: 1.5;
+    }
+
+    .excuse {
+      margin: 8px 0 0;
+      padding: 12px 16px;
+      background: #1a2332;
+      border-radius: 10px;
+      border: 1px dashed #3a4a5a;
+      font-size: 13px;
+      color: #6b8299;
+      line-height: 1.5;
+    }
+
+    .retry-btn {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 10px 24px;
+      background: #2a3f55;
+      color: #8fd1ff;
+      border: 1px solid #3a5a7a;
+      border-radius: 8px;
+      font-size: 14px;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .retry-btn:hover {
+      background: #3a5068;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      25% { transform: translateY(-4px) rotate(-1deg); }
+      75% { transform: translateY(-2px) rotate(1deg); }
+    }
+
+    @keyframes blink {
+      0%, 42%, 44%, 100% { transform: scaleY(1); }
+      43% { transform: scaleY(0.1); }
+    }
+
+    @keyframes wobble-mouth {
+      0%, 100% { transform: scaleX(1); }
+      50% { transform: scaleX(0.8) translateY(1px); }
+    }
+
+    @keyframes flicker {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.1); }
+    }
+
+    @keyframes cry {
+      0%, 100% { opacity: 0; transform: translateY(0); }
+      30% { opacity: 0.7; transform: translateY(6px); }
+      60% { opacity: 0; transform: translateY(14px); }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="phone-character">
+      <div class="phone-body">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div>
+            <div class="phone-eyes">
+              <div class="eye"></div>
+              <div class="eye"></div>
+            </div>
+            <div class="phone-mouth"></div>
+          </div>
+        </div>
+        <div class="phone-home"></div>
+        <span class="wifi-dead">📡</span>
+        <div class="tear tear-left"></div>
+        <div class="tear tear-right"></div>
+      </div>
+    </div>
+
+    <h1>找不到我的電腦 :(</h1>
+    <p class="subtitle">VibeDeck 手機端已就緒，但 PC Host 沒有回應。</p>
+
+    <div class="excuse">
+      可能的原因：<br>
+      • Host 沒開（它需要你在電腦按 start.bat）<br>
+      • WiFi 斷了（我只是一支手機，我不會通靈）<br>
+      • 電腦睡著了（跟你一樣懶）
+    </div>
+
+    <a href="/" class="retry-btn">再試一次 ↻</a>
+  </main>
+  <script type="module">
+    import { initLocale } from "/modules/i18n.js?v=3";
+    initLocale().catch(() => {});
+  </script>
+</body>
+</html>

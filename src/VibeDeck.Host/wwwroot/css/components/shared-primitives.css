@@ -1,0 +1,244 @@
+/* Shared structural primitives used by multiple final component owners. */
+
+:is(.controls, .view-switcher, .utility-controls, .quota-codex-switch-row) {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* Shared feedback grammar. Feature owners keep their own placement and
+ * sizing; this only standardizes state semantics and the tiny state signal. */
+.feedback-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.feedback-status::before {
+  content: "•";
+  flex: 0 0 auto;
+  width: 1em;
+  text-align: center;
+  color: var(--blue);
+  font-weight: 900;
+}
+
+.feedback-status:empty::before { display: none; }
+
+.feedback-status[data-feedback-state="working"] { color: var(--blue); }
+.feedback-status[data-feedback-state="working"]::before {
+  content: "↻";
+  animation: feedback-spin 1.1s linear infinite;
+}
+
+.feedback-status[data-feedback-state="success"] { color: var(--green); }
+.feedback-status[data-feedback-state="success"]::before { content: "✓"; }
+
+.feedback-status[data-feedback-state="warning"] { color: var(--yellow); }
+.feedback-status[data-feedback-state="warning"]::before { content: "!"; }
+
+.feedback-status[data-feedback-state="error"] { color: #ff8a7a; }
+.feedback-status[data-feedback-state="error"]::before { content: "×"; }
+
+.feedback-status[data-feedback-state="muted"] { color: var(--quiet); }
+.feedback-status[data-feedback-state="muted"]::before { content: "·"; }
+
+@keyframes feedback-spin {
+  to { transform: rotate(360deg); }
+}
+
+body.eink-client .feedback-status,
+body.eink-client .feedback-status::before {
+  color: #000;
+}
+
+body.eink-client .feedback-status[data-feedback-state="working"]::before {
+  animation: none;
+}
+
+body:is(.viewer-fullscreen, .dashboard-viewer, .deck-window):is(.mode-quota, .mode-sideboard) main {
+  padding: 0;
+  background: #000;
+  width: 100%;
+  min-height: var(--viewer-height);
+  overflow: hidden auto;
+}
+
+body:is(.viewer-fullscreen, .dashboard-viewer, .deck-window).mode-quota .quota-shell,
+body:is(.viewer-fullscreen, .dashboard-viewer, .deck-window).mode-sideboard .sideboard-shell {
+  min-height: var(--viewer-height);
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  padding: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top)))
+    calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right)))
+    calc(8px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)))
+    calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left)));
+}
+
+body:is(.viewer-fullscreen, .dashboard-viewer, .deck-window).mode-quota .quota-view.active,
+body:is(.viewer-fullscreen, .dashboard-viewer, .deck-window).mode-sideboard .sideboard-view.active {
+  width: 100%;
+  min-height: var(--viewer-height);
+  align-self: stretch;
+}
+
+/* Single-line labels and metadata that must truncate rather than grow cards.
+ * Keep this cross-owner contract centralized because several later
+ * tablet/E-Ink selectors intentionally re-assert truncation after a more
+ * general portrait wrapping rule. The groups below are arranged by owner so
+ * future maintenance does not require decoding one undifferentiated list. */
+
+/* App shell / device management. */
+:is(.brand-copy span, .trusted-device-main strong, .trusted-device-main span),
+/* Custom Cards / Activity Feed. */
+:is(.custom-card-title, .custom-card-footer, .custom-source-name, .activity-from),
+/* Metric Card. */
+.metric-sub,
+.metric-card .side-kicker,
+body.tablet-client.viewport-portrait.mode-sideboard #systemSideboardPage.dashboard-grid .metric-sub,
+body.eink-client #systemSideboardPage.dashboard-grid .metric-sub,
+/* Quota / Quota Mini. */
+:is(.quota-mini-credit, .quota-help-summary-label, .quota-account-email, .quota-action-status),
+:is(.quota-window small, .quota-local-card strong, .quota-local-card span),
+body.tablet-client.mode-sideboard .quota-mini-value-row span,
+body.tablet-client.viewport-landscape.mode-quota .quota-credit-row,
+/* Sideboard feeds / process list. */
+.feed-list li,
+body.eink-client #systemSideboardPage.dashboard-grid .feed-list li,
+body.eink-client #systemSideboardPage.dashboard-grid .side-load .side-summary span,
+.process-list li > span,
+body.tablet-client.mode-sideboard #systemSideboardPage.dashboard-grid .feed-list li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Shared confirmation surface. Native browser confirm dialogs break product
+ * hierarchy and cannot explain consequences clearly enough for destructive
+ * actions, so all surfaces share this one modal contract. */
+.vibe-confirm-overlay[hidden] {
+  display: none !important;
+}
+
+.vibe-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  display: grid;
+  place-items: center;
+  padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: rgba(3, 7, 11, .72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+body.confirm-open {
+  overflow: hidden !important;
+}
+
+.vibe-confirm-card {
+  width: min(100%, 460px);
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(143, 209, 255, .28);
+  border-radius: 12px;
+  background: #101820;
+  color: var(--text);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .52);
+}
+
+.vibe-confirm-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.vibe-confirm-head strong {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 18px;
+}
+
+.vibe-confirm-close {
+  flex: 0 0 auto;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 20px;
+}
+
+.vibe-confirm-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+  white-space: pre-line;
+}
+
+.vibe-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.vibe-confirm-actions button {
+  min-width: 92px;
+  min-height: 38px;
+}
+
+.vibe-confirm-actions #vibeConfirmAccept {
+  border-color: rgba(143, 209, 255, .42);
+  background: #294057;
+  color: #fff;
+  font-weight: 800;
+}
+
+.vibe-confirm-actions #vibeConfirmAccept.danger {
+  border-color: #d85d5d;
+  background: #7e2929;
+}
+
+body.eink-client .vibe-confirm-overlay {
+  background: rgba(255, 254, 248, .88);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.eink-client .vibe-confirm-card {
+  border: 3px solid #000;
+  border-radius: 4px;
+  background: #fffef8;
+  color: #000;
+  box-shadow: none;
+}
+
+body.eink-client .vibe-confirm-card p,
+body.eink-client .vibe-confirm-close {
+  color: #000;
+}
+
+body.eink-client .vibe-confirm-actions button,
+body.eink-client .vibe-confirm-actions #vibeConfirmAccept,
+body.eink-client .vibe-confirm-actions #vibeConfirmAccept.danger {
+  min-height: 46px;
+  border: 2px solid #000;
+  background: #fffef8;
+  color: #000;
+  font-size: 17px;
+}
+
+body.eink-client .vibe-confirm-actions #vibeConfirmAccept,
+body.eink-client .vibe-confirm-actions #vibeConfirmAccept.danger {
+  background: #000;
+  color: #fffef8;
+}

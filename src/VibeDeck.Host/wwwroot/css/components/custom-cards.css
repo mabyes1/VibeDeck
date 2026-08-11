@@ -1,0 +1,544 @@
+/* Custom Cards -----------------------------------------------------------
+ * Owns Windows notification integration, card rendering, card settings,
+ * source management, credentials, and phone-portrait Custom Cards layout.
+ * Dashboard editor owns the overlay shell; E-Ink final readability stays in
+ * eink-dashboard-content.css. */
+
+.custom-sideboard-page {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  gap: 8px;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+}
+
+.windows-notification-control {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 3px 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 8px;
+  background: rgba(255,255,255,.04);
+}
+
+.windows-notification-control > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.windows-notification-control strong {
+  color: var(--side-accent);
+  font-size: 13px;
+}
+
+.windows-notification-control span,
+.windows-notification-control p {
+  color: rgba(247,242,232,.66);
+  font-size: 11px;
+}
+
+.windows-notification-control p {
+  grid-column: 1 / 2;
+  margin: 0;
+}
+
+.windows-notification-control .custom-cards-toolbar {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  justify-content: flex-end;
+}
+
+.custom-card-settings {
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--side-line);
+  border-radius: 8px;
+  background: rgba(17,25,30,.92);
+}
+
+.custom-settings-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.custom-settings-header > div {
+  display: grid;
+  gap: 3px;
+}
+
+.custom-settings-header strong {
+  color: var(--side-accent);
+  font-size: 14px;
+}
+
+.custom-settings-header span,
+.custom-settings-help {
+  color: rgba(247,242,232,.62);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.custom-card-settings-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: 8px;
+}
+
+.custom-card-settings-form label {
+  display: grid;
+  gap: 4px;
+  color: rgba(247,242,232,.72);
+  font-size: 11px;
+}
+
+.custom-card-settings-form select,
+.custom-card-settings-form input[type="number"] {
+  width: 100%;
+  min-height: 30px;
+  padding: 5px 7px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 5px;
+  color: #fff;
+  background: rgba(255,255,255,.07);
+}
+
+.custom-card-settings-form .custom-settings-check {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+  gap: 6px;
+}
+
+.custom-settings-check input {
+  accent-color: var(--side-accent);
+}
+
+.custom-card-settings-form > .custom-settings-help {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.custom-card-settings-form .custom-source-form-actions {
+  grid-column: 1 / -1;
+}
+
+.custom-cards-top,
+.custom-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.custom-cards-title,
+.custom-manager-header > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.custom-cards-title strong,
+.custom-manager-header strong {
+  color: var(--side-accent);
+  font-size: clamp(16px, 3vw, 24px);
+}
+
+.custom-cards-title span,
+.custom-manager-header span,
+.custom-source-meta,
+.custom-source-health,
+.custom-source-form label,
+.custom-credential-panel > span {
+  color: rgba(247,242,232,.66);
+  font-size: 11px;
+}
+
+.custom-cards-toolbar,
+.custom-source-actions,
+.custom-source-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+.custom-cards-toolbar button,
+.custom-manager-header button,
+.custom-source-actions button,
+.custom-source-form-actions button {
+  min-height: 28px;
+  padding: 4px 9px;
+  border-color: rgba(255,255,255,.16);
+  background: rgba(255,255,255,.08);
+  color: rgba(247,242,232,.86);
+  font-size: 11px;
+}
+
+.custom-cards-toolbar button:hover,
+.custom-manager-header button:hover,
+.custom-source-actions button:hover,
+.custom-source-form-actions button:hover {
+  border-color: var(--side-accent);
+}
+
+.custom-cards-status {
+  min-height: 1em;
+}
+
+.windows-notification-ok { color: var(--side-good); }
+.windows-notification-warn { color: var(--side-warn); }
+
+.custom-source-health.health-active {
+  color: var(--side-good);
+}
+
+.custom-source-health.health-disabled,
+.custom-source-health.health-stale {
+  color: var(--side-warn);
+}
+
+.custom-source-health.health-waiting {
+  color: rgba(247,242,232,.58);
+}
+
+.custom-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 1px;
+}
+
+.custom-card,
+.custom-empty-state,
+.custom-sources-manager,
+.custom-credential-panel {
+  min-width: 0;
+  border: 1px solid var(--side-line);
+  background: rgba(17,25,30,.9);
+  border-radius: 8px;
+}
+
+.custom-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  min-height: 142px;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.custom-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.custom-card-title-block {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.custom-card-title {
+  color: #fff;
+  font-size: 15px;
+}
+
+.custom-card-source,
+.custom-card-footer,
+.custom-card-freshness {
+  color: rgba(247,242,232,.58);
+  font-size: 10px;
+}
+
+.custom-card-freshness {
+  flex: 0 0 auto;
+  padding: 2px 5px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+}
+
+.custom-card-freshness.freshness-fresh {
+  color: var(--side-good);
+}
+
+.custom-card-freshness.freshness-stale {
+  color: var(--side-warn);
+}
+
+.custom-status-content,
+.custom-metric-content {
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  min-height: 0;
+}
+
+.custom-status-value,
+.custom-metric-value {
+  color: var(--side-accent);
+  font-size: clamp(22px, 4vw, 34px);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.custom-metric-unit {
+  margin-left: 4px;
+  color: rgba(247,242,232,.72);
+  font-size: .5em;
+}
+
+.custom-status-detail,
+.custom-card-empty {
+  color: rgba(247,242,232,.72);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.custom-progress {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.1);
+}
+
+.custom-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--side-accent);
+}
+
+.custom-feed-list {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.custom-feed-item {
+  min-width: 0;
+  padding: 6px 7px;
+  border-left: 3px solid var(--side-accent-2);
+  background: rgba(255,255,255,.045);
+}
+
+.custom-feed-item.severity-success { border-left-color: var(--side-good); }
+.custom-feed-item.severity-warning { border-left-color: var(--side-warn); }
+.custom-feed-item.severity-error { border-left-color: #ff8d8d; }
+
+.custom-feed-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  color: rgba(247,242,232,.58);
+  font-size: 10px;
+}
+
+.custom-feed-text {
+  margin-top: 3px;
+  color: rgba(247,242,232,.9);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.custom-feed-text.is-streaming::after {
+  content: "▋";
+  display: inline-block;
+  margin-left: 2px;
+  color: var(--side-accent);
+  animation: custom-stream-caret 650ms steps(1, end) infinite;
+}
+
+@keyframes custom-stream-caret {
+  50% { opacity: 0; }
+}
+
+.custom-key-value-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  align-content: start;
+  gap: 5px 8px;
+  margin: 0;
+  overflow: auto;
+}
+
+.custom-key-value-list dt,
+.custom-key-value-list dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.custom-key-value-list dt { color: rgba(247,242,232,.58); }
+.custom-key-value-list dd { color: rgba(247,242,232,.92); }
+
+.custom-empty-state {
+  grid-column: 1 / -1;
+  padding: 24px 16px;
+  color: rgba(247,242,232,.7);
+  text-align: center;
+}
+
+.custom-sources-manager {
+  gap: 8px;
+  padding: 10px;
+  max-height: min(46vh, 430px);
+  overflow: auto;
+}
+
+.custom-manager-header .custom-manager-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.custom-source-list {
+  display: grid;
+  gap: 5px;
+}
+
+.custom-source-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.035);
+}
+
+.custom-source-summary {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.custom-source-name {
+  color: #fff;
+  font-size: 12px;
+}
+
+.custom-source-actions {
+  justify-content: flex-end;
+  flex: 0 0 auto;
+}
+
+.custom-source-actions .custom-source-action {
+  padding: 3px 6px;
+  font-size: 10px;
+}
+
+.custom-source-form,
+.custom-credential-panel {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  padding: 10px;
+}
+
+.custom-source-form > strong,
+.custom-credential-panel > strong,
+.custom-credential-panel > span,
+.custom-credential-panel > textarea,
+.custom-source-form-actions {
+  grid-column: 1 / -1;
+}
+
+.custom-source-form label {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.custom-source-form input,
+.custom-source-form select,
+.custom-credential-panel textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 7px;
+  background: rgba(0,0,0,.22);
+  font-size: 12px;
+}
+
+.custom-credential-panel textarea {
+  resize: vertical;
+  color: rgba(247,242,232,.9);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  line-height: 1.35;
+}
+
+.custom-manager-empty {
+  margin: 0;
+  color: rgba(247,242,232,.58);
+  font-size: 11px;
+}
+
+/* Phone portrait keeps management controls stacked and finger-friendly. */
+body.phone-client.viewport-portrait .custom-sideboard-page {
+  grid-column: 1;
+  grid-template-rows: auto auto auto;
+  gap: 10px;
+}
+
+body.phone-client.viewport-portrait .custom-cards-top,
+body.phone-client.viewport-portrait .custom-manager-header {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+body.phone-client.viewport-portrait .custom-cards-toolbar,
+body.phone-client.viewport-portrait .custom-source-actions,
+body.phone-client.viewport-portrait .custom-source-form-actions {
+  justify-content: stretch;
+}
+
+body.phone-client.viewport-portrait .custom-cards-toolbar button,
+body.phone-client.viewport-portrait .custom-manager-header button,
+body.phone-client.viewport-portrait .custom-source-actions button,
+body.phone-client.viewport-portrait .custom-source-form-actions button {
+  flex: 1 1 auto;
+  min-height: 40px;
+}
+
+body.phone-client.viewport-portrait .custom-cards-grid {
+  grid-template-columns: 1fr;
+  overflow: visible;
+}
+
+body.phone-client.viewport-portrait .custom-source-row {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+body.phone-client.viewport-portrait .custom-source-form {
+  grid-template-columns: 1fr;
+}
+
+body.phone-client.viewport-portrait .custom-source-form > strong,
+body.phone-client.viewport-portrait .custom-credential-panel > strong,
+body.phone-client.viewport-portrait .custom-credential-panel > span,
+body.phone-client.viewport-portrait .custom-credential-panel > textarea,
+body.phone-client.viewport-portrait .custom-source-form-actions {
+  grid-column: 1;
+}

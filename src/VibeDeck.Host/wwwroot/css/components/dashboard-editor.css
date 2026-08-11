@@ -1,0 +1,352 @@
+/* Dashboard editor ---------------------------------------------------------
+ * Owns edit-mode chrome and geometry. Dashboard cards keep their own visual
+ * styles; Sideboard Shell keeps the read-mode frame. */
+
+.dashboard-edit-toggle {
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid var(--side-line);
+  border-radius: 4px;
+  background: rgba(255,255,255,.08);
+  color: inherit;
+  font-weight: 700;
+}
+
+.dashboard-edit-toggle[aria-pressed="true"] {
+  background: var(--side-accent);
+  color: #071015;
+  border-color: var(--side-accent);
+}
+
+.dashboard-edit-bar {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: 8px 14px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--side-line);
+  background: rgba(7, 16, 21, .96);
+  z-index: 30;
+}
+
+.dashboard-edit-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.dashboard-edit-copy strong {
+  color: var(--side-accent);
+}
+
+.dashboard-edit-copy span {
+  color: rgba(247,242,232,.72);
+  font-size: 12px;
+}
+
+.dashboard-selection-controls {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--side-line);
+}
+
+.dashboard-selection-controls strong {
+  min-width: min(180px, 100%);
+  margin-right: auto;
+  color: var(--side-accent);
+}
+
+.dashboard-selection-controls button {
+  min-width: 42px;
+  min-height: 34px;
+  padding: 5px 9px;
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 3px;
+  background: #162229;
+  color: #fff;
+  touch-action: none;
+}
+
+.dashboard-size-control {
+  display: inline-grid;
+  grid-template-columns: auto 36px 36px;
+  align-items: center;
+  gap: 4px;
+  min-height: 34px;
+  padding: 3px 4px 3px 9px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 4px;
+  background: rgba(255,255,255,.045);
+}
+
+.dashboard-size-control > span {
+  margin-right: 3px;
+  color: rgba(247,242,232,.72);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dashboard-size-control button {
+  min-width: 36px;
+  padding-inline: 0;
+}
+
+.dashboard-selection-controls .dashboard-remove-card {
+  border-color: rgba(255, 188, 120, .42);
+  color: #ffd3a5;
+}
+
+.dashboard-edit-actions,
+.dashboard-card-library {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.dashboard-edit-actions button,
+.dashboard-card-library button {
+  min-height: 32px;
+  padding: 5px 9px;
+  border-radius: 4px;
+  background: rgba(255,255,255,.08);
+  color: inherit;
+  border-color: var(--side-line);
+}
+
+.dashboard-card-library {
+  grid-column: 1 / -1;
+  padding-top: 8px;
+  border-top: 1px solid var(--side-line);
+}
+
+.dashboard-library-empty {
+  color: rgba(247,242,232,.62);
+  font-size: 12px;
+}
+
+.dashboard-card-editor {
+  position: absolute;
+  inset: 6px 6px auto auto;
+  z-index: 50;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--side-accent);
+  background: #071015;
+  box-shadow: 0 3px 12px rgba(0,0,0,.45);
+}
+
+.dashboard-card-editor button {
+  min-width: 30px;
+  min-height: 30px;
+  padding: 3px 7px;
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 2px;
+  background: #162229;
+  color: #fff;
+  font-size: 11px;
+  touch-action: none;
+}
+
+.dashboard-card-editor .dashboard-drag-handle {
+  cursor: grab;
+  color: var(--side-accent);
+}
+
+.dashboard-card-dragging {
+  z-index: 40;
+  opacity: .78;
+  outline: 3px solid var(--side-accent);
+  pointer-events: none;
+}
+
+.dashboard-editing #systemSideboardPage.dashboard-grid {
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,.055) 1px, transparent 1px);
+  background-size: calc(100% / 12) calc(100% / 6);
+  outline: 1px dashed rgba(255,255,255,.2);
+}
+
+.dashboard-editing #systemSideboardPage.dashboard-grid [data-dashboard-key] {
+  cursor: pointer;
+}
+
+.dashboard-editing #systemSideboardPage.dashboard-grid .dashboard-card-selected {
+  z-index: 2;
+  outline: 3px solid var(--side-accent);
+  outline-offset: -3px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.dashboard-config-panel {
+  position: absolute;
+  inset: 76px 12px 12px;
+  z-index: 60;
+  min-width: 0;
+  max-width: 100%;
+  padding: 12px;
+  border: 1px solid var(--side-line);
+  background: rgba(7, 16, 21, .985);
+  box-shadow: 0 18px 60px rgba(0,0,0,.62);
+}
+
+/* E-ink editor: read mode stays a one-screen dashboard, edit mode may scroll. */
+body.dashboard-edit-mode.eink-client.dashboard-viewer,
+body.dashboard-edit-mode.eink-client.viewer-immersive {
+  height: auto !important;
+  min-height: 100dvh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  position: absolute !important;
+}
+
+body.dashboard-edit-mode.eink-client main,
+body.dashboard-edit-mode.eink-client .sideboard-view.active {
+  height: auto !important;
+  min-height: 100dvh !important;
+  overflow: visible !important;
+}
+
+body.dashboard-edit-mode.eink-client .sideboard-shell.dashboard-editing {
+  height: auto !important;
+  min-height: 100dvh !important;
+  overflow: visible !important;
+}
+
+body.dashboard-edit-mode.eink-client .sideboard-shell.dashboard-editing #systemSideboardPage.dashboard-grid {
+  height: calc(100dvh - 92px) !important;
+  min-height: 820px !important;
+}
+
+body.eink-client .dashboard-edit-toggle {
+  flex: 0 0 auto;
+  min-height: 46px;
+  padding: 6px 14px;
+  border: 3px solid #000;
+  background: #fffef8;
+  color: #000;
+  font-size: 17px;
+}
+
+body.eink-client .dashboard-edit-toggle[aria-pressed="true"] {
+  background: #000;
+  color: #fffef8;
+}
+
+body.eink-client .dashboard-edit-actions,
+body.eink-client .dashboard-card-library,
+body.eink-client .dashboard-selection-controls {
+  flex-wrap: wrap;
+}
+
+body.eink-client .dashboard-size-control {
+  border: 2px solid #000;
+  background: #fffef8;
+}
+
+body.eink-client .dashboard-size-control > span {
+  color: #000;
+  font-size: var(--eink-dashboard-min-font);
+}
+
+body.eink-client .dashboard-selection-controls .dashboard-remove-card {
+  border-color: #000;
+  color: #000;
+}
+
+body.eink-client .dashboard-edit-copy span,
+body.eink-client .dashboard-library-empty,
+body.eink-client .dashboard-edit-actions button,
+body.eink-client .dashboard-card-library button,
+body.eink-client .dashboard-selection-controls button,
+body.eink-client .dashboard-card-editor button {
+  border: 2px solid #000;
+  background: #fffef8;
+  color: #000;
+  font-size: var(--eink-dashboard-min-font);
+  line-height: 1.2;
+}
+
+body.eink-client .dashboard-edit-bar,
+body.eink-client .dashboard-config-panel {
+  border: 3px solid #000;
+  background: #fffef8;
+  color: #000;
+  box-shadow: none;
+}
+
+body.eink-client .dashboard-edit-bar {
+  grid-template-columns: 1fr;
+  padding: 8px;
+}
+
+body.eink-client .dashboard-edit-copy span,
+body.eink-client .dashboard-library-empty {
+  color: #000;
+}
+
+body.eink-client .dashboard-config-panel {
+  inset: 70px 10px 10px;
+  overflow: auto;
+}
+
+/* Edit mode owns the active interaction layer and its own cancel/close path.
+   Hide the underlying viewer exit button so fixed viewer chrome cannot cover
+   editor controls on narrow or E-Ink layouts. */
+body.dashboard-edit-mode .exit-viewer {
+  display: none !important;
+}
+
+/* Tablet read mode is intentionally one-screen. Editing is a workspace: keep
+   card rows large enough to remain legible and let the page scroll instead of
+   compressing the dashboard underneath the inspector. */
+body.dashboard-edit-mode.tablet-client:not(.eink-client) {
+  height: auto !important;
+  min-height: 100dvh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+body.dashboard-edit-mode.tablet-client:not(.eink-client) main,
+body.dashboard-edit-mode.tablet-client:not(.eink-client) .sideboard-view.active,
+body.dashboard-edit-mode.tablet-client:not(.eink-client) .sideboard-shell.dashboard-editing {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+body.dashboard-edit-mode.tablet-client:not(.eink-client) .sideboard-shell.dashboard-editing #systemSideboardPage.dashboard-grid {
+  height: max(720px, calc(100dvh - 120px)) !important;
+  min-height: 720px !important;
+  overflow: hidden !important;
+}
+
+body.dashboard-edit-mode.tablet-client:not(.eink-client).viewport-landscape .sideboard-shell.dashboard-editing #systemSideboardPage.dashboard-grid {
+  height: max(520px, calc(100dvh - 90px)) !important;
+  min-height: 520px !important;
+}
+
+body.eink-client .dashboard-card-editor {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  max-width: calc(100% - 12px);
+  border: 2px solid #000;
+  background: #fffef8;
+  box-shadow: none;
+}
+
+body.eink-client .dashboard-card-editor button {
+  min-width: 60px;
+  min-height: 40px;
+  padding: 4px 7px;
+  white-space: nowrap;
+}

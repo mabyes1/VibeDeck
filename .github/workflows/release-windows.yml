@@ -1,0 +1,60 @@
+name: Release Windows Setup
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress --yes
+
+      - name: Build VibeDeck Setup
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            throw "Release tag must be vX.Y.Z (received $env:GITHUB_REF_NAME)."
+          }
+          .\scripts\package-windows-setup.ps1 -Version $version
+
+      - name: Create installer checksum
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem .\artifacts\windows-setup -Filter 'VibeDeck-Setup-*.exe' |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+          if (-not $setup) {
+            throw 'VibeDeck Setup was not produced.'
+          }
+          $hash = (Get-FileHash -LiteralPath $setup.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash *$($setup.Name)" | Set-Content -LiteralPath "$($setup.FullName).sha256" -Encoding ascii -NoNewline
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/windows-setup/VibeDeck-Setup-*.exe
+            artifacts/windows-setup/VibeDeck-Setup-*.exe.sha256
+          fail_on_unmatched_files: true

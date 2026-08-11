@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="VibeDeck">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="VibeDeck">
+  <meta name="screen-orientation" content="any">
+  <meta name="theme-color" content="#111820">
+  <!-- Cache-bust: iOS freezes the first icon/title it saw for a host. -->
+  <link id="manifestLink" rel="manifest" href="/manifest.json?v=53">
+  <link rel="icon" type="image/svg+xml" href="/icons/vibedeck.svg?v=1" sizes="any">
+  <title>VibeDeck</title>
+  <link rel="stylesheet" href="/index.css?v=138">
+  <style>
+    /* Pairing is the recovery path: keep it usable even if an old iOS asset or
+       a later boot request fails. JS only hides it after trust is confirmed. */
+    #phonePairRescue { display: grid; }
+    #phonePairRescue[hidden],
+    body.deck-window #phonePairRescue,
+    body.device-trusted #phonePairRescue,
+    body.pc-console #phonePairRescue { display: none; }
+  </style>
+  <script>
+    // Early e-ink paint: PWA start_url has no ?eink=1, so read sticky prefs /
+    // BOOX-sized panels before CSS paints the phone chrome.
+    (function () {
+      try {
+        var params = new URLSearchParams(location.search);
+        var q = params.get("eink");
+        var preview = /^(boox-go-color-7|asus-zenpad-p024|galaxy-s23|iphone-xs)$/.test(params.get("devicePreview") || "") &&
+          /^(localhost|127\.0\.0\.1|::1)$/.test(location.hostname || "");
+        var stored = null;
+        try { stored = localStorage.getItem("vibeDeckEink"); } catch (e) {}
+        var cookie = (document.cookie.match(/(?:^|;\s*)vibeDeckEink=([01])/) || [])[1] || null;
+        var ua = navigator.userAgent || "";
+        var w = Math.max(screen.width || 0, screen.height || 0, window.innerWidth || 0, window.innerHeight || 0);
+        var h = Math.min.apply(null, [screen.width || 0, screen.height || 0, window.innerWidth || 0, window.innerHeight || 0].filter(function (v) { return v > 0; }));
+        var booxScreen = w >= 1180 && w <= 1900 && h >= 980 && h <= 1500 && (w / Math.max(h, 1)) >= 1.15;
+        var hardware = /VibeDeck-EInk|BOOX|ONYX|Onyx|eInk|E-Ink|E Ink/i.test(ua) || (/Android/i.test(ua) && booxScreen);
+        var on = q === "1" || q === "true" || stored === "1" || cookie === "1" ||
+          (q !== "0" && q !== "false" && stored !== "0" && cookie !== "0" && hardware);
+        if (on) document.documentElement.classList.add("eink-boot");
+        if (!preview && on && stored !== "0" && cookie !== "0") {
+          try { localStorage.setItem("vibeDeckEink", "1"); } catch (e) {}
+          try { document.cookie = "vibeDeckEink=1; Path=/; Max-Age=31536000; SameSite=Lax"; } catch (e) {}
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    html.eink-boot body,
+    html.eink-boot {
+      background: #f2f0e8 !important;
+      color: #171714;
+    }
+  </style>
+  <script>
+    // Older builds installed an offline service worker that could serve index.html
+    // to /api/* on iOS. Remove it before this online-only Host UI boots.
+    window.vibeDeckServiceWorkerCleanup = (async function () {
+      if (!("serviceWorker" in navigator)) return;
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(function (registration) {
+          return registration.unregister();
+        }));
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.filter(function (key) {
+            return key.indexOf("vibedeck-") === 0;
+          }).map(function (key) {
+            return caches.delete(key);
+          }));
+        }
+        if (navigator.serviceWorker.controller && !sessionStorage.getItem("vibeDeckSwRemovedV47")) {
+          sessionStorage.setItem("vibeDeckSwRemovedV47", "1");
+          const reloadUrl = new URL(location.href);
+          reloadUrl.pathname = "/index.html";
+          reloadUrl.searchParams.set("sw-removed", "47");
+          location.replace(reloadUrl.toString());
+          await new Promise(function () {});
+        }
+      } catch (_) {
+        // The Host remains usable without Cache API / service-worker management.
+      }
+    })();
+  </script>
+</head>
+<body>
+  <div id="hostAuthGate" class="host-auth-gate" role="dialog" aria-modal="true" aria-labelledby="hostAuthTitle" hidden>
+    <form id="hostAuthForm" class="host-auth-card">
+      <span class="host-auth-kicker" data-i18n="gates.hostAuthKicker">REMOTE HOST ACCESS</span>
+      <h1 id="hostAuthTitle" data-i18n="gates.hostAuthTitle">登入 VibeDeck Host</h1>
+      <p data-i18n="gates.hostAuthBody">這個 Host 正在另一個網路。請輸入 Host 設定的遠端密碼。</p>
+      <label for="hostAuthPassword" data-i18n="gates.hostAuthPassword">密碼</label>
+      <input id="hostAuthPassword" name="password" type="password" autocomplete="current-password" required autofocus>
+      <button id="hostAuthSubmit" class="gate-primary" type="submit" data-i18n="gates.hostAuthSubmit">登入</button>
+      <p id="hostAuthError" class="host-auth-error" role="alert"></p>
+      <small data-i18n="gates.hostAuthHint">遠端登入只接受 HTTPS。若還沒設定，請在 Host 啟動前設定 VIBEDECK_REMOTE_PASSWORD。</small>
+    </form>
+  </div>
+  <div id="mobileHttpsGate" role="dialog" aria-modal="true" aria-labelledby="mobileHttpsGateTitle">
+    <h1 id="mobileHttpsGateTitle" data-i18n="gates.httpsTitle">用 HTTPS 開啟 VibeDeck</h1>
+    <p data-i18n="gates.httpsBody">長亮、主畫面 App 與穩定串流需要 HTTPS。第一次開啟會看到瀏覽器警告，不必安裝憑證。</p>
+    <ol>
+      <li data-i18n="gates.httpsStep1">按下「開啟 HTTPS」</li>
+      <li data-i18n="gates.httpsStep2">若瀏覽器顯示警告，按「顯示詳細資訊」或「進階」</li>
+      <li data-i18n="gates.httpsStep3">選擇「造訪此網站」或「繼續前往」，再回 VibeDeck 配對</li>
+    </ol>
+    <div class="gate-actions">
+      <button id="mobileGateOpenHttps" class="gate-primary" type="button" data-i18n="gates.httpsOpen">開啟 HTTPS</button>
+      <a id="mobileGateHttpsUrl" class="gate-secondary" href="#" data-i18n="gates.httpsCopyLink">複製用的 HTTPS 網址</a>
+    </div>
+    <p class="gate-note" data-i18n="gates.httpsNote">這是本機電腦使用自簽憑證的正常提示，只需接受一次。</p>
+    <p class="gate-note" data-i18n="gates.httpsHomeIconNote">若主畫面還是舊圖示／舊名稱：長按刪除舊圖示，改從 HTTPS 頁重新「加入主畫面」。</p>
+  </div>
+  <header>
+    <div class="brand">
+      <span class="brand-mark">›_</span>
+      <div class="brand-copy">
+        <strong>VibeDeck</strong>
+        <span>手機副螢幕與資訊板 Host <em id="hostVersionLabel" class="host-version-label" hidden></em></span>
+      </div>
+    </div>
+    <div class="controls top-controls">
+      <div class="view-switcher" aria-label="切換檢視">
+        <button id="displayMode" class="mode-button active" type="button">顯示器</button>
+        <button id="setupMode" class="mode-button" type="button" hidden>裝置設定</button>
+        <button id="sideboardMode" class="mode-button" type="button">資訊板</button>
+        <button id="quotaMode" class="mode-button" type="button">額度</button>
+        <button id="addDeckMode" class="mode-button add-deck-mode" type="button">＋ Add Deck</button>
+      </div>
+      <div class="utility-controls">
+        <label class="locale-control">
+          <span class="sr-only" data-i18n="ui.language">語言</span>
+          <select id="localeSelect" aria-label="語言">
+            <option value="zh-Hant">繁體中文</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+          </select>
+        </label>
+        <button id="einkModeToggle" type="button" aria-pressed="false" title="切換成電子紙版面（BOOX / 電子書）">電子書</button>
+        <button id="keepAwake" type="button">長亮 ON</button>
+        <button id="fullscreen" type="button">全螢幕</button>
+        <button id="refresh" type="button">重新連線</button>
+        <button id="productUpdate" type="button" hidden>檢查更新</button>
+        <span id="productUpdateStatus" class="product-update-status feedback-status" role="status" aria-live="polite" hidden></span>
+        <button id="displaySettingsToggle" type="button" aria-expanded="false">顯示設定</button>
+        <span class="status" role="status" aria-live="polite"><span id="dot" class="dot"></span><span id="status">正在連線</span></span>
+      </div>
+    </div>
+    <video id="keepAwakeVideo"
+      playsinline
+      webkit-playsinline
+      muted
+      loop
+      preload="auto"
+      src="data:video/mp4;base64,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"
+      style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-10px;top:-10px"
+      aria-hidden="true"></video>
+    <div class="setup-panels">
+      <div class="setup-panels-heading">
+        <strong data-i18n="ui.advancedDisplaySettingsTitle">顯示器與進階設定</strong>
+        <span data-i18n="ui.advancedDisplaySettingsHint">只有需要調整串流、方向或虛擬螢幕時才需要。</span>
+      </div>
+      <details class="panel">
+        <summary>虛擬螢幕安裝與修復</summary>
+        <div class="controls">
+          <button id="setupInstallVirtualDisplay" type="button">安裝／修復虛擬螢幕</button>
+          <span id="setupDisplayInstallDetail" class="feedback-status" role="status" aria-live="polite">安裝完成後 Host 會自動重新偵測顯示器，不需要離開此頁。</span>
+        </div>
+      </details>
+      <details class="panel">
+        <summary>畫面方向</summary>
+        <div class="controls">
+          <label class="field">旋轉
+            <select id="rotation" aria-label="旋轉">
+              <option value="auto">自動旋轉</option>
+              <option value="0">0deg</option>
+              <option value="90">90deg</option>
+              <option value="180">180deg</option>
+              <option value="270">270deg</option>
+            </select>
+          </label>
+          <label class="field">版面方向
+            <select id="orientation" aria-label="版面方向">
+              <option value="auto">跟隨裝置</option>
+              <option value="portrait">固定直向</option>
+              <option value="landscape">固定橫向</option>
+            </select>
+          </label>
+        </div>
+      </details>
+      <details class="panel">
+        <summary>畫質與流暢度</summary>
+        <div class="controls">
+          <select id="streamPreset">
+            <option value="battery">省電 30fps / Q48</option>
+            <option value="balanced" selected>平衡 45fps / Q56</option>
+            <option value="smooth">順暢 60fps / Q60</option>
+            <option value="sharp">清晰 60fps / Q68</option>
+            <option value="custom">自訂</option>
+          </select>
+          <input id="streamFps" type="number" min="1" max="60" step="1" value="45" aria-label="FPS">
+          <input id="streamQuality" type="number" min="25" max="85" step="1" value="56" aria-label="Stream quality">
+          <label class="field">傳輸
+            <select id="streamTransport" aria-label="串流傳輸模式">
+              <option value="auto">自動（WebRTC 優先）</option>
+              <option value="webrtc">偏好 WebRTC</option>
+              <option value="jpeg">穩定 JPEG</option>
+            </select>
+          </label>
+          <button id="applyStream" type="button">套用串流</button>
+        </div>
+      </details>
+      <details id="turnSettingsPanel" class="panel" hidden>
+        <summary>遠端 WebRTC 與 Cloudflare TURN</summary>
+        <div class="controls turn-settings-controls">
+          <label class="field">TURN Key ID
+            <input id="turnKeyId" type="text" autocomplete="off" spellcheck="false" placeholder="Cloudflare TURN Key ID">
+          </label>
+          <label class="field">API Token
+            <input id="turnApiToken" type="password" autocomplete="new-password" spellcheck="false" placeholder="只保存在這台 PC">
+          </label>
+          <button id="saveTurnSettings" type="button">儲存 TURN</button>
+          <button id="testTurnSettings" class="secondary" type="button">測試憑證</button>
+          <button id="clearTurnSettings" class="secondary" type="button">移除</button>
+        </div>
+        <small id="turnSettingsStatus" class="turn-settings-status">未設定：維持 STUN 直連與 JPEG 備援。</small>
+        <small id="turnDiagnosticsStatus" class="turn-settings-status">遠端手機開啟顯示器後，這裡會顯示目前 Host WebRTC 狀態。</small>
+      </details>
+      <details class="panel">
+        <summary>虛擬螢幕尺寸</summary>
+        <div class="controls">
+          <select id="modePreset"></select>
+          <input id="modeWidth" type="number" min="320" max="3840" step="1" value="1024" aria-label="Width">
+          <input id="modeHeight" type="number" min="240" max="2560" step="1" value="576" aria-label="Height">
+          <input id="modeRefresh" type="number" min="30" max="120" step="1" value="60" aria-label="Refresh rate">
+          <button id="applyMode" type="button">套用解析度</button>
+        </div>
+      </details>
+    </div>
+    <div id="trustedDevicesPanel" class="trusted-devices device-management-panel" hidden>
+      <div class="trusted-devices-head">
+        <strong>已配對裝置</strong>
+        <button id="openNewDevicePanel" type="button" title="連接新裝置">＋ 新增</button>
+        <button id="refreshTrustedDevices" type="button" title="重新整理裝置">↻</button>
+        <details class="device-management-more">
+          <summary data-i18n-attr="title:deviceManagement.moreActions" title="更多裝置動作">⋯</summary>
+          <div>
+            <button id="clearTrustedDevices" type="button" data-clear-trusted-devices data-i18n="deviceManagement.clearAll">清空所有配對</button>
+          </div>
+        </details>
+      </div>
+      <div id="trustedDeviceList" class="trusted-device-list"></div>
+    </div>
+    <details id="newDeviceConnectPanel" class="new-device-panel" open>
+      <summary>
+        <span>連接新裝置</span>
+        <small>第一次使用或要加入另一台手機時開啟</small>
+      </summary>
+      <div class="new-device-panel-content">
+        <div class="connect-panel">
+          <div class="connect-qr">
+        <img id="qrCode" alt="手機連線 QR Code">
+        <span id="qrCaption">用手機相機掃描網址，或按下配對後掃描一次性配對 QR。</span>
+          </div>
+          <div class="connect-copy">
+        <p id="iosHomeTip" class="ios-home-tip">
+          iPhone：開啟 HTTPS → 首次警告按進階繼續 → 配對 → 分享加入主畫面。
+        </p>
+        <div class="connect-title">
+          <strong>裝置連線</strong>
+          <span id="connectTitleHint">不必安裝憑證。第一次開啟時，在瀏覽器警告頁按「進階」→「繼續前往」。</span>
+        </div>
+        <div class="pairing-progress idle" data-pair-progress style="--pair-progress:0%">
+          <div><strong data-pair-progress-detail data-i18n="pairingUx.waitingForPhone">等待手機提出申請</strong><b data-pair-progress-label>0%</b></div>
+          <progress data-pair-progress-bar max="100" value="0" aria-label="配對進度"></progress>
+        </div>
+        <div id="pendingPairingPanel" class="pending-pairings" role="status" aria-live="polite" hidden>
+          <strong data-i18n="pairingUx.pendingTitle">手機申請已送達</strong>
+          <div id="pendingPairingList"></div>
+        </div>
+        <div class="pairing-guide" aria-label="手機配對流程">
+          <div id="pairingStepInstall" class="pairing-step active">
+            <b>1</b>
+            <strong id="pairingStepInstallTitle" data-i18n="secureEndpoint.localScanTitle">手機掃描 QR Code</strong>
+            <span id="pairingStepInstallHint" data-i18n="secureEndpoint.localScanHint">用相機掃描左側 QR Code，開啟這台電腦的 HTTPS 頁面。</span>
+          </div>
+          <div id="pairingStepPair" class="pairing-step">
+            <b>2</b>
+            <strong id="pairingStepPairTitle" data-i18n="secureEndpoint.localWarningTitle">接受首次警告</strong>
+            <span id="pairingStepPairHint" data-i18n="secureEndpoint.localWarningHint">若顯示「危險網頁」或「連線不是私人連線」，按「進階」→「繼續前往」。</span>
+          </div>
+          <div id="pairingStepOpen" class="pairing-step">
+            <b>3</b>
+            <strong data-i18n="pairingUx.approveTitle">PC 核對並允許</strong>
+            <span data-i18n="pairingUx.approveHint">確認 PC 與手機顯示相同六位數碼，再按「允許」。</span>
+          </div>
+        </div>
+        <section id="deviceConnectionCodePanel" class="device-connection-code" hidden>
+          <div>
+            <strong data-i18n="secureEndpoint.deviceCodeTitle">不方便掃描 QR Code？</strong>
+            <p><span data-i18n="secureEndpoint.deviceCodeHintBefore">在另一台裝置輸入</span> <code id="deviceConnectionCodeUrl">vibedeck.pp.ua</code> <span data-i18n="secureEndpoint.deviceCodeHintAfter">，再輸入下方一次性連線碼。</span></p>
+          </div>
+          <div class="device-connection-code-value">
+            <output id="deviceConnectionCode">--------</output>
+            <button id="generateDeviceConnectionCode" type="button" data-i18n="secureEndpoint.deviceCodeGenerate">產生裝置連線碼</button>
+          </div>
+          <small id="deviceConnectionCodeStatus" aria-live="polite" data-i18n="secureEndpoint.deviceCodeIdle">連線碼有效 10 分鐘，使用一次後即失效。</small>
+        </section>
+        <div class="connect-status">
+          <span id="trustState" class="trust-state"></span>
+          <span id="streamCapabilityState" class="stream-capability-state"></span>
+          <span id="wakeState" class="wake-state"></span>
+          <span id="appState" class="app-state"></span>
+          <span id="deviceState" class="device-state"></span>
+        </div>
+        <details class="connect-links">
+          <summary>進階連線資訊</summary>
+          <div class="connect-link-list">
+            <a id="prettyLink" href="#"></a>
+            <a id="httpsLink" href="#"></a>
+            <a id="httpLink" href="#"></a>
+            <span id="certificateSetupTitle" class="advanced-cert-title">進階：不想再看到瀏覽器警告</span>
+            <a id="httpsCertLink" href="#" hidden>安裝 HTTPS 憑證</a>
+            <a id="androidCertLink" href="#" hidden>Android / BOOX 安裝 CA 憑證</a>
+            <p id="androidCertHelp" class="certificate-install-help" hidden>只有進階使用者需要：Android / BOOX 下載後請選「CA 憑證」；一般使用者直接在警告頁按「進階」→「繼續前往」即可。</p>
+            <section id="publicEndpointPanel" class="public-endpoint-panel" hidden>
+              <span class="advanced-cert-title" data-i18n="secureEndpoint.title">VibeDeck 安全網址</span>
+              <p id="publicEndpointStatus" class="public-endpoint-status" aria-live="polite"></p>
+              <p class="public-endpoint-id"><span data-i18n="secureEndpoint.installationId">安裝代號</span>：<code id="publicEndpointInstallationId">--</code></p>
+              <label for="publicEndpointUrl" data-i18n="secureEndpoint.urlLabel">此電腦的安全網址</label>
+              <div id="publicEndpointControls" class="public-endpoint-controls">
+                <input id="publicEndpointUrl" type="url" inputmode="url" autocomplete="off" spellcheck="false" data-i18n-attr="placeholder:secureEndpoint.urlPlaceholder" placeholder="https://vd-…vibedeck.pp.ua/">
+                <button id="savePublicEndpoint" type="button" data-i18n="secureEndpoint.save">儲存安全網址</button>
+                <button id="clearPublicEndpoint" type="button" hidden data-i18n="secureEndpoint.clear">停用安全網址</button>
+              </div>
+              <small id="publicEndpointHint" data-i18n="secureEndpoint.automaticHint">VibeDeck 會在背景自動維持安全連線，不需開啟命令視窗或設定 Cloudflare。</small>
+            </section>
+          </div>
+        </details>
+          </div>
+        </div>
+      </div>
+    </details>
+    <section id="diagnosticsPanel" class="diagnostics-panel" hidden>
+      <button id="diagnosticsToggle" class="diagnostics-toggle" type="button" aria-expanded="false">
+        <span>診斷軌跡</span>
+        <small id="diagnosticsSummary">最近操作與錯誤會保留 30 天</small>
+      </button>
+      <div id="diagnosticsPanelContent" class="diagnostics-panel-content" hidden>
+        <p>每次重要操作都會記錄追蹤碼。遇到問題時複製摘要即可快速定位。</p>
+        <div class="diagnostics-actions">
+          <button id="refreshDiagnostics" type="button">更新軌跡</button>
+          <button id="markDiagnostics" type="button">標記目前狀態</button>
+          <button id="copyDiagnostics" type="button">複製診斷摘要</button>
+          <a href="http://localhost:5000/device-lab.html" target="_blank" rel="noopener" data-i18n="ui.deviceLab">裝置版面測試</a>
+        </div>
+        <div id="diagnosticsList" class="diagnostics-list" role="log" aria-live="polite" data-i18n-ignore></div>
+      </div>
+    </section>
+    <div id="driverState" class="driver-state"></div>
+  </header>
+  <main>
+    <div id="pairSuccessBanner" class="pair-success-banner" role="status" aria-live="polite"></div>
+    <div id="phonePairRescue" class="phone-pair-rescue">
+      <small data-i18n="pairingUx.phoneKicker">VIBEDECK · 手機設定</small>
+      <strong data-i18n="pairingUx.phoneTitle">連接這台電腦</strong>
+      <span id="phonePairIntro" data-i18n="pairingUx.phoneIntro">按下方按鈕，再回 PC 核對六位數驗證碼並按「允許」。</span>
+      <label class="pairing-locale-control" for="pairingLocaleSelect">
+        <span data-i18n="ui.language">語言</span>
+        <select id="pairingLocaleSelect" aria-label="語言">
+          <option value="zh-Hant">繁體中文</option>
+          <option value="en">English</option>
+          <option value="ja">日本語</option>
+        </select>
+      </label>
+      <div class="pairing-progress idle" data-pair-progress style="--pair-progress:0%">
+        <div><strong data-pair-progress-detail data-i18n="pairingUx.readyToConnect">準備連線</strong><b data-pair-progress-label>0%</b></div>
+        <progress data-pair-progress-bar max="100" value="0" aria-label="配對進度"></progress>
+      </div>
+      <button id="phonePairRequest" type="button" data-i18n="pairingUx.phoneTitle">連接這台電腦</button>
+      <span class="phone-pair-benefit" data-i18n="pairingUx.displayBenefit">配對完成後，資訊板與 AI 額度不需安裝虛擬螢幕。</span>
+    </div>
+    <section id="displayView" class="app-view display-view active">
+      <div id="displayToolbar" class="display-toolbar is-collapsed" hidden>
+        <button id="displayToolbarToggle" class="display-toolbar-toggle" type="button" aria-expanded="false" aria-controls="displayToolbarExtras" aria-label="Display settings" title="Display">
+          <span class="display-toolbar-gear" aria-hidden="true">⚙</span>
+        </button>
+        <div id="displayToolbarExtras" class="display-toolbar-extras">
+          <label class="display-source-control" for="displaySource">
+            <select id="displaySource" aria-label="選擇要觀看的 Windows 顯示器"></select>
+          </label>
+          <span id="displaySourceKind" class="display-source-kind" role="status"></span>
+          <button id="remoteKeyboardButton" class="remote-keyboard-button" type="button" aria-pressed="false" data-i18n="ui.remoteKeyboard">⌨ 鍵盤</button>
+        </div>
+      </div>
+      <div id="displayEmptyState" class="display-empty-state">
+        <span class="display-empty-icon">▱</span>
+        <strong id="displayEmptyTitle">正在尋找虛擬螢幕</strong>
+        <span id="displayEmptyMessage" data-i18n="pairingUx.displayBenefit">配對完成後，資訊板與 AI 額度不需安裝虛擬螢幕。</span>
+        <div class="display-empty-actions">
+          <button id="openSideboardFromEmpty" type="button" data-i18n="pairingUx.useSideboard">改用資訊板</button>
+          <button id="installVirtualDisplay" class="secondary" type="button" data-i18n="pairingUx.goToDeviceSetup">前往裝置設定</button>
+        </div>
+        <small id="displayInstallDetail" class="display-install-detail feedback-status" role="status" aria-live="polite"></small>
+      </div>
+      <div id="displayStreamState" class="display-stream-state" role="status" aria-live="polite">
+        <span class="display-stream-indicator" aria-hidden="true"></span>
+        <strong data-i18n="ui.displayConnectingTitle">正在連接畫面</strong>
+        <span id="displayStreamStateMessage" data-i18n="ui.displayConnectingHint">正在建立串流，畫面恢復後會自動顯示。</span>
+        <button id="displayStreamRetry" type="button" data-i18n="ui.retry">重新嘗試</button>
+      </div>
+      <img id="screen" class="screen-media" alt="VibeDeck 顯示器串流">
+      <video id="rtcScreen" class="screen-media" autoplay playsinline muted hidden aria-label="VibeDeck WebRTC 顯示器串流"></video>
+      <textarea id="remoteKeyboardInput"
+        class="remote-keyboard-input"
+        rows="1"
+        inputmode="text"
+        enterkeyhint="enter"
+        autocomplete="off"
+        autocapitalize="sentences"
+        spellcheck="false"
+        aria-label="輸入到遠端 Windows"></textarea>
+    </section>
+    <section id="sideboardView" class="app-view sideboard-view">
+      <div id="sideboardShell" class="sideboard-shell skin-command">
+        <section id="dashboardEditBar" class="dashboard-edit-bar" hidden>
+          <div id="dashboardSelectionControls" class="dashboard-selection-controls" hidden></div>
+          <div class="dashboard-edit-copy">
+            <strong>編輯模式</strong>
+            <span id="dashboardEditStatus" class="dashboard-edit-status feedback-status" data-feedback-state="info" role="status" aria-live="polite">點選卡片；可直接拖曳卡片，或用上方控制列調整大小。</span>
+          </div>
+          <div class="dashboard-edit-actions">
+            <button id="dashboardAddCard" type="button">＋ 加入卡片</button>
+            <button id="customSettingsButton" type="button">卡片設定</button>
+            <button id="customManageButton" type="button">來源管理</button>
+            <button id="customAddSource" type="button">新增自訂卡片</button>
+            <button id="dashboardCompactLayout" type="button">整理空白</button>
+            <button id="dashboardResetLayout" type="button">恢復預設</button>
+            <button id="dashboardSaveLayout" type="button">完成編輯</button>
+          </div>
+          <div id="dashboardCardLibrary" class="dashboard-card-library" hidden></div>
+        </section>
+        <div class="sideboard-top">
+          <div class="side-title">
+            <strong id="sideHeadline">資訊板</strong>
+            <span id="sideSummary">等待電腦資訊。</span>
+          </div>
+          <div class="dashboard-view-controls">
+            <div class="dashboard-mode-switch" role="group" aria-label="切換資訊頁面">
+              <button type="button" data-dashboard-mode="sideboard" aria-pressed="true">資訊板</button>
+              <button type="button" data-dashboard-mode="quota" aria-pressed="false">額度</button>
+            </div>
+            <span class="eink-connection-state connecting" data-eink-connection-state role="status">正在連線</span>
+            <button id="launchDeckWindow" type="button" hidden data-i18n="ui.launchDeck">在虛擬螢幕顯示資訊板</button>
+            <button id="dashboardEditToggle" class="dashboard-edit-toggle" type="button" aria-pressed="false">編輯版面</button>
+          </div>
+          <div class="skin-picker" aria-label="Sideboard skin">
+            <button class="active" data-side-skin="command" type="button">命令</button>
+            <button data-side-skin="dial" type="button">儀表</button>
+            <button data-side-skin="focus" type="button">專注</button>
+          </div>
+        </div>
+
+        <section id="mobileOverview" class="mobile-overview" aria-label="手機資訊總覽">
+          <div class="mobile-overview-head">
+            <div>
+              <strong>資訊總覽</strong>
+              <span id="mobileConnectionState">正在連線</span>
+            </div>
+            <div class="mobile-overview-actions">
+              <button id="mobileFullscreen" type="button">全螢幕</button>
+              <button id="mobileCustomize" type="button">自訂</button>
+            </div>
+          </div>
+
+          <section class="mobile-overview-section mobile-system-card" data-mobile-section="status">
+            <div class="mobile-section-heading">
+              <span>系統狀態</span>
+              <button id="mobileDetailsOpen" type="button">詳細 ›</button>
+            </div>
+            <strong id="mobileSystemStatus">等待資料</strong>
+            <span id="mobileSystemReason">正在取得電腦狀態</span>
+          </section>
+
+          <section class="mobile-overview-section mobile-core-metrics" data-mobile-section="metrics" aria-label="核心系統指標">
+            <article class="mobile-metric-card">
+              <span>CPU</span>
+              <strong id="mobileCpu">--</strong>
+              <div class="mobile-mini-bar"><span id="mobileCpuBar"></span></div>
+            </article>
+            <article class="mobile-metric-card">
+              <span>RAM</span>
+              <strong id="mobileRam">--</strong>
+              <div class="mobile-mini-bar"><span id="mobileRamBar"></span></div>
+            </article>
+            <article class="mobile-metric-card">
+              <span>GPU</span>
+              <strong id="mobileGpu">--</strong>
+              <div class="mobile-mini-bar"><span id="mobileGpuBar"></span></div>
+            </article>
+            <article class="mobile-metric-card">
+              <span>磁碟</span>
+              <strong id="mobileDisk">--</strong>
+              <div class="mobile-mini-bar"><span id="mobileDiskBar"></span></div>
+            </article>
+          </section>
+
+          <section class="mobile-overview-section mobile-activity-preview" data-mobile-section="activity">
+            <div class="mobile-section-heading">
+              <strong>最新活動</strong>
+              <button id="mobileActivityOpen" type="button">查看全部 ›</button>
+            </div>
+            <ul id="mobileActivityPreview" aria-live="polite"></ul>
+          </section>
+
+          <button id="mobileQuotaOpen" class="mobile-overview-section mobile-quota-strip" data-mobile-section="quota" type="button">
+            <span>
+              <small id="mobileQuotaSource">AI 額度</small>
+              <strong id="mobileQuotaValue">--</strong>
+            </span>
+            <span>
+              <small id="mobileQuotaState">等待來源</small>
+              <b id="mobileQuotaReset">查看額度 ›</b>
+            </span>
+          </button>
+
+          <section id="mobileActivityPanel" class="mobile-detail-panel" hidden aria-label="活動動態">
+            <div class="mobile-detail-header">
+              <button type="button" data-mobile-panel-close>‹ 返回</button>
+              <strong>活動動態</strong>
+              <span></span>
+            </div>
+            <div class="mobile-activity-filters" role="group" aria-label="活動動態篩選">
+              <button type="button" data-mobile-activity-filter="all">全部</button>
+              <button type="button" data-mobile-activity-filter="task">任務</button>
+              <button type="button" data-mobile-activity-filter="notification">通知</button>
+            </div>
+            <ul id="mobileActivityList" class="mobile-activity-list"></ul>
+          </section>
+
+          <section id="mobileDetailsPanel" class="mobile-detail-panel" hidden aria-label="詳細系統資訊">
+            <div class="mobile-detail-header">
+              <button type="button" data-mobile-panel-close>‹ 返回</button>
+              <strong>詳細資訊</strong>
+              <span></span>
+            </div>
+            <div class="mobile-detail-host">
+              <span id="mobileDetailHost">主機 --</span>
+              <span id="mobileDetailUptime">運行時間 --</span>
+              <span id="mobileDetailHealth">等待資料</span>
+            </div>
+            <div class="mobile-detail-metrics">
+              <article><span>VRAM</span><strong id="mobileVram">--</strong><small id="mobileVramSub">--</small></article>
+              <article><span>網路</span><strong id="mobileNetwork">--</strong><small id="mobileNetworkSub">--</small></article>
+            </div>
+            <section class="mobile-detail-block">
+              <strong>天氣與 IO</strong>
+              <span id="mobileWeather">天氣 --</span>
+              <span id="mobileWeatherSub">體感 --</span>
+              <span id="mobileDiskIo">磁碟 IO --</span>
+            </section>
+            <section class="mobile-detail-block">
+              <strong>記憶體排行</strong>
+              <ul id="mobileProcessList"></ul>
+            </section>
+            <section id="mobileCustomCardsSection" class="mobile-detail-block" hidden>
+              <strong>自訂卡片</strong>
+              <div id="mobileCustomCards"></div>
+            </section>
+          </section>
+
+          <section id="mobileLayoutPanel" class="mobile-detail-panel" hidden aria-label="自訂手機總覽">
+            <div class="mobile-detail-header">
+              <button type="button" data-mobile-panel-close>‹ 返回</button>
+              <strong>自訂總覽</strong>
+              <button id="mobileLayoutSave" type="button">完成</button>
+            </div>
+            <p>手機版只調整顯示、隱藏與順序；桌面及電子書版面不受影響。</p>
+            <div id="mobileLayoutList" class="mobile-layout-list"></div>
+            <button id="mobileLayoutReset" class="mobile-layout-reset" type="button">恢復手機預設</button>
+          </section>
+        </section>
+
+        <section id="systemSideboardPage" class="sideboard-subpage dashboard-grid">
+        <section class="side-panel side-load" data-dashboard-key="system-load" data-dashboard-title="系統狀態">
+          <span class="side-kicker">系統狀態</span>
+          <strong id="sideLoad" class="side-big" hidden>--</strong>
+          <div id="sideLoadNormal" class="side-load-normal">
+            <strong id="sideLoadStatus">系統狀態良好</strong>
+            <span id="sideLoadStatusReason">目前沒有明顯瓶頸</span>
+          </div>
+          <div id="sideLoadAlert" class="side-load-alert" hidden>
+            <strong id="sideLoadAlertTitle">系統壓力偏高</strong>
+            <span id="sideLoadAlertReason"></span>
+          </div>
+          <div class="side-summary">
+            <span id="sideHost">主機 --</span>
+            <span id="sideUptime">運行時間 --</span>
+            <span id="sideHealth">等待資料</span>
+            <span id="sideError" class="side-error"></span>
+          </div>
+        </section>
+
+        <section class="metric-grid">
+          <article class="metric-card" data-dashboard-key="cpu" data-dashboard-title="CPU">
+            <span class="side-kicker">CPU</span>
+            <strong id="sideCpu" class="metric-value">--</strong>
+            <span id="sideCpuSub" class="metric-sub">--</span>
+            <div class="mini-bar"><span id="sideCpuBar"></span></div>
+          </article>
+          <article class="metric-card" data-dashboard-key="ram" data-dashboard-title="RAM">
+            <span class="side-kicker">RAM</span>
+            <strong id="sideRam" class="metric-value">--</strong>
+            <span id="sideRamSub" class="metric-sub">--</span>
+            <div class="mini-bar"><span id="sideRamBar"></span></div>
+          </article>
+          <article class="metric-card" data-dashboard-key="gpu" data-dashboard-title="GPU">
+            <span class="side-kicker">GPU</span>
+            <strong id="sideGpu" class="metric-value">--</strong>
+            <span id="sideGpuSub" class="metric-sub">--</span>
+            <div class="mini-bar"><span id="sideGpuBar"></span></div>
+          </article>
+          <article class="metric-card" data-dashboard-key="vram" data-dashboard-title="VRAM">
+            <span class="side-kicker">VRAM</span>
+            <strong id="sideVram" class="metric-value">--</strong>
+            <span id="sideVramSub" class="metric-sub">--</span>
+            <div class="mini-bar"><span id="sideVramBar"></span></div>
+          </article>
+          <article class="metric-card" data-dashboard-key="disk" data-dashboard-title="磁碟">
+            <span class="side-kicker">磁碟</span>
+            <strong id="sideDisk" class="metric-value">--</strong>
+            <span id="sideDiskSub" class="metric-sub">--</span>
+            <div class="mini-bar"><span id="sideDiskBar"></span></div>
+          </article>
+          <article class="metric-card" data-dashboard-key="network" data-dashboard-title="網路">
+            <span class="side-kicker">網路</span>
+            <strong id="sideNet" class="metric-value">--</strong>
+            <span id="sideNetSub" class="metric-sub">--</span>
+            <div class="mini-bar"><span id="sideNetBar"></span></div>
+          </article>
+        </section>
+
+        <section class="side-panel side-feed dashboard-feed-card" data-dashboard-key="weather-io" data-dashboard-title="天氣與 IO">
+          <span class="feed-heading">天氣 / IO</span>
+          <ul class="feed-list">
+            <li><span id="sideWeather">天氣 --</span></li>
+            <li><span id="sideWeatherSub">體感 --</span></li>
+            <li><span id="sideDiskIo">磁碟 IO --</span></li>
+          </ul>
+        </section>
+        <section class="side-panel side-feed dashboard-feed-card" data-dashboard-key="processes" data-dashboard-title="記憶體排行">
+          <span class="feed-heading">記憶體排行</span>
+          <ul id="sideProcessList" class="feed-list process-list"></ul>
+        </section>
+        <section id="activityFeedCard" class="side-panel dashboard-feed-card activity-feed-card" data-dashboard-key="activity-feed" data-dashboard-title="活動動態">
+          <div class="activity-feed-head">
+            <strong class="feed-heading">活動動態</strong>
+            <div class="activity-feed-filters" role="group" aria-label="活動動態篩選">
+              <button type="button" data-activity-filter="all" aria-pressed="true">全部</button>
+              <button type="button" data-activity-filter="task" aria-pressed="false">任務</button>
+              <button type="button" data-activity-filter="notification" aria-pressed="false">通知</button>
+            </div>
+            <select id="activityFeedFilterSelect" class="activity-feed-filter-select" aria-label="活動動態篩選">
+              <option value="all">全部</option>
+              <option value="task">任務</option>
+              <option value="notification">通知</option>
+            </select>
+          </div>
+          <ul id="activityFeedList" class="activity-feed-list"></ul>
+        </section>
+        <section class="side-panel quota-mini-card" data-dashboard-key="quota-mini" data-dashboard-title="AI 額度">
+          <div class="quota-mini-head">
+            <strong>AI 額度</strong>
+            <span id="quotaMiniState">等待來源</span>
+          </div>
+          <select id="quotaMiniSource" aria-label="切換額度來源" disabled></select>
+          <div class="quota-mini-value-row">
+            <strong id="quotaMiniValue">--</strong>
+            <span id="quotaMiniReset">尚無額度來源</span>
+          </div>
+          <div id="quotaMiniCredits" class="quota-mini-credit" hidden></div>
+          <div class="quota-mini-bar" aria-hidden="true"><span id="quotaMiniBar"></span></div>
+        </section>
+        <div id="customCardsGrid" class="custom-cards-grid" aria-live="polite"></div>
+        </section>
+
+        <section id="customSideboardPage" class="sideboard-subpage custom-sideboard-page dashboard-config-panel" hidden>
+          <div class="custom-cards-top">
+            <div class="custom-cards-title">
+              <strong>卡片管理</strong>
+              <span id="customCardsStatus" class="custom-cards-status feedback-status" data-feedback-state="info" role="status" aria-live="polite">先建立一張卡片，再串接外部資料。</span>
+            </div>
+            <div class="custom-cards-toolbar">
+              <button id="customRefreshCards" type="button" title="重新整理自訂卡片">↻</button>
+              <button id="dashboardConfigClose" type="button">關閉</button>
+            </div>
+          </div>
+          <section id="windowsNotificationControl" class="windows-notification-control" hidden>
+            <div>
+              <strong>Windows 通知串接</strong>
+              <span id="windowsNotificationStatus">尚未檢查</span>
+            </div>
+            <p id="windowsNotificationMessage">把這台 PC 的新通知轉成「Windows 通知」訊息卡片。</p>
+            <div class="custom-cards-toolbar">
+              <button id="windowsNotificationEnable" type="button">啟用 Windows 通知</button>
+              <button id="windowsNotificationDisable" type="button" hidden>停用</button>
+            </div>
+          </section>
+          <section id="customCardSettingsPanel" class="custom-card-settings" hidden>
+            <div class="custom-settings-header">
+              <div>
+                <strong>卡片設定</strong>
+                <span>控制保留筆數與通知進場動畫，設定會保存到 Host。</span>
+              </div>
+              <button id="customSettingsClose" type="button">關閉</button>
+            </div>
+            <form id="customCardSettingsForm" class="custom-card-settings-form">
+              <label>要設定的卡片<select id="customSettingsCard" required></select></label>
+              <label>顯示通知則數
+                <input id="customSettingsMaxItems" type="number" min="5" max="30" step="1" value="10">
+                <span class="custom-settings-help">只接受 5～30 則；儲存後超出的舊通知會被清掉。</span>
+              </label>
+              <label class="custom-settings-check">
+                <input id="customSettingsStreamEnabled" type="checkbox" checked>
+                <span>啟用逐字串流效果</span>
+              </label>
+              <label>逐字速度
+                <select id="customSettingsStreamDelay">
+                  <option value="14">快 · 14ms / 字</option>
+                  <option value="28" selected>平衡 · 28ms / 字</option>
+                  <option value="46">慢 · 46ms / 字</option>
+                  <option value="70">電影感 · 70ms / 字</option>
+                </select>
+              </label>
+              <p id="customSettingsHint" class="custom-settings-help">新通知會由完整資料即時推送，再在畫面上逐字出現。</p>
+              <div class="custom-source-form-actions">
+                <button id="customSettingsSave" type="submit">儲存設定</button>
+                <button id="customSettingsClear" type="button">清空目前通知</button>
+              </div>
+            </form>
+          </section>
+          <section id="customSourcesManager" class="custom-sources-manager" hidden>
+            <div class="custom-manager-header">
+              <div>
+                <strong>資料來源管理</strong>
+                <span>只有 Host PC 本機可以建立或修改來源。</span>
+              </div>
+              <div class="custom-manager-actions">
+                <button id="customManagerAdd" type="button">＋新增卡片</button>
+                <button id="customManagerClose" type="button">關閉</button>
+              </div>
+            </div>
+            <form id="customSourceForm" class="custom-source-form" hidden>
+              <strong id="customSourceFormTitle">新增資料來源</strong>
+              <label>Source Key<input id="customSourceKey" required pattern="[a-z0-9][a-z0-9-]{1,46}[a-z0-9]" maxlength="48" autocomplete="off"></label>
+              <label>顯示名稱<input id="customSourceDisplayName" required maxlength="80" autocomplete="off"></label>
+              <label>卡片類型<select id="customCardType">
+                <option value="message-feed">即時訊息</option>
+                <option value="status">狀態</option>
+                <option value="metric">數值</option>
+                <option value="key-value">資料清單</option>
+              </select></label>
+              <label>卡片標題<input id="customCardTitle" maxlength="80" autocomplete="off"></label>
+              <label>排序<input id="customCardPosition" type="number" min="0" max="10000" step="1"></label>
+              <label>過期標記秒數<input id="customStaleAfter" type="number" min="0" max="604800" step="1" value="300"></label>
+              <label>預設 TTL 秒數<input id="customDefaultTtl" type="number" min="0" max="604800" step="1" value="0"></label>
+              <label>訊息保留筆數<input id="customMaxItems" type="number" min="5" max="30" step="1" value="20"></label>
+              <div class="custom-source-form-actions">
+                <button id="customSourceFormSubmit" type="submit">建立來源</button>
+                <button id="customSourceCancel" type="button">取消</button>
+              </div>
+            </form>
+
+            <div id="customCredentialPanel" class="custom-credential-panel" hidden>
+              <strong>請立即保存這組寫入資訊</strong>
+              <span>Token 只會顯示這一次；關閉後 VibeDeck 不會再提供舊 Token。</span>
+              <textarea id="customCredentialText" rows="8" readonly spellcheck="false"></textarea>
+              <div class="custom-source-form-actions">
+                <button id="customCredentialCopy" type="button">複製</button>
+                <button id="customCredentialClose" type="button">我已保存，關閉</button>
+              </div>
+            </div>
+
+            <div id="customSourceList" class="custom-source-list"></div>
+          </section>
+        </section>
+      </div>
+    </section>
+    <section id="quotaView" class="app-view quota-view">
+      <div class="quota-shell">
+        <div class="quota-top">
+          <div class="quota-left">
+            <div class="quota-title">
+              <strong>AI 額度</strong>
+              <span id="quotaSummary">等待額度來源。</span>
+            </div>
+            <div id="quotaTabs" class="quota-tabs" role="tablist" aria-label="Quota provider tabs"></div>
+          </div>
+          <div class="dashboard-view-controls">
+            <div class="dashboard-mode-switch" role="group" aria-label="切換資訊頁面">
+              <button type="button" data-dashboard-mode="sideboard" aria-pressed="false">資訊板</button>
+              <button type="button" data-dashboard-mode="quota" aria-pressed="true">額度</button>
+            </div>
+            <span class="eink-connection-state connecting" data-eink-connection-state role="status">正在連線</span>
+          </div>
+          <span id="quotaUpdated" class="quota-status">--</span>
+        </div>
+        <div id="quotaHelp" class="quota-help" aria-live="polite"></div>
+        <div id="quotaGrid" class="quota-grid"></div>
+      </div>
+    </section>
+    <section id="customDeckView" class="app-view custom-deck-view" aria-label="Custom Deck">
+      <div id="customDeckHelp" class="custom-deck-help">
+        <div class="custom-deck-help-copy">
+          <span class="custom-deck-kicker">HACKABLE DECKS</span>
+          <h1>Create your own Deck</h1>
+          <p>一個 Deck 就是一個資料夾裡的普通網頁。VibeDeck 會直接交給裝置自己的 Browser viewport 原生渲染。</p>
+        </div>
+        <ol class="custom-deck-steps">
+          <li>到 Deck 資料夾建立新資料夾，例如 <code>my-deck</code></li>
+          <li>放入 <code>deck.json</code></li>
+          <li>放入 <code>index.html</code> 與你需要的 CSS / JS</li>
+          <li>VibeDeck 會自動偵測並把它加到上方導航</li>
+        </ol>
+        <pre class="custom-deck-manifest" aria-label="Deck manifest example"><code>{
+  "name": "My Deck",
+  "entry": "index.html",
+  "icon": "✨"
+}</code></pre>
+        <div class="custom-deck-folder-row">
+          <span>Deck folder</span>
+          <code id="customDeckFolderPath">C:\ProgramData\VibeDeck\Decks</code>
+        </div>
+        <p class="custom-deck-security-note">Deck 資料夾會作為 Web assets 提供給裝置瀏覽器。不要把密碼、Token、憑證或其他 secrets 放進 Deck；V1 不提供 Host Bridge 或敏感系統能力。</p>
+        <div class="custom-deck-help-actions">
+          <button id="customDeckOpenFolder" type="button">Open Deck Folder</button>
+          <button id="customDeckOpenExample" class="secondary" type="button">View Coding Pet</button>
+          <button id="customDeckRefresh" class="secondary" type="button">↻ Refresh Decks</button>
+        </div>
+        <div id="customDeckStatus" class="custom-deck-status" role="status" aria-live="polite"></div>
+        <div id="customDeckIssues" class="custom-deck-issues" hidden></div>
+      </div>
+      <iframe id="customDeckFrame"
+        class="custom-deck-frame"
+        title="Custom Deck"
+        sandbox="allow-scripts"
+        referrerpolicy="no-referrer"
+        hidden></iframe>
+    </section>
+  </main>
+  <div id="vibeConfirmOverlay" class="vibe-confirm-overlay" hidden>
+    <section class="vibe-confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="vibeConfirmTitle" aria-describedby="vibeConfirmMessage">
+      <div class="vibe-confirm-head">
+        <strong id="vibeConfirmTitle">確認操作</strong>
+        <button id="vibeConfirmClose" class="vibe-confirm-close" type="button" aria-label="關閉">×</button>
+      </div>
+      <p id="vibeConfirmMessage"></p>
+      <div class="vibe-confirm-actions">
+        <button id="vibeConfirmCancel" type="button">取消</button>
+        <button id="vibeConfirmAccept" type="button">確認</button>
+      </div>
+    </section>
+  </div>
+
+  <button id="exitViewer" class="exit-viewer" type="button" aria-label="Exit viewer">×</button>
+
+  <script type="module" src="/index.js?v=144"></script>
+</body>
+</html>

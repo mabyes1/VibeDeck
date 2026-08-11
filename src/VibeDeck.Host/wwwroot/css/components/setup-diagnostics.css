@@ -1,0 +1,341 @@
+/* Setup shell + diagnostics owner.
+   Pairing internals stay in pairing-setup.css; this file owns the surrounding
+   setup panels, diagnostics surface, and setup-mode visibility contracts. */
+
+.setup-panels {
+  order: 6;
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid rgba(255, 255, 255, .07);
+  padding-top: 10px;
+}
+
+.setup-panels-heading {
+  flex: 1 0 100%;
+  display: grid;
+  gap: 2px;
+  padding: 0 2px 2px;
+}
+
+.setup-panels-heading strong {
+  color: #dce7f4;
+  font-size: 14px;
+}
+
+.setup-panels-heading span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.setup-panels .panel {
+  order: 0;
+  grid-column: auto;
+  border-top: 0;
+  padding-top: 0;
+  flex: 0 1 auto;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 8px;
+  background: rgba(9, 14, 20, .36);
+}
+
+.setup-panels .panel:not([open]) {
+  padding: 0;
+}
+
+.setup-panels .panel:not([open]) > :not(summary) {
+  display: none !important;
+}
+
+.setup-panels .panel summary {
+  display: flex;
+  align-items: center;
+  min-height: 34px;
+  margin: 0;
+  padding: 7px 12px;
+  list-style: none;
+  font-size: 13px;
+  color: var(--muted);
+  user-select: none;
+}
+
+.setup-panels .panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.setup-panels .panel summary::before {
+  content: "⚙ ";
+  opacity: .6;
+}
+
+.setup-panels .panel[open] {
+  flex-basis: 100%;
+  background: rgba(8, 13, 19, .5);
+}
+
+.setup-panels .panel[open] summary {
+  color: #dce7f4;
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+  margin-bottom: 8px;
+}
+
+.setup-panels .panel .controls {
+  padding: 0 12px 12px;
+}
+
+.new-device-panel,
+.diagnostics-panel {
+  order: 4;
+  grid-column: 1 / -1;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(8, 13, 19, .28);
+}
+
+.diagnostics-panel {
+  order: 7;
+}
+
+.new-device-panel > summary,
+.diagnostics-panel > .diagnostics-toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 12px;
+  align-items: center;
+  width: 100%;
+  padding: 11px 13px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  list-style: none;
+  text-align: left;
+  user-select: none;
+}
+
+.new-device-panel > summary::-webkit-details-marker,
+.diagnostics-panel > .diagnostics-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.new-device-panel > summary span,
+.diagnostics-panel > .diagnostics-toggle span {
+  color: #e8f2ff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.new-device-panel > summary small,
+.diagnostics-panel > .diagnostics-toggle small {
+  grid-column: 1;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.new-device-panel > summary::after,
+.diagnostics-panel > .diagnostics-toggle::after {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: var(--muted);
+  content: "＋";
+  font-size: 18px;
+  line-height: 1;
+}
+
+.new-device-panel[open] > summary::after,
+.diagnostics-panel.is-open > .diagnostics-toggle::after {
+  content: "−";
+}
+
+.new-device-panel[open] > summary,
+.diagnostics-panel.is-open > .diagnostics-toggle {
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.new-device-panel-content,
+.diagnostics-panel-content {
+  padding: 12px;
+}
+
+.diagnostics-panel-content {
+  display: grid;
+  gap: 10px;
+}
+
+.diagnostics-panel.is-open {
+  display: flex;
+  flex-direction: column;
+  height: min(34dvh, 260px);
+}
+
+.diagnostics-panel.is-open .diagnostics-panel-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.diagnostics-panel-content > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.diagnostics-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.diagnostics-actions button,
+.diagnostics-actions a {
+  min-height: 32px;
+  padding: 6px 10px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.diagnostics-actions a {
+  border: 1px solid var(--line);
+  color: var(--text);
+  background: var(--panel);
+}
+
+.diagnostics-list {
+  display: grid;
+  gap: 7px;
+  max-height: 340px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.diagnostics-panel.is-open .diagnostics-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+}
+
+.diagnostics-entry,
+.diagnostics-empty,
+.diagnostics-storage-error {
+  display: grid;
+  gap: 3px;
+  padding: 8px 9px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 6px;
+  background: rgba(10,16,24,.28);
+  color: #d7e1eb;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.diagnostics-entry.is-warning,
+.diagnostics-storage-error {
+  border-color: rgba(255, 210, 122, .42);
+}
+
+.diagnostics-entry.is-error {
+  border-color: rgba(255, 133, 133, .5);
+  background: rgba(92, 28, 34, .24);
+}
+
+.diagnostics-entry strong {
+  color: #f4f8fc;
+  font-size: 12px;
+}
+
+.diagnostics-entry-meta,
+.diagnostics-entry-subject,
+.diagnostics-entry-details,
+.diagnostics-empty,
+.diagnostics-storage-error {
+  color: #b9c4d0;
+}
+
+body.pc-console.mode-setup .setup-panels {
+  border-top-color: rgba(143, 209, 255, .10);
+}
+
+body.pc-console.mode-setup .setup-panels .panel {
+  border-color: rgba(255, 255, 255, .085);
+  border-radius: 9px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .025), rgba(255, 255, 255, .010));
+}
+
+body.pc-console.mode-setup .setup-panels .panel[open] {
+  border-color: rgba(143, 209, 255, .13);
+  background: linear-gradient(180deg, rgba(143, 209, 255, .035), rgba(8, 13, 19, .42));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025);
+}
+
+body.pc-console.mode-setup .diagnostics-panel,
+body.pc-console.mode-setup .new-device-panel {
+  border-color: rgba(143, 209, 255, .11);
+  border-radius: 10px;
+  background: rgba(8, 13, 19, .34);
+}
+
+body.pc-console:not(.mode-setup) header .setup-panels,
+body.pc-console:not(.mode-setup) header .new-device-panel,
+body.pc-console:not(.mode-setup) header .diagnostics-panel,
+body.pc-console:not(.mode-setup) header .driver-state {
+  display: none;
+}
+
+body.pc-console.mode-setup {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+body.pc-console.mode-setup header {
+  align-content: start;
+  grid-auto-rows: max-content;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body.pc-console.mode-setup main {
+  display: none;
+}
+
+body.phone-client .new-device-panel,
+body.phone-client .diagnostics-panel,
+body.phone-client.device-trusted .driver-state {
+  display: none;
+}
+
+body.phone-client.device-trusted:not(.mode-display) .setup-panels {
+  display: none;
+}
+
+body.phone-client.device-trusted .setup-panels {
+  display: none;
+}
+
+body.phone-client.device-trusted.mode-display.display-settings-open .setup-panels {
+  display: flex;
+}
+
+body.phone-client.viewport-portrait .panel:not(.setup-panels .panel) {
+  display: none;
+}
+
+body.phone-client.viewport-portrait .setup-panels {
+  justify-content: center;
+}
+
+body.eink-client .setup-panels,
+body.eink-client .new-device-panel,
+body.eink-client .diagnostics-panel,
+body.eink-client .driver-state {
+  display: none;
+}

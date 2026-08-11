@@ -1,0 +1,171 @@
+/* Shared E-Ink primitives used by multiple final component owners. */
+
+body.eink-client {
+  --viewer-width: 100dvw;
+  --viewer-height: 100dvh;
+  --eink-dashboard-min-font: 17px;
+  color: #171714;
+  background: #f2f0e8;
+  overflow-x: hidden;
+  -webkit-font-smoothing: auto;
+}
+
+body.eink-client header {
+  min-height: 68px;
+  padding: 10px 18px;
+  border-bottom: 3px solid #24241f;
+  box-shadow: none;
+}
+
+body.eink-client main {
+  min-height: 0;
+  height: auto;
+  max-height: none;
+  padding: 0 0 28px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.eink-client header,
+body.eink-client main {
+  background: #f2f0e8;
+}
+
+body.eink-client .brand-copy strong,
+body.eink-client .brand-copy span {
+  color: #3d3d36;
+  text-shadow: none;
+}
+
+body.eink-client .brand-copy strong {
+  color: #171714;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.eink-client *,
+  body.eink-client *::before,
+  body.eink-client *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body.eink-client,
+body.eink-client button,
+body.eink-client select,
+body.eink-client input {
+  font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif !important;
+}
+
+body.eink-client button {
+  min-height: 44px;
+  border: 2px solid #24241f;
+  border-radius: 2px;
+  color: #171714;
+  background: #f2f0e8;
+  box-shadow: none;
+  transition: none;
+}
+
+body.eink-client #openNewDevicePanel,
+body.eink-client #refreshTrustedDevices,
+body.eink-client summary,
+body.eink-client select {
+  /* Keep the E-Ink touch floor hard, but let component owners raise it
+     without starting another !important specificity fight. */
+  min-height: var(--eink-control-min-height, 42px) !important;
+}
+
+body.eink-client :is(img, video, canvas, svg, input, select, textarea, button) {
+  max-width: 100%;
+}
+
+body.eink-client header,
+body.eink-client main,
+body.eink-client .app-view,
+body.eink-client .custom-sideboard-page,
+body.eink-client .custom-cards-grid,
+body.eink-client .custom-sources-manager {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body.eink-client .brand-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+body.eink-client.dashboard-viewer main,
+body.eink-client.viewer-immersive main,
+body.eink-client.viewer-fullscreen main {
+  height: 100dvh !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+/* Installed E-Ink viewers follow the real safe area. Avoid fixed top offsets:
+ * BOOX browser chrome and PWA insets vary by device and orientation. */
+body.eink-client.dashboard-viewer,
+body.eink-client.viewer-immersive {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  padding-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) !important;
+  padding-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+  padding-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+  padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+}
+
+body.eink-client :is(.metric-card, .quota-account-card, .quota-local-card, .side-panel) {
+  color: #171714;
+  background: #fffef8;
+  border: 3px solid #000;
+  border-radius: 4px;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.eink-client :is(.custom-cards-toolbar, .custom-manager-header, .custom-source-actions, .custom-source-form-actions) button {
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 3px solid #000;
+  border-radius: 4px;
+  background: #fffef8;
+  color: #000;
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+body.eink-client .skin-picker button.active,
+body.eink-client :is(.mode-button, .quota-tab).active {
+  color: #fff;
+  background: #24241f;
+  border-color: #24241f;
+}
+
+body.eink-client :is(.custom-card-title, .custom-status-value, .custom-metric-value, .custom-card-empty, .custom-status-detail, .custom-feed-text, .custom-card-footer, .custom-card-source, .custom-feed-meta, .custom-source-meta, .custom-source-health, .quota-status, .quota-time, .side-summary),
+body.eink-client :is(.custom-cards-title strong, .custom-manager-header strong, .custom-key-value-list dd, .custom-cards-title span, .custom-manager-header span, .custom-source-form label, .custom-credential-panel > span, .custom-key-value-list dt, .quota-title span, .quota-window span, .quota-window small, .side-summary span) {
+  color: #000;
+  font-size: 18px;
+  line-height: 1.45;
+  text-shadow: none;
+}
+
+body.eink-client :is(.quota-provider-title, .side-kicker, .feed-heading) {
+  color: #000;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
+body.eink-client :is(.quota-view, .sideboard-view) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  align-self: stretch;
+}

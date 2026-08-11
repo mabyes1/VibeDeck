@@ -1,0 +1,133 @@
+/* Dashboard navigation / connection chrome --------------------------------
+ * Owns local mode switching, view-control wrapping, and the compact
+ * connection badge used by dashboard viewers and e-ink clients. */
+
+.eink-connection-state {
+  display: none;
+}
+
+body.eink-client .eink-connection-state {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 4px 12px;
+  border: 3px solid #000;
+  border-radius: 4px;
+  background: #fffef8;
+  color: #000;
+  font-size: clamp(22px, 3.8vw, 32px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: .04em;
+  white-space: normal;
+  text-align: center;
+}
+
+body.eink-client .eink-connection-state.online {
+  border-color: #000;
+  color: #fffef8;
+  background: #000;
+}
+
+body.phone-client:not(.eink-client):is(.dashboard-viewer, .viewer-immersive, .deck-window) .eink-connection-state {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 4px 10px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  color: var(--side-accent, #fff);
+  background: transparent;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+body.phone-client:not(.eink-client) .eink-connection-state.online {
+  color: #071015;
+  border-color: var(--side-accent, #fff);
+  background: var(--side-accent, #fff);
+}
+
+/* Local dashboard navigation appears only where global navigation is hidden. */
+body:not(.dashboard-viewer):not(.viewer-immersive):not(.deck-window) .dashboard-mode-switch {
+  display: none;
+}
+
+.dashboard-view-controls,
+.dashboard-mode-switch {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.dashboard-mode-switch {
+  padding: 3px;
+  border: 1px solid var(--side-line, rgba(255,255,255,.22));
+  border-radius: 5px;
+  background: rgba(255,255,255,.06);
+}
+
+.dashboard-mode-switch button {
+  min-height: 38px;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.dashboard-mode-switch button.active {
+  border-color: var(--side-accent, currentColor);
+  background: var(--side-accent, #fff);
+  color: #071015;
+}
+
+body.eink-client .dashboard-view-controls {
+  flex: 1 1 220px;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+body.eink-client .dashboard-mode-switch {
+  flex: 1 1 180px;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+  border: 2px solid #000;
+  border-radius: 4px;
+  background: #fffef8;
+}
+
+body.eink-client .dashboard-mode-switch button {
+  flex: 1 1 88px;
+  min-width: 0;
+  min-height: 44px;
+  border: 2px solid transparent;
+  background: #fffef8;
+  color: #000;
+  white-space: normal;
+}
+
+body.eink-client .dashboard-mode-switch button.active {
+  border-color: #000;
+  background: #000;
+  color: #fffef8;
+}
+
+body.phone-client.viewport-portrait:not(.eink-client) .dashboard-view-controls {
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}

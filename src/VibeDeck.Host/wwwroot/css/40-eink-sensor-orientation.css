@@ -1,0 +1,34 @@
+/* BOOX sensor-orientation compatibility ----------------------------------
+ * Chrome can preserve an old install-time landscape lock even when Android
+ * auto-rotate is enabled. The motion sensor marks the physical placement and
+ * this rotates a portrait-sized dashboard canvas into it. These !important
+ * declarations are intentional geometry contracts against runtime styles. */
+
+html.eink-sensor-portrait {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body.eink-client.eink-sensor-portrait {
+  position: fixed !important;
+  width: 100dvh !important;
+  height: 100dvw !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  transform-origin: top left !important;
+}
+
+body.eink-client.eink-sensor-portrait-primary {
+  top: 100% !important;
+  left: 0 !important;
+  transform: rotate(-90deg) !important;
+}
+
+body.eink-client.eink-sensor-portrait-secondary {
+  top: 0 !important;
+  left: 100% !important;
+  transform: rotate(90deg) !important;
+}

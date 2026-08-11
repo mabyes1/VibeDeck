@@ -1,0 +1,63 @@
+{
+  "id": "/?pwa=vibedeck-v52",
+  "name": "VibeDeck",
+  "short_name": "VibeDeck",
+  "description": "把手機變成 PC 副螢幕、資訊板與 AI 額度看板。",
+  "lang": "zh-Hant",
+  "dir": "ltr",
+  "start_url": "/index.html?source=pwa&v=52",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone", "browser"],
+  "orientation": "any",
+  "background_color": "#f2f0e8",
+  "theme_color": "#f2f0e8",
+  "categories": ["productivity", "utilities"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icons/vibedeck.svg?v=1",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "資訊板",
+      "short_name": "資訊板",
+      "url": "/index.html?mode=sideboard&source=pwa&v=52",
+      "icons": [
+        {
+          "src": "/icons/vibedeck.svg?v=1",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "AI 額度",
+      "short_name": "額度",
+      "url": "/index.html?mode=quota&source=pwa&v=52",
+      "icons": [
+        {
+          "src": "/icons/vibedeck.svg?v=1",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "顯示器",
+      "short_name": "顯示器",
+      "url": "/index.html?mode=display&source=pwa&v=52",
+      "icons": [
+        {
+          "src": "/icons/vibedeck.svg?v=1",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}

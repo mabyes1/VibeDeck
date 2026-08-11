@@ -1,0 +1,68 @@
+;
+; VibeDeck.Idd.inf
+;
+
+[Version]
+PnpLockDown=1
+Signature="$Windows NT$"
+ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
+Class=Display
+ClassVer=2.0
+Provider=%ManufacturerName%
+CatalogFile=VibeDeck.Idd.cat
+DriverVer=07/01/2026,0.1.0.0
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$.10.0...22000
+
+[Standard.NT$ARCH$.10.0...22000]
+%DeviceName%=VibeDeck_Install, Root\VibeDeckIdd
+%DeviceName%=VibeDeck_Install, VibeDeckIdd
+
+[SourceDisksFiles]
+VibeDeck.Idd.dll=1
+
+[SourceDisksNames]
+1=%DiskName%
+
+[VibeDeck_Install.NT]
+Include=WUDFRD.inf
+Needs=WUDFRD.NT
+CopyFiles=UMDriverCopy
+
+[VibeDeck_Install.NT.hw]
+Include=WUDFRD.inf
+Needs=WUDFRD.NT.HW
+AddReg=VibeDeck_HardwareDeviceSettings
+
+[VibeDeck_HardwareDeviceSettings]
+HKR,, "UpperFilters", %REG_MULTI_SZ%, "IndirectKmd"
+HKR, "WUDF", "DeviceGroupId", %REG_SZ%, "VibeDeckIddGroup"
+
+[VibeDeck_Install.NT.Services]
+Include=WUDFRD.inf
+Needs=WUDFRD.NT.Services
+
+[VibeDeck_Install.NT.Wdf]
+UmdfService=VibeDeck.Idd,VibeDeck_UmdfService
+UmdfServiceOrder=VibeDeck.Idd
+UmdfKernelModeClientPolicy=AllowKernelModeClients
+
+[VibeDeck_UmdfService]
+UmdfLibraryVersion=$UMDFVERSION$
+ServiceBinary=%12%\UMDF\VibeDeck.Idd.dll
+UmdfExtensions=IddCx0102
+
+[DestinationDirs]
+UMDriverCopy=12,UMDF
+
+[UMDriverCopy]
+VibeDeck.Idd.dll
+
+[Strings]
+ManufacturerName="VibeDeck"
+DiskName="VibeDeck Indirect Display Driver Installation Disk"
+DeviceName="VibeDeck Display"
+
+REG_MULTI_SZ=0x00010000
+REG_SZ=0x00000000

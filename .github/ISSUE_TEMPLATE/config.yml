@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Contribution guide
+    url: https://github.com/mabyes1/VibeDeck/blob/main/CONTRIBUTING.md
+    about: Read how bug reports, ideas, and pull requests are handled.
+

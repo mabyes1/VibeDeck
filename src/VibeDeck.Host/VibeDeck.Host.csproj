@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Version>0.1.37</Version>
+    <AssemblyName>VibeDeck.Host</AssemblyName>
+    <RootNamespace>VibeDeck.Host</RootNamespace>
+    <Product>VibeDeck</Product>
+    <Description>把閒置手機變成 Windows PC 的智慧副螢幕與資訊板。</Description>
+    <OutputType>WinExe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="VibeDeck.Host.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.28" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <PackageReference Include="SharpDX" Version="4.2.0" />
+    <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
+    <PackageReference Include="SharpDX.DXGI" Version="4.2.0" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.28" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+    <!-- Security floors for legacy NETStandard.Library 1.6.1 transitive chains
+         still used by SharpDX and SIPSorcery's mDNS dependency. -->
+    <PackageReference Include="System.Net.Http" Version="4.3.4" PrivateAssets="all" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" PrivateAssets="all" />
+    <PackageReference Include="SIPSorcery" Version="10.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="wwwroot\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Installers\install-virtual-display.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="Sideboard\sideboard-stats.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="DeckExamples\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <None Update="DeckExamples\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
