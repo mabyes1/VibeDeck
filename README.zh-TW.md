@@ -2,15 +2,13 @@
 
 [English](README.md) · **繁體中文**
 
+![VibeDeck 功能總覽](docs/assets/social-preview0.png)
+
 > **讓你的閒置螢幕有一份新工作。**
 >
-> VibeDeck 能把任何瀏覽器變成一個**真正的 Windows 顯示器**，或一個**原生、可自由改造的 Deck**。
+> VibeDeck 是 Windows Host，能把另一塊可開瀏覽器的螢幕變成**真正的 Windows 顯示器**，或**瀏覽器原生、可自由改造的 Deck**。
 >
-> **副裝置不用安裝 App，打開瀏覽器就能用。**
-
-![VibeDeck](docs/assets/hero.png)
-
-*上圖是功能總覽；下面的功能段落使用實際產品畫面與實作細節。*
+> **Host：Windows 10/11 · Client：現代瀏覽器 · 副裝置不用安裝 App。**
 
 VibeDeck 是一個 Windows Host，讓閒置的手機、平板、電子紙裝置、筆電，以及其他能跑瀏覽器的螢幕重新派上用場。同一台裝置可以在兩條完全不同的路徑之間切換：
 
@@ -34,7 +32,7 @@ VibeDeck 是一個 Windows Host，讓閒置的手機、平板、電子紙裝置�
 
 把閒置裝置當成真正的 Windows 顯示器。VibeDeck 會建立或找到 Windows 顯示器、擷取畫面、串流到瀏覽器，也能把輸入操作送回 Windows。一般 Windows 應用程式可以像移到普通第二螢幕一樣，直接移到 VibeDeck 顯示器上。
 
-![Display mode](docs/assets/display.png)
+![VibeDeck 真正的 Windows 顯示器](docs/assets/social-preview2.png)
 
 適合：
 
@@ -47,7 +45,7 @@ VibeDeck 是一個 Windows Host，讓閒置的手機、平板、電子紙裝置�
 
 內建資訊板就是為了那些「一直看得到才有價值」的資訊：AI 額度、系統遙測、活動、任務，以及由選用通知 Companion 整合進來的 Windows 通知。
 
-![包含 AI 額度與 Windows 通知的資訊板](docs/assets/sideboard.png)
+![VibeDeck 資訊板、AI 額度、系統狀態與 Windows 通知](docs/assets/social-preview3.png)
 
 它不是把桌面 Dashboard 硬縮到小螢幕。Browser-native 版面可以依手機、平板與電子紙尺寸重新排列，讓真正重要的數字保持可讀。
 
@@ -61,9 +59,11 @@ Deck 完全不需要影片編碼，可以直接以裝置原生解析度顯示，
 
 這個 repository 內附了一個很小的 **Coding Pet** 範例 Deck。
 
+![VibeDeck 自訂 HTML Deck](docs/assets/social-preview1.png)
+
 ## 為什麼是 VibeDeck
 
-- **Browser first。** 手機、平板、BOOX 和一般電腦都共用同一套 Web Client。
+- **Windows Host、瀏覽器 Client。** Host 跑在 Windows 10/11；手機、平板、BOOX、macOS/Linux 電腦和其他能跑瀏覽器的螢幕都共用同一套 Web Client。
 - **真正的 Windows 顯示器。** Display 模式使用 Windows 顯示器列舉，不是拿一塊假 Canvas 冒充螢幕。
 - **天生可改。** Deck 就是普通的 HTML、CSS 和 JavaScript。
 - **一台裝置，多種工作。** 同一台裝置可以切換 Display、Sideboard、Quota、Custom Deck，以及其他專門用途的介面。

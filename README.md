@@ -2,15 +2,13 @@
 
 **English** · [繁體中文](README.zh-TW.md)
 
+![VibeDeck capability overview](docs/assets/social-preview0.png)
+
 > **Give your spare screen a new job.**
 >
-> VibeDeck turns any browser into a **real Windows display** or a **native, hackable Deck**.
+> A Windows Host that turns a spare browser-capable screen into a **real Windows display** or a **browser-native, hackable Deck**.
 >
-> **No client app required. Just open a browser.**
-
-![VibeDeck](docs/assets/hero.png)
-
-*Capability overview above; real product captures and implementation details below.*
+> **Host: Windows 10/11 · Client: modern browser · No client app required.**
 
 VibeDeck is a Windows host for spare phones, tablets, e-paper devices, laptops, and other browser-capable screens. It has two distinct paths that can share the same device:
 
@@ -34,7 +32,7 @@ The result is not just screen mirroring and not just a dashboard. It is a small-
 
 Use a spare device as a real Windows display. VibeDeck creates or discovers a Windows display, captures it, streams it to the browser, and relays input back to Windows. Normal Windows applications can be moved onto that display just like any other monitor.
 
-![Display mode](docs/assets/display.png)
+![VibeDeck real Windows display](docs/assets/social-preview2.png)
 
 Good for:
 
@@ -47,7 +45,7 @@ Good for:
 
 The built-in information board is designed for the things that are useful precisely because they stay visible: AI quota, machine telemetry, activity, tasks, and Windows notifications from the optional notification companion.
 
-![Information board with AI quota and Windows notifications](docs/assets/sideboard.png)
+![VibeDeck Sideboard with AI quota, system status and Windows notifications](docs/assets/social-preview3.png)
 
 This is deliberately different from shrinking a desktop dashboard onto a small screen. The browser-native layout can reflow for phones, tablets, and e-paper devices while keeping the important numbers readable.
 
@@ -61,9 +59,11 @@ Decks avoid video encoding entirely, stay sharp at the device's native resolutio
 
 The repository includes **Coding Pet** as a tiny example Deck.
 
+![VibeDeck custom HTML Deck](docs/assets/social-preview1.png)
+
 ## Why VibeDeck
 
-- **Browser first.** Phones, tablets, BOOX devices, and normal computers use the same web client.
+- **Windows Host, browser client.** The Host runs on Windows 10/11; phones, tablets, BOOX devices, macOS/Linux computers, and other browser-capable screens all use the same web client.
 - **Real Windows display.** Display mode is backed by Windows display enumeration rather than a fake canvas pretending to be a monitor.
 - **Hackable by default.** Decks are ordinary HTML, CSS, and JavaScript.
 - **One device, multiple jobs.** A device can move between Display, Sideboard, Quota, Custom Decks, and other purpose-built views.
