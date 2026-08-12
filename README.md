@@ -19,16 +19,73 @@ VibeDeck is a Windows host for spare phones, tablets, e-paper devices, laptops, 
 
 Those two rendering paths can power very different jobs. Out of the box, VibeDeck can be a real Windows display, a custom HTML Deck, an AI quota monitor, or a system information board with Windows notifications.
 
-## Four useful jobs. One spare screen.
+## Why I built VibeDeck
 
-| | What it does |
-|---|---|
-| **Real Windows Display** | Put an actual Windows application on the spare screen. VibeDeck uses a real Windows display, streams it over WebRTC, and relays input back to Windows. |
-| **Hackable HTML Decks** | Drop in `index.html`, CSS, and JavaScript to build a purpose-made interface that renders natively in the device browser. |
-| **AI Quota at a glance** | Keep Codex, Claude, AGY, reset times, percentages, and remaining credits visible without opening another app. |
-| **Info Board + Windows Notifications** | See CPU, RAM, GPU, VRAM, activity, tasks, and desktop notifications together on a glanceable second screen. |
+Recently I started seeing those tiny displays people mount inside a PC case to show CPU/GPU temperatures, utilization, and other system stats.
 
-The result is not just screen mirroring and not just a dashboard. It is a small-screen runtime where Windows pixels and browser-native interfaces can coexist on the same device.
+They looked great. I was immediately tempted.
+
+Then I saw the price: a few hundred to a few thousand NT dollars.
+
+Once I thought about it, I realized I did not really want that piece of hardware.
+
+I just wanted somewhere to put information that was **not important enough to deserve my main screen, but not unimportant enough to ignore.**
+
+So I did not buy one.
+
+I also use Claude Code and Codex heavily for development.
+
+My main monitor is for code and documents. The second one used to hold chat and reference material. Then an Agent joined the desk.
+
+But I do not actually want to stare at an Agent while it works. I do not care what it is doing every second.
+
+Sometimes I only need to know:
+
+**Is it finished? Is it stuck? Is it waiting for me to press Allow?**
+
+Anyone who uses coding agents has probably left one running for half an hour, come back, and discovered that it spent twenty-nine of those minutes waiting for an approval.
+
+Then I looked at an old phone on my desk whose only remaining job was being an alarm clock.
+
+And that little display still sitting in my shopping cart flashed back into my head.
+
+**What if the Agent could just live over there?**
+
+So I built something that turns an old phone or tablet into another Windows display.
+
+That was the earliest version of VibeDeck.
+
+After using it for a while, development started burning through enough AI quota to give me quota anxiety.
+
+Then it clicked: **isn't quota the same kind of information?**
+
+I do not need to stare at it, but I do want to know how much is left whenever I glance over.
+
+So I added the quota view.
+
+I also play games when I am not developing. GPU temperature and CPU load are exactly the kind of things I sometimes want to glance at while playing.
+
+Windows notifications are things I do not want jumping in front of me, but also cannot completely ignore. Weather is similar.
+
+They are all the same kind of information.
+
+**They do not deserve to take over my screen, but they deserve somewhere nearby to live.**
+
+At that point I had one more thought.
+
+If you like the architecture but think my interface is ugly, that is completely fair.
+
+So I left an escape hatch.
+
+An HTML Deck is just ordinary HTML, CSS, and JavaScript. You can build your own quota board, information panel, controls, or put in whatever you actually want to see.
+
+You can ignore every interface I made if you want.
+
+**If a browser can render it, it can basically become your Deck.**
+
+VibeDeck ended up becoming something pretty different from what I first imagined.
+
+It is not about buying another tiny display. It is about taking the old phones, tablets, and screens you already own, the ones that still work but no longer have much of a purpose, and **giving them a job again.**
 
 ## Real product captures
 
@@ -52,6 +109,17 @@ These are captures from the actual VibeDeck product and hardware, not UI mockups
     <td align="center"><sub><b>A browser-native custom Deck</b></sub></td>
   </tr>
 </table>
+
+## Four useful jobs. One spare screen.
+
+| | What it does |
+|---|---|
+| **Real Windows Display** | Put an actual Windows application on the spare screen. VibeDeck uses a real Windows display, streams it over WebRTC, and relays input back to Windows. |
+| **Hackable HTML Decks** | Drop in `index.html`, CSS, and JavaScript to build a purpose-made interface that renders natively in the device browser. |
+| **AI Quota at a glance** | Keep Codex, Claude, AGY, reset times, percentages, and remaining credits visible without opening another app. |
+| **Info Board + Windows Notifications** | See CPU, RAM, GPU, VRAM, activity, tasks, and desktop notifications together on a glanceable second screen. |
+
+The result is not just screen mirroring and not just a dashboard. It is a small-screen runtime where Windows pixels and browser-native interfaces can coexist on the same device.
 
 ## Real Windows applications, not a fake monitor
 
