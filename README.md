@@ -30,6 +30,29 @@ Those two rendering paths can power very different jobs. Out of the box, VibeDec
 
 The result is not just screen mirroring and not just a dashboard. It is a small-screen runtime where Windows pixels and browser-native interfaces can coexist on the same device.
 
+## Real product captures
+
+These are captures from the actual VibeDeck product and hardware, not UI mockups. Account and notification details are redacted where needed.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/realshots/real-display.png" alt="VibeDeck running a real Windows display on a spare ASUS tablet"></td>
+    <td width="50%"><img src="docs/assets/realshots/real-quota.png" alt="VibeDeck AI quota view"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>Real Windows display on spare hardware</b></sub></td>
+    <td align="center"><sub><b>Live AI quota view</b></sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/assets/realshots/real-sideboard.png" alt="VibeDeck live system sideboard"></td>
+    <td width="50%"><img src="docs/assets/realshots/real-deck.png" alt="VibeDeck Coding Pet custom Deck"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>System state, activity and Windows notifications</b></sub></td>
+    <td align="center"><sub><b>A browser-native custom Deck</b></sub></td>
+  </tr>
+</table>
+
 ## Real Windows applications, not a fake monitor
 
 Use a spare device as a real Windows display. VibeDeck creates or discovers a Windows display, captures it, streams it to the browser, and relays input back to Windows. Normal Windows applications can be moved onto that display just like any other monitor.

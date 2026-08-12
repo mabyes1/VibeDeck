@@ -30,6 +30,29 @@ VibeDeck 是一個 Windows Host，讓閒置的手機、平板、電子紙裝置�
 
 所以 VibeDeck 不只是螢幕鏡像，也不只是一個 Dashboard。它比較像是一個小螢幕 Runtime，讓 Windows 畫素串流和瀏覽器原生介面可以共存在同一台裝置上。
 
+## 真實產品畫面
+
+下面都是實際 VibeDeck 產品與硬體上的畫面，不是 UI mockup。帳號與通知內容等敏感資訊已視需要遮蔽。
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/realshots/real-display.png" alt="VibeDeck 在閒置 ASUS 平板上顯示真正的 Windows 畫面"></td>
+    <td width="50%"><img src="docs/assets/realshots/real-quota.png" alt="VibeDeck AI 額度畫面"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>閒置實機上的真正 Windows 顯示器</b></sub></td>
+    <td align="center"><sub><b>即時 AI 額度頁</b></sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/assets/realshots/real-sideboard.png" alt="VibeDeck 即時系統資訊板"></td>
+    <td width="50%"><img src="docs/assets/realshots/real-deck.png" alt="VibeDeck Coding Pet 自訂 Deck"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>系統狀態、活動與 Windows 通知</b></sub></td>
+    <td align="center"><sub><b>瀏覽器原生的自訂 Deck</b></sub></td>
+  </tr>
+</table>
+
 ## 真正跑 Windows App，不是假螢幕
 
 把閒置裝置當成真正的 Windows 顯示器。VibeDeck 會建立或找到 Windows 顯示器、擷取畫面、串流到瀏覽器，也能把輸入操作送回 Windows。一般 Windows 應用程式可以像移到普通第二螢幕一樣，直接移到 VibeDeck 顯示器上。
