@@ -10,6 +10,8 @@
 >
 > **Host: Windows 10/11 · Client: modern browser · No client app required.**
 
+**[Download the latest Windows release](https://github.com/mabyes1/VibeDeck/releases/latest)** · [Build from source](#build-from-source)
+
 VibeDeck is a Windows host for spare phones, tablets, e-paper devices, laptops, and other browser-capable screens. It has two distinct paths that can share the same device:
 
 - **Display** renders an actual Windows display over the network.
@@ -116,7 +118,7 @@ VibeDeck discovers valid Deck folders automatically. See `docs/custom-data-sourc
 
 ### Windows setup
 
-The normal product path is the Windows Setup package. A release build produces:
+Download the latest published Windows Setup from the **[GitHub Releases page](https://github.com/mabyes1/VibeDeck/releases/latest)**. The normal product path is a single installer:
 
 ```text
 VibeDeck-Setup-<version>.exe
@@ -129,6 +131,8 @@ C:\ProgramData\VibeDeck
 ```
 
 After installation, open VibeDeck on the Windows PC and follow the connection flow for the spare device. Local discovery starts over HTTP and upgrades the device to HTTPS for normal use.
+
+> **Windows signing note:** current public builds are not yet Authenticode-signed, so Windows may show an unknown-publisher / SmartScreen warning. Release assets include a SHA-256 checksum for integrity verification.
 
 ### Build from source
 

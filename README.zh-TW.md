@@ -10,6 +10,8 @@
 >
 > **Host：Windows 10/11 · Client：現代瀏覽器 · 副裝置不用安裝 App。**
 
+**[下載最新版 Windows 安裝程式](https://github.com/mabyes1/VibeDeck/releases/latest)** · [從原始碼建置](#從原始碼建置)
+
 VibeDeck 是一個 Windows Host，讓閒置的手機、平板、電子紙裝置、筆電，以及其他能跑瀏覽器的螢幕重新派上用場。同一台裝置可以在兩條完全不同的路徑之間切換：
 
 - **Display**：透過網路顯示真正的 Windows 顯示器畫面。
@@ -116,7 +118,7 @@ VibeDeck 會自動探索有效的 Deck 資料夾。目前的擴充模型可參�
 
 ### Windows 安裝
 
-一般使用者的正式安裝路徑是 Windows Setup。Release build 會產生：
+請從 **[GitHub Releases](https://github.com/mabyes1/VibeDeck/releases/latest)** 下載最新版 Windows Setup。正式產品路線只有一個安裝程式：
 
 ```text
 VibeDeck-Setup-<version>.exe
@@ -129,6 +131,8 @@ C:\ProgramData\VibeDeck
 ```
 
 安裝完成後，在 Windows PC 上開啟 VibeDeck，依照連線流程讓閒置裝置加入。本機探索會先從 HTTP 開始，正常使用時再把裝置導向 HTTPS。
+
+> **Windows 簽章提醒：**目前公開版本尚未加入 Authenticode 程式碼簽章，因此 Windows 可能顯示未知發行者／SmartScreen 警告。Release 會同時提供 SHA-256 checksum 供完整性驗證。
 
 ### 從原始碼建置
 
