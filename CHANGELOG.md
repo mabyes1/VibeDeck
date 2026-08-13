@@ -2,6 +2,15 @@
 
 本檔記錄每個可發佈版本的使用者可見變更、修正與產品化調整；後續改版須在打包前補入對應版本。
 
+## 0.1.39 - 2026-08-13
+
+- 新增既有安裝專用的 `-FastLocal` 增量 Setup：比對完整 publish cache 與 `C:\Program Files\VibeDeck`，只封裝變更檔案及完整 Web UI，不再為本機迭代重包未變更的 .NET runtime、cloudflared 或獨立通知 Companion；純前端修改可再加 `-WebOnly` 完全跳過 `dotnet publish`，正式 Release Setup 維持完整乾淨打包。
+- 整理 Windows 安裝腳本：`package-windows-setup.ps1` 僅保留 Release／FastLocal／WebOnly 三條高階流程，下載驗證、publish、差異 payload 與 Inno 編譯移入專責模組；舊的 webroot／Host／runtime 快速同步入口改為 FastLocal Setup 相容捷徑，不再直接覆寫 Program Files。
+- 串流「自動」模式改以瀏覽器 WebRTC 與安全來源能力判斷，不再只讓行動裝置優先使用 H.264；PC 對 PC 在 HTTPS 或 loopback 下也會先嘗試 WebRTC H.264，失敗才回退 JPEG。
+- 重整全裝置響應式版面：以內容空間與語意 class 適配手機、平板、PC、電子紙及舊版 Chromium，修正資訊板、額度、編輯模式、短視窗與全螢幕的裁切、重疊及水平爆版。
+- 針對 ZenPad 等舊硬體改善 H.264 穩定性：同裝置重連會立即回收舊串流，顯示器全螢幕時停止資訊板背景輪詢，並加入傳輸回饋、保守碼率階梯、NACK／PLI 恢復與關鍵幀策略，降低 2.4 GHz 網路下的一秒週期停格。
+- 新增實際瀏覽器響應式矩陣與舊 Chromium 相容性回歸，涵蓋多語系、奇形解析度、全螢幕、短視窗及內容溢位。
+
 ## 0.1.37 - 2026-07-22
 
 - 修正手機首次連線實體螢幕時偶發黑畫面：DXGI 尚未取得新畫面且 bitmap 尚未初始化時，會先以 GDI 擷取目前桌面，不再送出全黑首幀。

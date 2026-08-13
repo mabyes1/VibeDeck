@@ -762,6 +762,8 @@ namespace VibeDeck.Host
                     transport = "webrtc-h264",
                     path = "/api/stream/webrtc/offer",
                     encoder = h264.IsAvailable ? h264.EncoderDescription : null,
+                    codecProfile = H264WebRtcCodecContract.AdvertisedProfile,
+                    codecParameters = H264WebRtcCodecContract.SdpFormatParameters,
                     gpuCapture = h264.IsAvailable && h264.IsGpuCaptureAvailable,
                     capturePath = h264.IsAvailable && h264.IsGpuCaptureAvailable
                         ? "D3D11 GPU direct; bitmap fallback"
@@ -1283,6 +1285,7 @@ namespace VibeDeck.Host
         public string DeviceName { get; set; }
         public int Fps { get; set; } = 45;
         public int Quality { get; set; } = 56;
+        public int ReceiverMaxBitrateKbps { get; set; }
     }
 
     public sealed class AgyAccountRequest

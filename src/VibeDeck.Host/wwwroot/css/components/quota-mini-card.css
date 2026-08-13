@@ -2,7 +2,7 @@
  * Quota Mini Card
  *
  * This file is the final owner of the compact quota card shown inside the
- * sideboard. Device rules may tune density here, but legacy activity/layout
+ * sideboard. Component space may tune density here, but legacy activity/layout
  * files must not redefine the component.
  */
 
@@ -27,7 +27,8 @@
   align-content: center;
   gap: var(--quota-mini-gap);
   padding: var(--quota-mini-padding);
-  overflow: hidden;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .quota-mini-head,
@@ -37,7 +38,7 @@
   justify-content: space-between;
   gap: 8px;
   min-width: 0;
-  overflow: hidden;
+  flex-wrap: wrap;
 }
 
 .quota-mini-head > *,
@@ -58,9 +59,8 @@
 .quota-mini-head span,
 .quota-mini-value-row span {
   color: var(--side-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .quota-mini-card select {
@@ -97,9 +97,8 @@
   font-size: var(--quota-mini-detail-size);
   font-weight: 700;
   line-height: var(--quota-mini-detail-line);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .quota-mini-bar {
@@ -133,18 +132,35 @@ body.pc-console.mode-sideboard .quota-mini-bar span {
   background: linear-gradient(90deg, var(--side-accent), #f7cc8f);
 }
 
-/* Phone sideboard readability. Tablet and e-ink overrides below win when a
- * device carries both client classes. */
-body.phone-client:not(.eink-client) .quota-mini-head,
-body.phone-client:not(.eink-client) .quota-mini-value-row span,
-body.phone-client:not(.eink-client) .quota-mini-card select {
-  font-size: 17px;
+/* Mid-sized Sideboard density follows available component width. */
+@container sideboard-view (min-width: 44.01rem) and (max-width: 64rem) {
+  .quota-mini-card {
+    --quota-mini-padding: 4px 6px;
+    --quota-mini-gap: 2px;
+    --quota-mini-head-size: 12px;
+    --quota-mini-source-height: 26px;
+    --quota-mini-source-size: 12px;
+    --quota-mini-value-size: 24px;
+    --quota-mini-value-line: 24px;
+    --quota-mini-detail-size: 11px;
+    --quota-mini-detail-line: 12px;
+    --quota-mini-bar-height: 3px;
+    align-content: stretch;
+  }
+
+  .quota-mini-value-row span {
+    min-width: 0;
+    font-size: 11px;
+    line-height: 12px;
+  }
+
+  .quota-mini-credit {
+    min-height: var(--quota-mini-detail-line);
+    line-height: var(--quota-mini-detail-line);
+  }
 }
 
-body.phone-client:not(.eink-client) #quotaMiniReset { font-size: 12px; }
-
-/* ZenPad/tablet density. */
-body.tablet-client.mode-sideboard .quota-mini-card {
+body:not(.eink-client) .sideboard-view.space-sideboard-mid .quota-mini-card {
   --quota-mini-padding: 4px 6px;
   --quota-mini-gap: 2px;
   --quota-mini-head-size: 12px;
@@ -158,19 +174,19 @@ body.tablet-client.mode-sideboard .quota-mini-card {
   align-content: stretch;
 }
 
-body.tablet-client.mode-sideboard .quota-mini-value-row span {
+body:not(.eink-client) .sideboard-view.space-sideboard-mid .quota-mini-value-row span {
   min-width: 0;
   font-size: 11px;
   line-height: 12px;
 }
 
-body.tablet-client.mode-sideboard .quota-mini-credit {
+body:not(.eink-client) .sideboard-view.space-sideboard-mid .quota-mini-credit {
   min-height: var(--quota-mini-detail-line);
   line-height: var(--quota-mini-detail-line);
 }
 
-/* BOOX / e-ink presentation. Values below reflect the previously computed
- * cascade, without needing a chain of later !important overrides. */
+/* BOOX / e-ink presentation. Values below are owned in one final block so
+ * ordinary cascade order remains sufficient. */
 body.eink-client .quota-mini-card {
   --quota-mini-padding: 9px;
   --quota-mini-gap: 4px;

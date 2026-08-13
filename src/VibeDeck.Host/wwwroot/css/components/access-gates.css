@@ -81,12 +81,12 @@
   line-height: 1.4;
 }
 
-body.ios-client.phone-client:not(.device-trusted) .ios-home-tip,
-body.ios-client.phone-client:not(.standalone-app) .ios-home-tip.show-install {
+body.ios-client.remote-client:not(.device-trusted) .ios-home-tip,
+body.ios-client.remote-client:not(.standalone-app) .ios-home-tip.show-install {
   display: block;
 }
 
-body.ios-client.phone-client.device-trusted.standalone-app .ios-home-tip {
+body.ios-client.remote-client.device-trusted.standalone-app .ios-home-tip {
   display: none;
 }
 
@@ -111,7 +111,7 @@ body.mobile-http-blocked #mobileHttpsGate {
 body.mobile-http-blocked > header,
 body.mobile-http-blocked > main,
 body.mobile-http-blocked > .exit-viewer {
-  display: none !important;
+  display: none;
 }
 
 #mobileHttpsGate h1 {

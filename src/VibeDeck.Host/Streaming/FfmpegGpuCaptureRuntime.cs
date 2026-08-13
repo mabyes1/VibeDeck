@@ -109,6 +109,7 @@ namespace VibeDeck.Host.Streaming
                 CreateNoWindow = true
             };
             var bufferKbps = FfmpegVbvBufferPlanner.CalculateBufferKbps(encoderName, bitrateKbps, fps);
+            var keyFrameInterval = H264WebRtcCodecContract.KeyFrameIntervalFrames(fps);
             var filter = $"ddagrab=output_idx={Math.Max(0, outputIndex)}:draw_mouse=1:framerate={fps}," +
                 $"scale_d3d11=width={width}:height={height}:format=nv12";
 
@@ -124,8 +125,12 @@ namespace VibeDeck.Host.Streaming
 
             AddEncoderOptions(startInfo, encoderName, nvencPreset);
             AddArgs(startInfo,
-                "-g", fps.ToString(),
-                "-keyint_min", fps.ToString(),
+                // The WebRTC track advertises constrained-baseline. NVENC
+                // otherwise defaults to Main, which Linux Chromium may decode
+                // as a solid purple frame even though ICE remains connected.
+                "-profile:v", H264WebRtcCodecContract.EncoderProfile(encoderName),
+                "-g", keyFrameInterval.ToString(),
+                "-keyint_min", keyFrameInterval.ToString(),
                 "-refs", "1",
                 "-b:v", $"{bitrateKbps}k",
                 "-maxrate", $"{bitrateKbps}k",

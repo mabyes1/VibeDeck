@@ -2,7 +2,7 @@
  * Metric card component
  *
  * Owns the CPU, memory, GPU, VRAM, disk, and network card family from
- * structure through device-specific density. Page grid placement remains in
+ * structure through space-driven density. Page grid placement remains in
  * layout files; cross-cutting transient effects may decorate the card without
  * owning its geometry or typography.
  */
@@ -36,7 +36,8 @@
   border: 1px solid rgba(255,255,255,.09);
   border-radius: 8px;
   background: rgba(255,255,255,.03);
-  overflow: hidden;
+  overflow: auto;
+  overscroll-behavior: contain;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition: transform .2s cubic-bezier(.4, 0, .2, 1), box-shadow .2s ease, border-color .2s ease;
@@ -121,79 +122,50 @@ body.deck-window.mode-sideboard .metric-value {
   line-height: 1.08;
 }
 
-body.phone-client:not(.eink-client).viewport-portrait .metric-card {
-  min-height: 76px;
-  padding: 10px;
-  border-radius: 10px;
+/* Mid-sized Sideboard containers use a denser card composition regardless of
+ * whether the surface is a tablet, a split desktop pane, or a custom screen. */
+@container sideboard-view (min-width: 44.01rem) and (max-width: 64rem) {
+  #systemSideboardPage.dashboard-grid .metric-card {
+    --metric-card-padding: 4px 6px;
+    --metric-card-row-gap: 1px;
+    --metric-card-column-gap: 5px;
+    --metric-title-size: clamp(13px, 1.8cqi, 15px);
+    --metric-title-line: 1.15;
+    --metric-value-size: clamp(20px, 3cqi, 26px);
+    --metric-value-line: 1;
+    --metric-sub-size: clamp(10px, 1.4cqi, 12px);
+    --metric-sub-line: 1.2;
+    --metric-bar-height: 3px;
+    grid-template-rows: auto auto var(--metric-bar-height);
+    align-content: stretch;
+    align-items: center;
+  }
+
+  #systemSideboardPage.dashboard-grid .metric-sub {
+    white-space: normal;
+    text-overflow: clip;
+  }
 }
 
-body.phone-client:not(.eink-client).viewport-portrait .metric-value {
-  font-size: clamp(22px, 7vw, 30px);
-}
-
-body.phone-client:not(.eink-client).viewport-portrait .metric-sub {
-  overflow: visible;
-  font-size: 11px;
-  text-overflow: unset;
-  white-space: normal;
-}
-
-body.tablet-client.mode-sideboard #systemSideboardPage.dashboard-grid .metric-card {
+body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid .metric-card {
   --metric-card-padding: 4px 6px;
   --metric-card-row-gap: 1px;
   --metric-card-column-gap: 5px;
-  --metric-title-size: 14px;
-  --metric-title-line: 16px;
-  --metric-value-size: 22px;
-  --metric-value-line: 22px;
-  --metric-sub-size: 11px;
-  --metric-sub-line: 12px;
+  --metric-title-size: clamp(13px, 1.8vw, 15px);
+  --metric-title-line: 1.15;
+  --metric-value-size: clamp(20px, 3vw, 26px);
+  --metric-value-line: 1;
+  --metric-sub-size: clamp(10px, 1.4vw, 12px);
+  --metric-sub-line: 1.2;
   --metric-bar-height: 3px;
-  grid-template-rows: var(--metric-title-line) minmax(var(--metric-sub-line), 1fr) var(--metric-bar-height);
+  grid-template-rows: auto auto var(--metric-bar-height);
   align-content: stretch;
   align-items: center;
 }
 
-body.tablet-client.viewport-portrait.mode-sideboard #systemSideboardPage.dashboard-grid .metric-card {
-  --metric-card-padding: 6px 8px;
-  --metric-card-row-gap: 2px;
-  --metric-title-size: 15px;
-  --metric-title-line: 18px;
-  --metric-value-size: 25px;
-  --metric-value-line: 25px;
-  --metric-sub-size: 13px;
-  --metric-sub-line: 15px;
-  --metric-bar-height: 4px;
-  grid-template-rows: var(--metric-title-line) minmax(var(--metric-sub-line), 1fr) var(--metric-bar-height);
-}
-
-body.tablet-client.viewport-portrait.mode-sideboard #systemSideboardPage.dashboard-grid .metric-sub {
-  display: block;
-  min-height: var(--metric-sub-line);
-  max-height: calc(var(--metric-sub-line) * 2);
-  line-height: var(--metric-sub-line);
-}
-
-body.tablet-client.dashboard-viewer.mode-sideboard #systemSideboardPage.dashboard-grid .metric-card {
-  grid-template-rows: 20px minmax(0, 1fr) 4px;
-  align-items: center;
-}
-
-body.tablet-client.dashboard-viewer.mode-sideboard #systemSideboardPage.dashboard-grid .metric-value {
-  grid-row: 1;
-}
-
-body.tablet-client.dashboard-viewer.mode-sideboard #systemSideboardPage.dashboard-grid .metric-sub {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  align-self: center;
-  font-size: 12px;
-  line-height: 14px;
-}
-
-body.tablet-client.dashboard-viewer.mode-sideboard #systemSideboardPage.dashboard-grid .mini-bar {
-  grid-row: 3;
-  align-self: end;
+body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid .metric-sub {
+  white-space: normal;
+  text-overflow: clip;
 }
 
 body.eink-client #systemSideboardPage.dashboard-grid .metric-card {
@@ -201,28 +173,20 @@ body.eink-client #systemSideboardPage.dashboard-grid .metric-card {
   --metric-card-row-gap: 2px;
   --metric-card-column-gap: 8px;
   --metric-title-size: 17px;
-  --metric-title-line: 20px;
+  --metric-title-line: 1.15;
   --metric-value-size: clamp(30px, 3.4vw, 40px);
-  --metric-value-line: 40px;
+  --metric-value-line: 1;
   --metric-sub-size: 16px;
-  --metric-sub-line: 19px;
+  --metric-sub-line: 1.2;
   --metric-bar-height: 6px;
   min-height: 0;
   height: auto;
-  grid-template-rows: var(--metric-title-line) minmax(var(--metric-sub-line), 1fr) var(--metric-bar-height);
+  grid-template-rows: auto auto var(--metric-bar-height);
   align-content: stretch;
   padding: var(--metric-card-padding);
   gap: var(--metric-card-row-gap) var(--metric-card-column-gap);
-  overflow: hidden;
+  overflow: auto;
   border-width: 2px;
-}
-
-body.eink-client.viewport-portrait #systemSideboardPage.dashboard-grid .metric-card {
-  --metric-value-size: clamp(28px, 6vw, 36px);
-  --metric-value-line: 36px;
-  --metric-sub-size: 16px;
-  --metric-sub-line: 19px;
-  --metric-bar-height: 5px;
 }
 
 body.eink-client #systemSideboardPage.dashboard-grid .metric-value {
@@ -232,11 +196,6 @@ body.eink-client #systemSideboardPage.dashboard-grid .metric-value {
   font-variant-numeric: tabular-nums;
   line-height: var(--metric-value-line);
   letter-spacing: -.03em;
-}
-
-body.eink-client.viewport-landscape #systemSideboardPage.dashboard-grid .metric-value {
-  align-self: center;
-  transform: none;
 }
 
 body.eink-client #systemSideboardPage.dashboard-grid .metric-sub {

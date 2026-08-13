@@ -51,7 +51,9 @@ import { createCustomDeckController } from "./modules/custom-deck-controller.js?
 import { createQuotaMiniCardController } from "./modules/quota-mini-card.js?v=59";
 import { createSideboardController } from "./modules/sideboard.js?v=51";
 import { createMobileOverviewController } from "./modules/mobile-overview.js?v=3";
-import { createStreamController } from "./modules/stream-controller.js?v=50";
+import { createResponsiveSpaceController } from "./modules/responsive-space.js?v=1";
+import { isFullscreenDisplayStreaming as isFullscreenDisplayStreamingPolicy } from "./modules/dashboard-background-policy.js?v=1";
+import { createStreamController } from "./modules/stream-controller.js?v=52";
 import { tuneVideoReceiver } from "./modules/stream-tuning.js?v=47";
 import { applyFeedbackState } from "./modules/feedback-state.js?v=1";
 import { confirmAction } from "./modules/ui-confirm.js?v=1";
@@ -84,7 +86,8 @@ import {
   isIosUA,
   isIphoneUA,
   isMobileUA,
-} from "./modules/env-detect.js?v=1";
+  shouldPreferWebRtcDisplay,
+} from "./modules/env-detect.js?v=2";
 import {
   EINK_PREF_KEY,
   readEinkQuery,
@@ -317,6 +320,7 @@ import {
     const hostAuthPassword = document.getElementById("hostAuthPassword");
     const hostAuthSubmit = document.getElementById("hostAuthSubmit");
     const hostAuthError = document.getElementById("hostAuthError");
+    const responsiveSpaceController = createResponsiveSpaceController();
     const wsBase = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}`;
     let lastUrl = null;
     let inputSocket = null;
@@ -408,7 +412,8 @@ import {
     let shouldDefaultToFirstDeviceSetup = false;
     const touchLongPressMs = 460;
     const touchDragThresholdPx = 12;
-    const DEVICE_PREVIEW_KINDS = new Set(["boox-go-color-7", "asus-zenpad-p024", "galaxy-s23", "iphone-xs"]);
+    const DEVICE_PREVIEW_KINDS = new Set(["boox-go-color-7", "asus-zenpad-p024", "galaxy-s23", "iphone-xs", "linux-desktop"]);
+    const MOBILE_DEVICE_PREVIEW_KINDS = new Set(["boox-go-color-7", "asus-zenpad-p024", "galaxy-s23", "iphone-xs"]);
     const DEVICE_PREVIEW_TRUST_STATES = new Set(["paired", "unpaired", "pending", "local"]);
     const devicePreviewKind = (() => {
       if (!isLoopbackHost()) return "";
@@ -450,7 +455,7 @@ import {
     }
 
     function isMobileClient() {
-      if (isDevicePreview()) return true;
+      if (isDevicePreview()) return MOBILE_DEVICE_PREVIEW_KINDS.has(devicePreviewKind);
       return isMobileUA();
     }
 
@@ -557,16 +562,39 @@ import {
       return isEinkClient() ? 20000 : 5000;
     }
 
+    function isFullscreenDisplayStreaming() {
+      return isFullscreenDisplayStreamingPolicy(activeMode, document.body);
+    }
+
+    function suspendDashboardBackgroundWork() {
+      if (!isFullscreenDisplayStreaming()) return;
+      for (const state of Object.values(dashboardRefreshState)) {
+        if (state.timer) clearTimeout(state.timer);
+        state.timer = null;
+        state.dirty = false;
+      }
+    }
+
+    function resumeDashboardBackgroundWork() {
+      if (isFullscreenDisplayStreaming() || document.visibilityState === "hidden") return;
+      scheduleDashboardRefresh("sideboard", true);
+      scheduleDashboardRefresh("quota", true);
+      scheduleDashboardRefresh("customCards", true);
+    }
+
     function scheduleDashboardRefresh(topic, immediate = false) {
       const state = dashboardRefreshState[topic];
-      if (!state) return;
+      if (!state || isFullscreenDisplayStreaming()) return;
       state.dirty = true;
       if (document.visibilityState === "hidden" || state.timer) return;
       const elapsed = Date.now() - state.last;
       const delay = immediate ? 0 : Math.max(0, dashboardMinInterval(topic) - elapsed);
       state.timer = setTimeout(async () => {
         state.timer = null;
-        if (!state.dirty || document.visibilityState === "hidden") return;
+        if (!state.dirty || document.visibilityState === "hidden" || isFullscreenDisplayStreaming()) {
+          state.dirty = false;
+          return;
+        }
         state.dirty = false;
         state.last = Date.now();
         if (topic === "sideboard") await refreshSideboard();
@@ -607,7 +635,7 @@ import {
       const preview = isDevicePreview();
       const previewLocal = isDevicePreviewTrust("local");
       const localConsole = Boolean(deviceLocalRequest) && (!preview || previewLocal);
-      const phoneClient = (preview && !previewLocal) || (!localConsole && isMobileClient());
+      const phoneClient = !localConsole && isMobileClient();
       const ios = isIos();
       const eink = isEinkClient();
       const trusted = Boolean(deviceTrusted) || isDevicePreviewTrust("paired");
@@ -618,8 +646,7 @@ import {
       const themeColor = document.querySelector('meta[name="theme-color"]');
       if (themeColor) themeColor.setAttribute("content", eink ? "#f2f0e8" : "#111820");
       document.body.classList.toggle("phone-client", phoneClient);
-      const viewport = getRawViewportSize();
-      syncTabletClientClass(viewport.width, viewport.height);
+      document.body.classList.toggle("remote-client", !localConsole);
       document.body.classList.toggle("ios-client", ios && !localConsole);
       document.body.classList.toggle("device-trusted", trusted && !localConsole);
       document.body.classList.toggle("pc-console", localConsole);
@@ -695,40 +722,6 @@ import {
       };
     }
 
-    function matchesTabletViewport(width, height) {
-      const shortEdge = Math.min(width, height);
-      const longEdge = Math.max(width, height);
-      return shortEdge >= 500 &&
-        longEdge >= 800 &&
-        longEdge <= 1100;
-    }
-
-    function matchesTabletEnvironment(width, height) {
-      if (matchesTabletViewport(width, height)) return true;
-
-      // Android browser chrome can shave enough CSS pixels off the short edge
-      // that an 8-inch tablet briefly looks like a phone until fullscreen is
-      // entered. screen.* keeps the physical CSS viewport and prevents the
-      // dashboard layout from changing merely because the address bar exists.
-      const screenWidth = Number(window.screen?.width || 0);
-      const screenHeight = Number(window.screen?.height || 0);
-      return screenWidth > 0 &&
-        screenHeight > 0 &&
-        matchesTabletViewport(screenWidth, screenHeight);
-    }
-
-    function isTabletClient() {
-      const viewport = getRawViewportSize();
-      return isMobileClient() && !isEinkClient() && matchesTabletEnvironment(viewport.width, viewport.height);
-    }
-
-    function syncTabletClientClass(width, height) {
-      const tablet = document.body.classList.contains("phone-client") &&
-        !isEinkClient() && matchesTabletEnvironment(width, height);
-      document.body.classList.toggle("tablet-client", tablet);
-      return tablet;
-    }
-
     function syncEinkSensorOrientationClasses(width, height) {
       const forcePortrait = isEinkClient() &&
         orientation?.value === "auto" &&
@@ -788,7 +781,12 @@ import {
     }
 
     function prefersWebRtcDisplay() {
-      return isMobileClient() || new URLSearchParams(location.search).get("webrtc") === "1";
+      return shouldPreferWebRtcDisplay({
+        forced: new URLSearchParams(location.search).get("webrtc") === "1",
+        hasPeerConnection: typeof window.RTCPeerConnection === "function",
+        secureContext: window.isSecureContext,
+        loopback: isLoopbackHost(),
+      });
     }
 
     function isStandaloneApp() {
@@ -828,10 +826,10 @@ import {
 
       document.documentElement.style.setProperty("--viewer-width", `${width}px`);
       document.documentElement.style.setProperty("--viewer-height", `${height}px`);
-      syncTabletClientClass(width, height);
       document.body.classList.toggle("viewport-portrait", !forceLandscape && height >= width);
       document.body.classList.toggle("viewport-landscape", forceLandscape || width > height);
       applyForcedLandscape();
+      responsiveSpaceController.refresh();
     }
 
     function describeClient() {
@@ -911,6 +909,7 @@ import {
       sideboardView.classList.toggle("active", isSideboard);
       quotaView.classList.toggle("active", isQuota);
       customDeckView.classList.toggle("active", isDeck);
+      requestAnimationFrame(() => responsiveSpaceController.refresh());
       displayMode.classList.toggle("active", isDisplay);
       setupMode?.classList.toggle("active", isSetup);
       sideboardMode.classList.toggle("active", isSideboard);
@@ -1308,7 +1307,9 @@ import {
       deviceStatusTimer = null;
       deviceStatusInterval = nextInterval;
       if (nextInterval > 0) {
-        deviceStatusTimer = setInterval(() => loadDeviceTrustStatus(), nextInterval);
+        deviceStatusTimer = setInterval(() => {
+          if (!isFullscreenDisplayStreaming()) loadDeviceTrustStatus();
+        }, nextInterval);
       }
     }
 
@@ -1648,6 +1649,7 @@ import {
       navigate: setMode,
       getActiveMode: () => activeMode,
       isLocalRequest: () => deviceLocalRequest,
+      shouldPoll: () => !isFullscreenDisplayStreaming(),
     });
 
     const activityFeedController = createActivityFeedController({
@@ -1662,6 +1664,7 @@ import {
     // This guarantees the feed receives the Windows payload even when the
     // custom-card page is hidden or its stream renderer is busy.
     const refreshActivityNotifications = async () => {
+      if (isFullscreenDisplayStreaming()) return;
       try {
         const snapshot = await fetchJsonOrThrow("/api/custom-cards");
         const card = (snapshot?.cards || []).find(item => item.sourceKey === "windows-notifications") || null;
@@ -1819,7 +1822,6 @@ import {
       dashboardLayoutController = createDashboardLayoutController({
         fetchJsonOrThrow,
         isEinkClient,
-        isTabletClient,
         openCardSettings: () => openDashboardConfig(() => customCardsController?.setSettingsPanelVisible(true)),
         openSourceManager: () => openDashboardConfig(() => customCardsController?.setManagerVisible(true)),
         openSourceForm: () => openDashboardConfig(() => customCardsController?.showForm()),
@@ -1871,8 +1873,6 @@ import {
       document,
       t,
       tLegacy,
-      isMobileClient,
-      isEinkQuotaClient,
       fetchJsonOrThrow,
       confirmAction,
       runQuotaButton: quotaActions.runButton,
@@ -2400,6 +2400,7 @@ import {
         document.body.classList.add("viewer-immersive");
       } else {
         document.body.classList.remove("viewer-immersive");
+        suspendDashboardBackgroundWork();
       }
       const mainContent = document.querySelector("main");
       mainContent?.scrollTo({ top: 0, left: 0 });
@@ -2468,6 +2469,7 @@ import {
       document.body.classList.remove("viewer-fullscreen");
       document.body.classList.remove("dashboard-viewer");
       document.body.classList.remove("viewer-immersive");
+      resumeDashboardBackgroundWork();
       try {
         if (document.exitFullscreen && (document.fullscreenElement || document.webkitFullscreenElement)) {
           await document.exitFullscreen();
@@ -3020,6 +3022,7 @@ import {
         // stream chrome when the system fullscreen shell closes.
         if (activeMode === "display") {
           document.body.classList.remove("viewer-fullscreen");
+          resumeDashboardBackgroundWork();
         }
       }
       updateViewportSize();

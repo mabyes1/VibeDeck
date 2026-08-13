@@ -140,17 +140,14 @@ body.eink-client .custom-card-settings-form .custom-settings-check input[type="c
   height: 24px;
 }
 
-body.eink-client.viewport-portrait .custom-card-settings-form {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 /* One-screen E-Ink dashboard: reserve explicit rows so the load heading and
  * summary stay inside the card without requiring specificity warfare. */
 body.eink-client #systemSideboardPage.dashboard-grid :is(.side-load, .side-feed, .custom-card) {
   min-height: 0;
   height: auto;
   padding: 10px;
-  overflow: hidden;
+  overflow: auto;
+  overscroll-behavior: contain;
   border-width: 2px;
 }
 
@@ -164,7 +161,7 @@ body.eink-client #systemSideboardPage.dashboard-grid .side-load :is(.side-load-n
   min-height: 44px;
   align-content: start;
   gap: 2px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 body.eink-client #systemSideboardPage.dashboard-grid .side-load :is(.side-load-normal, .side-load-alert) > :is(strong, span) {
@@ -180,7 +177,7 @@ body.eink-client #systemSideboardPage.dashboard-grid .side-feed {
 
 body.eink-client #systemSideboardPage.dashboard-grid .feed-list {
   gap: 3px;
-  overflow: hidden;
+  overflow: visible;
   font-size: var(--eink-dashboard-min-font);
   line-height: 1.25;
 }
@@ -214,7 +211,7 @@ body.eink-client #systemSideboardPage.dashboard-grid .side-load .side-big {
 body.eink-client #systemSideboardPage.dashboard-grid .side-load .side-summary {
   gap: 1px;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   font-size: var(--eink-dashboard-min-font);
   line-height: 1.15;
 }

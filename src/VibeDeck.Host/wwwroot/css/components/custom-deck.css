@@ -8,10 +8,9 @@
 .view-switcher .custom-deck-tab,
 .view-switcher .add-deck-mode { flex: 0 0 auto; white-space: nowrap; }
 
-body.mode-deck main { padding: 0; overflow: hidden; }
-.custom-deck-view { position: relative; width: 100%; height: 100%; min-height: 0; overflow: hidden; background: #05080b; }
+body.mode-deck main { grid-template-rows: minmax(0, 1fr); align-content: stretch; padding: 0; overflow: hidden; }
+.custom-deck-view { position: relative; width: 100%; height: auto; min-height: 0; align-self: stretch; overflow: hidden; background: #05080b; container: custom-deck-view / size; }
 .custom-deck-frame { width: 100%; height: 100%; min-width: 0; min-height: 0; display: block; border: 0; background: #05080b; }
-.custom-deck-frame[hidden], .custom-deck-help[hidden] { display: none !important; }
 
 .custom-deck-help {
   width: min(900px, calc(100% - 32px));
@@ -35,7 +34,7 @@ body.mode-deck main { padding: 0; overflow: hidden; }
 .custom-deck-folder-row { display: grid; gap: 6px; min-width: 0; margin-bottom: 14px; }
 .custom-deck-folder-row > span { color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .custom-deck-folder-row code { min-width: 0; overflow-wrap: anywhere; color: var(--text); }
-.custom-deck-security-note { margin: 0 0 14px !important; padding: 10px 12px; border: 1px solid rgba(242,180,95,.18); border-radius: 10px; background: rgba(242,180,95,.055); color: rgba(242,210,165,.82) !important; font-size: 12px; line-height: 1.55 !important; }
+.custom-deck-help p.custom-deck-security-note { margin: 0 0 14px; padding: 10px 12px; border: 1px solid rgba(242,180,95,.18); border-radius: 10px; background: rgba(242,180,95,.055); color: rgba(242,210,165,.82); font-size: 12px; line-height: 1.55; }
 .custom-deck-help-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .custom-deck-help-actions button { min-height: 38px; }
 .custom-deck-status { min-height: 1.5em; margin-top: 12px; color: var(--muted); font-size: 13px; }
@@ -44,6 +43,11 @@ body.mode-deck main { padding: 0; overflow: hidden; }
 .custom-deck-issues strong { display: block; margin-bottom: 6px; }
 .custom-deck-issues ul { margin: 0; padding-left: 20px; }
 
-body.phone-client .custom-deck-help { width: min(100% - 20px, 760px); max-height: calc(100% - 20px); padding: 18px; border-radius: 14px; }
-body.phone-client.viewport-portrait .custom-deck-help-actions button { flex: 1 1 140px; }
+@container custom-deck-view (max-width: 48rem) {
+  .custom-deck-help { width: min(100% - 20px, 760px); max-height: calc(100% - 20px); padding: 18px; border-radius: 14px; }
+}
+
+@container custom-deck-view (max-width: 30rem) {
+  .custom-deck-help-actions button { flex: 1 1 140px; }
+}
 body.eink-client.mode-deck main, body.eink-client .custom-deck-view { background: #fff; }

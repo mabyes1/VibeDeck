@@ -4,34 +4,35 @@
 
 /* App foundation. */
 @import url("/css/00-base-tokens.css");
-@import url("/css/10-core.css?v=2");
+@import url("/css/10-core.css?v=5");
 
-/* Early feature/device baselines. Display must precede its later control and
-   device overrides; the numbered phone/E-Ink files retain order-sensitive
-   device baselines at this point in the cascade. */
+/* Early feature baselines. Display precedes its later control owner; the
+   legacy-numbered compact dashboard file is container-driven. */
 @import url("/css/components/access-gates.css?v=1");
-@import url("/css/components/display-surface.css?v=2");
-@import url("/css/30-phone-dashboard.css?v=127");
-@import url("/css/40-eink-sensor-orientation.css?v=1");
+@import url("/css/components/display-surface.css?v=6");
+@import url("/css/30-phone-dashboard.css?v=130");
 
 /* Shared cross-component contracts. */
-@import url("/css/components/shared-primitives.css?v=3");
-@import url("/css/components/eink-primitives.css?v=1");
+@import url("/css/components/shared-primitives.css?v=5");
+@import url("/css/components/eink-primitives.css?v=2");
 
 /* Final component owners. */
-@import url("/css/components/sideboard-shell.css?v=5");
-@import url("/css/components/dashboard-editor.css?v=3");
-@import url("/css/components/custom-cards.css?v=2");
+@import url("/css/components/sideboard-shell.css?v=11");
+@import url("/css/components/dashboard-editor.css?v=5");
+@import url("/css/components/custom-cards.css?v=3");
 @import url("/css/components/dashboard-navigation.css?v=1");
 @import url("/css/components/pairing-setup.css?v=3");
-@import url("/css/components/setup-diagnostics.css?v=3");
+@import url("/css/components/setup-diagnostics.css?v=5");
 @import url("/css/components/device-management.css?v=4");
-@import url("/css/components/app-controls.css?v=9");
-@import url("/css/components/metric-card.css?v=3");
-@import url("/css/components/quota-mini-card.css?v=4");
-@import url("/css/components/activity-feed.css?v=4");
-@import url("/css/components/quota-page.css?v=10");
-@import url("/css/components/custom-deck.css?v=1");
+@import url("/css/components/app-controls.css?v=10");
+@import url("/css/components/metric-card.css?v=5");
+@import url("/css/components/quota-mini-card.css?v=6");
+@import url("/css/components/activity-feed.css?v=6");
+@import url("/css/components/quota-page.css?v=14");
+@import url("/css/components/custom-deck.css?v=2");
 
 /* Final E-Ink dashboard content. */
-@import url("/css/components/eink-dashboard-content.css?v=3");
+@import url("/css/components/eink-dashboard-content.css?v=4");
+
+/* Physical sensor correction is the final geometry overlay by ownership. */
+@import url("/css/40-eink-sensor-orientation.css?v=3");

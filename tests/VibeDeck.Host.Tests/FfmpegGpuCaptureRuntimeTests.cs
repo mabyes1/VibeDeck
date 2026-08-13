@@ -36,10 +36,34 @@ namespace VibeDeck.Host.Tests
             Assert.Equal("1", ArgumentValue(startInfo, "-zerolatency"));
             Assert.Equal("0", ArgumentValue(startInfo, "-bf"));
             Assert.Equal("1", ArgumentValue(startInfo, "-refs"));
+            Assert.Equal("baseline", ArgumentValue(startInfo, "-profile:v"));
+            Assert.Equal(1, ArgumentOccurrence(startInfo, "-profile:v"));
             Assert.Equal(1, ArgumentOccurrence(startInfo, "-aud"));
             Assert.Equal(1, ArgumentOccurrence(startInfo, "-surfaces"));
+            Assert.Equal("120", ArgumentValue(startInfo, "-g"));
+            Assert.Equal("120", ArgumentValue(startInfo, "-keyint_min"));
             Assert.Equal("134k", ArgumentValue(startInfo, "-bufsize"));
             Assert.Equal("pipe:1", startInfo.ArgumentList.Last());
+        }
+
+        [Theory]
+        [InlineData("h264_nvenc", "baseline")]
+        [InlineData("h264_qsv", "baseline")]
+        [InlineData("h264_amf", "constrained_baseline")]
+        public void CreateStartInfo_MatchesAdvertisedWebRtcProfile(string encoderName, string expectedProfile)
+        {
+            var startInfo = FfmpegGpuCaptureRuntime.CreateStartInfo(
+                "ffmpeg.exe",
+                encoderName,
+                outputIndex: 0,
+                width: 1280,
+                height: 800,
+                fps: 60,
+                bitrateKbps: 10000,
+                nvencPreset: null);
+
+            Assert.Equal(expectedProfile, ArgumentValue(startInfo, "-profile:v"));
+            Assert.Equal(1, ArgumentOccurrence(startInfo, "-profile:v"));
         }
 
         [Theory]

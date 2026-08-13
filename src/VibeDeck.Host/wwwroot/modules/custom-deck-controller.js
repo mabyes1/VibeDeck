@@ -46,6 +46,7 @@ export function createCustomDeckController({
   navigate,
   getActiveMode,
   isLocalRequest,
+  shouldPoll = () => true,
 }) {
   let catalog = { rootPath: "", decks: [], issues: [] };
   let pollTimer = null;
@@ -212,7 +213,7 @@ export function createCustomDeckController({
     startPolling(intervalMs = 5000) {
       if (pollTimer) return;
       pollTimer = setInterval(() => {
-        if (document.visibilityState === "hidden") return;
+        if (document.visibilityState === "hidden" || !shouldPoll()) return;
         refresh({ silent: true }).catch(() => {});
       }, intervalMs);
     },

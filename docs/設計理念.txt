@@ -1,0 +1,26 @@
+Show HN: VibeDeck – spare phone/pad as Windows displays and dashboards
+https://github.com/mabyes1/VibeDeck
+Recently, I saw some small monitors installed inside computer cases online, displaying CPU, GPU, temperature, and usage.
+
+They looked cool, and I was immediately drawn to them.
+
+Then I saw the price.
+
+After calming down, I realized that what I really wanted wasn't the hardware itself.
+
+I just wanted a place to display some information—information that wasn't important enough to take up the main screen, but also not important enough to be completely ignored.
+
+Because I frequently use Claude Code and Codex for work.
+
+I use the main screen to write code, while the secondary screen, originally used for sending and receiving instant messages and looking up information, now hosts a proxy program. But I don't want to constantly stare at this proxy.
+
+Sometimes I just want to know if it's finished?
+
+Is it stuck?
+
+Is it waiting for me to click "Allow"?
+
+Anyone who has used a code proxy has probably experienced this: you let it run for half an hour, and when you come back, you find that it actually finished running at 29... I've been waiting for your approval for minutes now.
+another option is HTML Deck is just plain HTML, CSS, and JavaScript.
+
+You can create your own captions, news panels, control panels, or add anything you want to display.

@@ -73,6 +73,14 @@ namespace VibeDeck.Host.Tests
             Assert.NotEqual(low, high);
         }
 
+        [Fact]
+        public void ApplyReceiverLimit_ScalesEveryCongestionTierBelowReceiverCeiling()
+        {
+            Assert.Equal(1400, GpuStreamQualityLadder.ApplyReceiverLimit(2648, 1400, 1d));
+            Assert.Equal(1092, GpuStreamQualityLadder.ApplyReceiverLimit(2648, 1400, 0.78d));
+            Assert.Equal(812, GpuStreamQualityLadder.ApplyReceiverLimit(2648, 1400, 0.58d));
+        }
+
         private static void AssertProfile(
             GpuStreamQualityProfile profile,
             string name,

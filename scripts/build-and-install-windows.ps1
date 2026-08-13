@@ -1,7 +1,9 @@
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-    [switch]$SkipTests
+    [switch]$SkipTests,
+    [switch]$FastLocal,
+    [switch]$WebOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -9,18 +11,19 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $project = Join-Path $repoRoot "src\VibeDeck.Host\VibeDeck.Host.csproj"
 $packageScript = Join-Path $PSScriptRoot "package-windows-setup.ps1"
 
-Write-Host "VibeDeck one-click install / update" -ForegroundColor Cyan
-& $packageScript -InstallInno -SkipTests:$SkipTests
+Write-Host $(if ($FastLocal) { "VibeDeck fast local Setup update" } else { "VibeDeck one-click install / update" }) -ForegroundColor Cyan
+& $packageScript -InstallInno -SkipTests:$SkipTests -FastLocal:$FastLocal -WebOnly:$WebOnly
 if ($LASTEXITCODE -ne 0) { throw "VibeDeck Setup build failed." }
 
 $projectXml = [xml][IO.File]::ReadAllText($project, [Text.Encoding]::UTF8)
 $version = [string]$projectXml.Project.PropertyGroup.Version
-$setup = Join-Path $repoRoot "artifacts\windows-setup\VibeDeck-Setup-$version.exe"
+$setupFileName = if ($FastLocal) { "VibeDeck-FastLocal-Setup-$version.exe" } else { "VibeDeck-Setup-$version.exe" }
+$setup = Join-Path $repoRoot "artifacts\windows-setup\$setupFileName"
 if (-not (Test-Path -LiteralPath $setup)) {
     throw "Setup was not produced: $setup"
 }
 
-Write-Host "Starting canonical Setup update..." -ForegroundColor Cyan
+Write-Host $(if ($FastLocal) { "Starting same-AppId fast local Setup update..." } else { "Starting canonical Setup update..." }) -ForegroundColor Cyan
 $oldListener = Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
 $oldHostPid = if ($oldListener) { [int]$oldListener.OwningProcess } else { 0 }
 $setupArguments = '/SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /FORCECLOSEAPPLICATIONS /TASKS="desktopicon,autostart"'

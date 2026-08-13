@@ -8,12 +8,14 @@ namespace VibeDeck.Host.Streaming
         public string Name { get; }
         public int Fps { get; }
         public int Quality { get; }
+        public double BitrateScale { get; }
 
-        public GpuStreamQualityProfile(string name, int fps, int quality)
+        public GpuStreamQualityProfile(string name, int fps, int quality, double bitrateScale = 1d)
         {
             Name = name;
             Fps = Math.Max(1, Math.Min(60, fps));
             Quality = Math.Max(25, Math.Min(85, quality));
+            BitrateScale = Math.Max(0.35d, Math.Min(1d, bitrateScale));
         }
     }
 
@@ -28,15 +30,17 @@ namespace VibeDeck.Host.Streaming
             requestedQuality = Math.Max(25, Math.Min(85, requestedQuality));
 
             var profiles = new List<GpuStreamQualityProfile>();
-            AddUnique(profiles, new GpuStreamQualityProfile("full", requestedFps, requestedQuality));
+            AddUnique(profiles, new GpuStreamQualityProfile("full", requestedFps, requestedQuality, 1d));
             AddUnique(profiles, new GpuStreamQualityProfile(
                 "balanced",
                 Math.Min(45, requestedFps),
-                Math.Min(60, Math.Max(25, requestedQuality - 4))));
+                Math.Min(60, Math.Max(25, requestedQuality - 4)),
+                0.78d));
             AddUnique(profiles, new GpuStreamQualityProfile(
                 "safe",
                 Math.Min(30, requestedFps),
-                Math.Min(52, Math.Max(25, requestedQuality - 10))));
+                Math.Min(52, Math.Max(25, requestedQuality - 10)),
+                0.58d));
             return profiles;
         }
 
@@ -45,7 +49,8 @@ namespace VibeDeck.Host.Streaming
             return new GpuStreamQualityProfile(
                 "software-safe",
                 Math.Min(30, requestedFps),
-                Math.Min(52, requestedQuality));
+                Math.Min(52, requestedQuality),
+                0.70d);
         }
 
         public static (int Width, int Height) FitWithin(int width, int height, int maxWidth = 2560, int maxHeight = 1440)
@@ -84,11 +89,28 @@ namespace VibeDeck.Host.Streaming
             return (int)Math.Round(bitrate);
         }
 
+        public static int ApplyReceiverLimit(
+            int estimatedBitrateKbps,
+            int receiverMaxBitrateKbps,
+            double profileScale = 1d)
+        {
+            var baseline = Math.Max(350, estimatedBitrateKbps);
+            if (receiverMaxBitrateKbps > 0)
+            {
+                baseline = Math.Min(baseline, receiverMaxBitrateKbps);
+            }
+            var scaled = (int)Math.Round(baseline *
+                Math.Max(0.35d, Math.Min(1d, profileScale)));
+            return Math.Max(500, Math.Min(MaximumBitrateKbps, scaled));
+        }
+
         private static void AddUnique(List<GpuStreamQualityProfile> profiles, GpuStreamQualityProfile profile)
         {
             foreach (var existing in profiles)
             {
-                if (existing.Fps == profile.Fps && existing.Quality == profile.Quality)
+                if (existing.Fps == profile.Fps &&
+                    existing.Quality == profile.Quality &&
+                    Math.Abs(existing.BitrateScale - profile.BitrateScale) < 0.001d)
                 {
                     return;
                 }

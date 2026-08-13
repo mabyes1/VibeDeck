@@ -152,7 +152,14 @@ namespace VibeDeck.Host.Streaming
         /// The browser receives standard RTP/SRTP rather than raw WebSocket
         /// bytes, so Safari can use its hardware H.264 decoder.
         /// </summary>
-        public async Task StreamToWebRtcAsync(RTCPeerConnection peer, string deviceName, int fps, int quality, CancellationToken cancellationToken)
+        public async Task StreamToWebRtcAsync(
+            RTCPeerConnection peer,
+            H264WebRtcTransport transport,
+            string deviceName,
+            int fps,
+            int quality,
+            int receiverMaxBitrateKbps,
+            CancellationToken cancellationToken)
         {
             var ffmpegPath = ResolveFfmpegPath();
             if (ffmpegPath == null)
@@ -170,10 +177,12 @@ namespace VibeDeck.Host.Streaming
             var h264PayloadTypeId = Convert.ToInt32(peer.VideoStream.GetSendingFormat().ID);
             if (await gpuCapture.TryStreamAsync(
                 peer,
+                transport,
                 h264PayloadTypeId,
                 deviceName,
                 fps,
                 quality,
+                receiverMaxBitrateKbps,
                 cancellationToken))
             {
                 return;
@@ -207,7 +216,10 @@ namespace VibeDeck.Host.Streaming
                     var profile = string.Equals(encoderName, "libx264", StringComparison.OrdinalIgnoreCase)
                         ? GpuStreamQualityLadder.CreateSoftwareFallback(fps, quality)
                         : new GpuStreamQualityProfile("bitmap-hardware", fps, quality);
-                    var bitrateKbps = EstimateBitrateKbps(width, height, profile.Fps, profile.Quality);
+                    var bitrateKbps = GpuStreamQualityLadder.ApplyReceiverLimit(
+                        EstimateBitrateKbps(width, height, profile.Fps, profile.Quality),
+                        receiverMaxBitrateKbps,
+                        profile.BitrateScale);
                     process = StartFfmpeg(ffmpegPath, encoderName, width, height, profile.Fps, bitrateKbps);
 
                     var rawFrame = new byte[width * height * 4];
@@ -223,11 +235,14 @@ namespace VibeDeck.Host.Streaming
                     var outputTask = H264WebRtcRelay.RelayAsync(
                         process.StandardOutput.BaseStream,
                         peer,
+                        transport,
                         h264PayloadTypeId,
                         profile.Fps,
+                        bitrateKbps,
                         metricsLease,
                         recordEncodedFrames: false,
                         shouldDownshift: null,
+                        canDownshift: attempt == 0,
                         cancellationToken);
                     errorTask = DrainErrorAsync(process.StandardError);
 
@@ -268,6 +283,11 @@ namespace VibeDeck.Host.Streaming
                 catch (OperationCanceledException)
                 {
                     throw;
+                }
+                catch (H264KeyFrameRequestException)
+                {
+                    Console.Error.WriteLine($"[H264] restarting bitmap encoder for PLI: attempt={attempt}");
+                    attempt--;
                 }
                 catch (Exception error) when (attempt == 0 && !string.Equals(resolvedEncoderName, "libx264", StringComparison.OrdinalIgnoreCase))
                 {
@@ -450,6 +470,7 @@ namespace VibeDeck.Host.Streaming
             };
 
             var bufferKbps = FfmpegVbvBufferPlanner.CalculateBufferKbps(encoderName, bitrateKbps, fps);
+            var keyFrameInterval = H264WebRtcCodecContract.KeyFrameIntervalFrames(fps);
 
             // Basic input arguments (common to all)
             AddArgs(startInfo,
@@ -494,15 +515,15 @@ namespace VibeDeck.Host.Streaming
                 AddArgs(startInfo,
                     "-preset", "ultrafast",
                     "-tune", "zerolatency",
-                    "-profile:v", "baseline",
                     "-bf", "0");
             }
 
             // Common output arguments
             AddArgs(startInfo,
+                "-profile:v", H264WebRtcCodecContract.EncoderProfile(encoderName),
                 "-pix_fmt", "yuv420p",
-                "-g", fps.ToString(),
-                "-keyint_min", fps.ToString(),
+                "-g", keyFrameInterval.ToString(),
+                "-keyint_min", keyFrameInterval.ToString(),
                 "-sc_threshold", "0",
                 "-refs", "1",
                 "-b:v", $"{bitrateKbps}k",
@@ -513,7 +534,7 @@ namespace VibeDeck.Host.Streaming
             {
                 // libx264-specific parameters for Annex B output headers
                 AddArgs(startInfo,
-                    "-x264-params", $"aud=1:repeat-headers=1:keyint={fps}:min-keyint={fps}:scenecut=0:sync-lookahead=0:rc-lookahead=0:sliced-threads=0");
+                    "-x264-params", $"aud=1:repeat-headers=1:keyint={keyFrameInterval}:min-keyint={keyFrameInterval}:scenecut=0:sync-lookahead=0:rc-lookahead=0:sliced-threads=0");
             }
 
             AddArgs(startInfo,

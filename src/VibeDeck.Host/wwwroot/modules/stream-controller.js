@@ -9,6 +9,34 @@ const WEBRTC_DISCONNECT_GRACE_MS = 12000;
 const WEBRTC_RESTART_SETTLE_MS = 8000;
 const JPEG_RECONNECT_MAX_MS = 15000;
 
+export function estimateReceiverMaxBitrateKbps(settings = {}, environment = globalThis) {
+  const navigatorValue = environment?.navigator || {};
+  const userAgent = String(navigatorValue.userAgent || "");
+  const mobileReceiver = Boolean(navigatorValue.userAgentData?.mobile) ||
+    /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
+  if (!mobileReceiver) return 0;
+
+  const screenValue = environment?.screen || {};
+  const devicePixelRatio = Math.max(1, Math.min(3, Number(environment?.devicePixelRatio) || 1));
+  const width = Math.max(320, Number(screenValue.width) || Number(environment?.innerWidth) || 640) * devicePixelRatio;
+  const height = Math.max(240, Number(screenValue.height) || Number(environment?.innerHeight) || 480) * devicePixelRatio;
+  const fps = Math.max(1, Math.min(60, Number(settings.fps) || 18));
+  const quality = Math.max(25, Math.min(85, Number(settings.quality) || 48));
+  const qualityRatio = (quality - 25) / 60;
+  const bitsPerPixel = 0.060 + qualityRatio * 0.040;
+  let limit = width * height * fps * bitsPerPixel / 1000;
+
+  // NetworkInformation is only a hint, but it is useful as a ceiling. Keep
+  // enough headroom for RTP/RTCP, input traffic, and 2.4 GHz contention.
+  const downlinkMbps = Number(navigatorValue.connection?.downlink);
+  if (Number.isFinite(downlinkMbps) && downlinkMbps > 0) {
+    limit = Math.min(limit, downlinkMbps * 550);
+  }
+
+  limit = Math.max(800, Math.min(2500, limit));
+  return Math.round(limit / 50) * 50;
+}
+
 export function createStreamController({
   elements,
   getWsBase,
@@ -330,6 +358,7 @@ export function createStreamController({
     if (generation !== connectGeneration || rtcPeer !== peer || peer.signalingState === "closed") return false;
 
     const settings = getStreamSettings();
+    const receiverMaxBitrateKbps = estimateReceiverMaxBitrateKbps(settings);
     const answer = await fetchJsonOrThrow("/api/stream/webrtc/offer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -337,7 +366,8 @@ export function createStreamController({
         sdp: peer.localDescription?.sdp || offer.sdp,
         deviceName: getSelectedDisplayName(),
         fps: settings.fps,
-        quality: settings.quality
+        quality: settings.quality,
+        receiverMaxBitrateKbps
       })
     });
     if (generation !== connectGeneration || rtcPeer !== peer || peer.signalingState === "closed") return false;
@@ -471,7 +501,8 @@ export function createStreamController({
           previous,
           now,
           resolveVideoRttSeconds(reports, selectedPair));
-        if (stats.interval) {
+        const fullscreenDisplay = globalThis.document?.body?.classList?.contains("viewer-fullscreen");
+        if (stats.interval && !fullscreenDisplay) {
           const interval = stats.interval;
           const statusParts = [pathLabel(selectedPath)];
           if (interval.fps !== null) statusParts.push(`${Math.max(0, interval.fps).toFixed(0)}fps`);
@@ -492,7 +523,7 @@ export function createStreamController({
         }
         previous = stats.snapshot;
       } catch { }
-    }, 1000);
+    }, 2500);
   }
 
   function scheduleJpegReconnect(socket) {

@@ -36,9 +36,12 @@
   grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
   width: 100%;
-  min-height: 360px;
+  min-width: 0;
+  min-height: 0;
   padding: 12px;
-  overflow: hidden;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   color: #f7f2e8;
   background: var(--side-bg);
   border: 1px solid rgba(255,255,255,.18);
@@ -57,7 +60,7 @@
   background-position: center;
   background-size: cover;
   opacity: .68;
-  transform: scale(1.015);
+  transform: none;
 }
 
 .sideboard-shell::after {
@@ -106,7 +109,8 @@
 .sideboard-view {
   width: min(100%, 920px);
   justify-self: center;
-  align-self: center;
+  align-self: start;
+  container: sideboard-view / inline-size;
 }
 
 .side-title {
@@ -156,7 +160,8 @@
   padding: 8px;
   border: 1px solid var(--side-line);
   background: var(--side-panel);
-  overflow: hidden;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .side-load {
@@ -234,7 +239,8 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  overflow: hidden;
+  overflow: auto;
+  overscroll-behavior: contain;
   color: rgba(247,242,232,.82);
   font-size: var(--side-feed-size);
   line-height: var(--side-feed-line);
@@ -272,9 +278,12 @@
 #systemSideboardPage.dashboard-grid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: repeat(6, minmax(0, 1fr));
+  /* Read mode is a finite dashboard canvas. Card content must use its local
+   * safe scroller instead of changing the size of persisted grid tracks. The
+   * content-sized editor contract lives in dashboard-editor.css. */
+  grid-template-rows: repeat(var(--dashboard-row-count, 6), minmax(0, 1fr));
   gap: 8px;
-  min-height: 680px;
+  min-height: 0;
   isolation: isolate;
 }
 
@@ -288,6 +297,14 @@
   min-width: 0;
   min-height: 0;
   height: auto;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+
+/* Activity already owns a dedicated list scroller. Keep its heading and
+ * filters pinned inside the card instead of turning the whole card into a
+ * competing nested scroller. */
+#systemSideboardPage.dashboard-grid > .activity-feed-card {
   overflow: hidden;
 }
 
@@ -298,13 +315,41 @@ body.eink-client #systemSideboardPage.dashboard-grid [data-dashboard-key] {
   container-name: eink-card;
 }
 
-#systemSideboardPage.dashboard-grid .dashboard-card-hidden {
-  display: none !important;
-}
-
 body:is(.viewer-fullscreen, .dashboard-viewer).mode-sideboard {
   grid-template-rows: 1fr;
   min-height: var(--viewer-height);
+}
+
+/* Reading mode consumes the space below whatever app chrome is present. This
+ * is a mode contract, not a phone/tablet breakpoint: the main document remains
+ * the outer safety scroller while finite dashboard tracks contain live cards.
+ * E-Ink intentionally owns a growing paper-like document further below. */
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) {
+  height: var(--viewer-height, 100vh);
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) main {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) .sideboard-view.active {
+  height: 100%;
+  min-height: 0;
+}
+
+/* A finite read canvas has exactly one content scroller per card. Decorative
+ * background scaling must not manufacture an outer dashboard scrollbar. */
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) .sideboard-shell {
+  overflow: auto;
+}
+
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) #systemSideboardPage.dashboard-grid {
+  overflow: hidden;
 }
 
 body.deck-window.mode-sideboard .side-title strong {
@@ -376,255 +421,226 @@ body.pc-console.mode-sideboard:not(.dashboard-edit-mode) [data-dashboard-key="qu
 
 body.pc-console.mode-sideboard #systemSideboardPage.dashboard-grid,
 body.deck-window.mode-sideboard #systemSideboardPage.dashboard-grid {
-  overflow: hidden;
+  overflow: auto;
 }
 
-/* Tablet owns the real dashboard grid; the phone fallback must not replace it. */
-body.tablet-client.mode-sideboard .sideboard-shell {
+/* Mid-sized Sideboards share one density contract whether they are a tablet,
+ * a split PC window, or an unusual external display. */
+@container sideboard-view (min-width: 44.01rem) and (max-width: 64rem) {
+  .sideboard-shell {
+    --side-kicker-size: 14px;
+    --side-kicker-line: 1.1;
+    --side-summary-size: 14px;
+    --side-summary-line: 1.2;
+    --side-feed-size: 14px;
+    --side-feed-line: 1.2;
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-self: stretch;
+    padding: var(--viewer-surface-padding, calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)))
+      calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right, 0px)))
+      calc(10px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))
+      calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left, 0px))));
+  }
+
+  .sideboard-shell.dashboard-editing {
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+
+  .sideboard-top {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  #systemSideboardPage.dashboard-grid {
+    gap: 5px;
+    width: 100%;
+    min-height: 0;
+    align-self: stretch;
+  }
+
+  #systemSideboardPage.dashboard-grid > [data-dashboard-key] {
+    padding: 5px 6px;
+    border-radius: 5px;
+  }
+
+  #systemSideboardPage.dashboard-grid .side-load {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    align-content: center;
+    gap: 3px;
+  }
+
+  #sideLoadStatus,
+  #sideLoadAlertTitle {
+    font-size: clamp(17px, 2.2cqi, 22px);
+    line-height: 1.05;
+  }
+
+  #systemSideboardPage.dashboard-grid .side-feed {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 3px;
+  }
+
+  #systemSideboardPage.dashboard-grid .feed-list {
+    gap: 2px;
+    min-height: 0;
+  }
+
+  #systemSideboardPage.dashboard-grid .feed-list li {
+    min-width: 0;
+    padding: 1px 0;
+  }
+}
+
+/* ResizeObserver mirrors the same measured-container state for Chromium builds
+ * predating native container queries. Keep this capability fallback semantic:
+ * it is based on Sideboard space, never a device or orientation label. */
+body:not(.eink-client) .sideboard-view.space-sideboard-mid .sideboard-shell {
   --side-kicker-size: 14px;
   --side-kicker-line: 1.1;
   --side-summary-size: 14px;
   --side-summary-line: 1.2;
   --side-feed-size: 14px;
   --side-feed-line: 1.2;
-  height: auto;
   min-height: 0;
   grid-template-rows: auto minmax(0, 1fr);
   align-self: stretch;
-  padding: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)))
+  padding: var(--viewer-surface-padding, calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)))
     calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right, 0px)))
     calc(10px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))
-    calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left, 0px)));
+    calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left, 0px))));
 }
 
-body.tablet-client.mode-sideboard .sideboard-shell.dashboard-editing {
+body:not(.eink-client) .sideboard-view.space-sideboard-mid .sideboard-shell.dashboard-editing {
   grid-template-rows: auto auto minmax(0, 1fr);
 }
 
-body.tablet-client:is(.dashboard-viewer, .viewer-immersive).mode-sideboard .sideboard-top {
+body:not(.eink-client) .sideboard-view.space-sideboard-mid .sideboard-top {
   grid-template-columns: minmax(0, 1fr) auto auto;
 }
 
-body.tablet-client.mode-sideboard #systemSideboardPage.dashboard-grid {
-  grid-template-rows: repeat(10, minmax(0, 1fr));
+body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid {
   gap: 5px;
   width: 100%;
-  height: 100%;
   min-height: 0;
   align-self: stretch;
-  overflow: hidden;
 }
 
-body.tablet-client.mode-sideboard {
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  min-height: 0;
-  grid-template-rows: auto minmax(0, 1fr);
-  overflow: hidden;
+body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid > [data-dashboard-key] {
+  padding: 5px 6px;
+  border-radius: 5px;
 }
 
-body.tablet-client.mode-sideboard main,
-body.tablet-client.mode-sideboard .sideboard-view.active {
+body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid .side-load {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-content: center;
+  gap: 3px;
+}
+
+body:not(.eink-client) .sideboard-view.space-sideboard-mid :is(#sideLoadStatus, #sideLoadAlertTitle) {
+  font-size: clamp(17px, 2.2vw, 22px);
+  line-height: 1.05;
+}
+
+body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid .side-feed {
   display: grid;
-  width: 100%;
-  height: auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 3px;
+}
+
+body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid .feed-list {
+  gap: 2px;
   min-height: 0;
-  grid-template-rows: minmax(0, 1fr);
-  align-self: stretch;
-  overflow: hidden;
 }
 
-body.tablet-client.mode-sideboard .sideboard-view.active {
-  max-width: 100%;
-}
-
-body.tablet-client.mode-sideboard .mobile-overview {
-  display: none;
-}
-
-body.tablet-client:not(.eink-client).mode-sideboard:not(.dashboard-edit-mode) .skin-picker {
-  display: none;
+body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid .feed-list li {
+  min-width: 0;
+  padding: 1px 0;
 }
 
 body.pc-console.mode-sideboard:not(.dashboard-edit-mode) .skin-picker {
   display: none;
 }
 
-body.tablet-client:not(.eink-client).mode-sideboard #systemSideboardPage.dashboard-grid > [data-dashboard-key] {
-  padding: 5px 6px;
-  border-radius: 5px;
-}
-
-body.tablet-client:not(.eink-client).mode-sideboard #systemSideboardPage.dashboard-grid .side-load {
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  align-content: center;
-  gap: 3px;
-}
-
-body.tablet-client:not(.eink-client).mode-sideboard #sideLoadStatus,
-body.tablet-client:not(.eink-client).mode-sideboard #sideLoadAlertTitle {
-  font-size: clamp(17px, 2.2vw, 22px);
-  line-height: 1.05;
-}
-
-body.tablet-client:not(.eink-client).mode-sideboard #systemSideboardPage.dashboard-grid .side-feed {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 3px;
-}
-
-body.tablet-client:not(.eink-client).mode-sideboard #systemSideboardPage.dashboard-grid .feed-list {
-  gap: 2px;
-  min-height: 0;
-}
-
-body.tablet-client:not(.eink-client).mode-sideboard #systemSideboardPage.dashboard-grid .feed-list li {
-  min-width: 0;
-  padding: 1px 0;
-}
-
-/* Narrow phone sideboard is a dedicated compact overview. */
-@media (max-width: 1100px) {
-  body.phone-client:not(.tablet-client):not(.eink-client).mode-sideboard .sideboard-top,
-  body.phone-client:not(.tablet-client):not(.eink-client).mode-sideboard #dashboardEditBar,
-  body.phone-client:not(.tablet-client):not(.eink-client).mode-sideboard #systemSideboardPage,
-  body.phone-client:not(.tablet-client):not(.eink-client).mode-sideboard #customSideboardPage {
-    display: none !important;
+/* Content breakpoint: the compact overview replaces spatial editing only when
+ * this component cannot keep the 12-column dashboard readable. */
+@container sideboard-view (max-width: 44rem) {
+  .sideboard-top,
+  #dashboardEditBar,
+  #systemSideboardPage.dashboard-grid,
+  #customSideboardPage {
+    display: none;
   }
 
-  body.phone-client:not(.tablet-client):not(.eink-client).mode-sideboard .sideboard-shell {
+  .sideboard-shell {
+    --viewer-surface-padding: 0;
     display: block;
     height: auto;
     min-height: 0;
     padding: 0;
     overflow: visible;
+    scrollbar-gutter: auto;
+  }
+
+  .sideboard-shell::before {
+    opacity: .42;
+    transform: none;
   }
 }
 
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-sideboard .sideboard-shell,
-body.phone-client.device-trusted.viewport-landscape.mode-sideboard .sideboard-shell,
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-sideboard .mobile-overview,
-body.phone-client.device-trusted.viewport-landscape.mode-sideboard .mobile-overview {
-  width: 100%;
-  max-width: none;
+body:not(.eink-client) .sideboard-view.space-sideboard-compact :is(
+  .sideboard-top,
+  #dashboardEditBar,
+  #systemSideboardPage.dashboard-grid,
+  #customSideboardPage
+) {
+  display: none;
 }
 
-body.phone-client.viewport-portrait .sideboard-view {
-  width: 100%;
-  max-width: none;
-  justify-self: stretch;
-  align-self: start;
-}
-
-body.phone-client.viewport-portrait .sideboard-shell {
-  --side-title-size: clamp(20px, 6.4vw, 28px);
-  --side-title-line: 1.1;
-  --side-big-size: clamp(40px, 14vw, 64px);
-  --side-big-line: .92;
-  --side-summary-size: 13px;
-  --side-summary-line: 1.35;
-  --side-feed-size: 13px;
-  --side-feed-line: 1.35;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto;
-  grid-auto-rows: auto;
-  gap: 10px;
-  min-height: 0;
+body:not(.eink-client) .sideboard-view.space-sideboard-compact .sideboard-shell {
+  --viewer-surface-padding: 0;
+  display: block;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: repeat(4, auto);
   height: auto;
+  min-height: 0;
+  padding: 0;
   overflow: visible;
-  padding: 12px;
-  border-radius: 12px;
+  scrollbar-gutter: auto;
 }
 
-/* E-Ink portrait read mode is a fixed 10-row dashboard. Real BOOX Chromium
- * does not reliably resolve the nested percentage-height chain used by the
- * generic viewer shell, even though desktop emulation does. Anchor the read
- * surface to the measured viewport height instead; edit mode remains
- * scrollable and keeps its own explicit grid height contract. */
-body.eink-client.viewport-portrait.mode-sideboard:not(.dashboard-edit-mode) .sideboard-view.active {
-  height: var(--viewer-height, 100dvh);
-  min-height: 0;
-  align-self: stretch;
-}
-
-body.eink-client.viewport-portrait.mode-sideboard:not(.dashboard-edit-mode) .sideboard-shell {
-  grid-template-rows: auto minmax(0, 1fr);
-  height: var(--viewer-height, 100dvh);
-  min-height: 0;
-  overflow: hidden;
-}
-
-body.phone-client.viewport-portrait .sideboard-shell::before {
+body:not(.eink-client) .sideboard-view.space-sideboard-compact .sideboard-shell::before {
   opacity: .42;
   transform: none;
 }
 
-body.phone-client.viewport-portrait .sideboard-top {
-  grid-column: 1;
-  align-items: start;
+/* The E-Ink read surface starts at one viewport but may grow when translated
+ * text or an unusual aspect ratio needs more room. The document remains the
+ * single reachable scroller. */
+body.eink-client.mode-sideboard:not(.dashboard-edit-mode) .sideboard-view.active {
+  height: auto;
+  min-height: var(--viewer-height, 100vh);
+  align-self: stretch;
 }
 
-body.phone-client.viewport-portrait:not(.eink-client) .sideboard-top {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-body.phone-client.viewport-portrait .side-title {
-  display: grid;
-  gap: 4px;
-  white-space: normal;
-}
-
-body.phone-client.viewport-portrait .side-title strong {
-  white-space: normal;
-}
-
-body.phone-client.viewport-portrait .side-title span {
-  white-space: normal;
-  font-size: 13px;
-  line-height: 1.35;
-}
-
-body.phone-client.viewport-portrait .side-load {
-  border-right: 0;
-  border-bottom: 0;
-  gap: 6px;
-  padding: 12px;
-  border-radius: 10px;
-}
-
-body.phone-client.viewport-portrait .side-feed {
-  grid-template-rows: none;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 10px;
+body.eink-client.mode-sideboard:not(.dashboard-edit-mode) .sideboard-shell {
+  grid-template-rows: auto minmax(0, 1fr);
+  height: auto;
+  min-height: var(--viewer-height, 100vh);
   overflow: visible;
 }
 
-body.phone-client.viewport-portrait .feed-list {
-  overflow: visible;
-  gap: 6px;
+body.ios-client.remote-client:not(.eink-client).dashboard-viewer.mode-sideboard .sideboard-shell {
+  padding-top: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+  padding-right: calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right, 0px)));
+  padding-bottom: calc(8px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  padding-left: calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left, 0px)));
 }
 
-body.phone-client.viewport-portrait .feed-list li {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: unset;
-}
-
-@media (max-width: 960px) {
-  body.ios-client.phone-client:not(.eink-client).dashboard-viewer.mode-sideboard .sideboard-shell {
-    padding-top: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
-    padding-right: calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right, 0px)));
-    padding-bottom: calc(8px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
-    padding-left: calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left, 0px)));
-  }
-}
-
-@media (max-width: 760px) {
+@container sideboard-view (max-width: 44rem) {
   .sideboard-shell {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(4, auto);
   }
 }
 
@@ -644,14 +660,22 @@ body.eink-client .sideboard-shell {
   align-content: start;
   min-width: 0;
   max-width: 100%;
-  height: var(--viewer-height, 100dvh);
-  min-height: var(--viewer-height, 100dvh);
+  height: var(--viewer-height, 100vh);
+  min-height: var(--viewer-height, 100vh);
   padding: 10px 14px 12px;
   color: #000;
   background: #f5f2e7;
   font-size: 18px;
   border: 0;
   border-radius: 0;
+}
+
+/* E-Ink is a distinct high-contrast interaction mode, not a device-width
+ * exception. Give it a separate container name so the ordinary compact
+ * overview cannot replace its configurable paper dashboard at an arbitrary
+ * narrow width. Card internals still respond to their own inline containers. */
+body.eink-client .sideboard-view {
+  container-name: eink-sideboard-view;
 }
 
 body.eink-client .sideboard-shell::before,
@@ -773,7 +797,7 @@ body.eink-client .feed-list li {
 
 body.eink-client:is(.dashboard-viewer, .viewer-immersive) .sideboard-shell,
 body.eink-client.viewer-fullscreen.mode-sideboard .sideboard-shell {
-  padding: 12px 14px 28px;
+  padding: 12px 14px calc(58px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
 }
 
 body.eink-client:is(.viewer-fullscreen, .dashboard-viewer, .viewer-immersive).mode-sideboard .sideboard-shell {
@@ -785,9 +809,6 @@ body.eink-client:is(.viewer-fullscreen, .dashboard-viewer, .viewer-immersive).mo
 body.eink-client #systemSideboardPage.dashboard-grid {
   min-height: 0;
   height: 100%;
-  overflow: hidden;
-}
-
-body.eink-client.viewport-portrait #systemSideboardPage.dashboard-grid {
-  grid-template-rows: repeat(10, minmax(0, 1fr));
+  overflow: auto;
+  overscroll-behavior: contain;
 }

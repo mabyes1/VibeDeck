@@ -15,10 +15,12 @@ namespace VibeDeck.Host.Streaming
 
         Task<bool> TryStreamAsync(
             RTCPeerConnection peer,
+            H264WebRtcTransport transport,
             int h264PayloadTypeId,
             string deviceName,
             int requestedFps,
             int requestedQuality,
+            int receiverMaxBitrateKbps,
             CancellationToken cancellationToken);
     }
 
@@ -49,10 +51,12 @@ namespace VibeDeck.Host.Streaming
 
         public async Task<bool> TryStreamAsync(
             RTCPeerConnection peer,
+            H264WebRtcTransport transport,
             int h264PayloadTypeId,
             string deviceName,
             int requestedFps,
             int requestedQuality,
+            int receiverMaxBitrateKbps,
             CancellationToken cancellationToken)
         {
             if (!runtime.IsAvailable)
@@ -78,19 +82,35 @@ namespace VibeDeck.Host.Streaming
                 {
                     var profile = profiles[profileIndex];
                     var canDownshift = profileIndex + 1 < profiles.Count;
+                    var keyFrameRestarts = 0;
                     try
                     {
-                        await RunAttemptAsync(
-                            peer,
-                            h264PayloadTypeId,
-                            display.OutputIndex,
-                            dimensions.Width,
-                            dimensions.Height,
-                            encoder,
-                            profile,
-                            profileIndex,
-                            canDownshift,
-                            cancellationToken);
+                        while (true)
+                        {
+                            try
+                            {
+                                await RunAttemptAsync(
+                                    peer,
+                                    transport,
+                                    h264PayloadTypeId,
+                                    display.OutputIndex,
+                                    dimensions.Width,
+                                    dimensions.Height,
+                                    encoder,
+                                    profile,
+                                    profileIndex,
+                                    canDownshift,
+                                    receiverMaxBitrateKbps,
+                                    cancellationToken);
+                                break;
+                            }
+                            catch (H264KeyFrameRequestException)
+                            {
+                                keyFrameRestarts++;
+                                Console.Error.WriteLine(
+                                    $"[H264] restarting encoder for PLI: encoder={encoder} tier={profile.Name}");
+                            }
+                        }
                         return true;
                     }
                     catch (OperationCanceledException)
@@ -122,6 +142,7 @@ namespace VibeDeck.Host.Streaming
 
         private async Task RunAttemptAsync(
             RTCPeerConnection peer,
+            H264WebRtcTransport transport,
             int h264PayloadTypeId,
             int outputIndex,
             int width,
@@ -130,6 +151,7 @@ namespace VibeDeck.Host.Streaming
             GpuStreamQualityProfile profile,
             int downshiftCount,
             bool canDownshift,
+            int receiverMaxBitrateKbps,
             CancellationToken cancellationToken)
         {
             Process process = null;
@@ -138,11 +160,14 @@ namespace VibeDeck.Host.Streaming
             H264StreamMetricsLease metricsLease = null;
             try
             {
-                var bitrateKbps = GpuStreamQualityLadder.EstimateBitrateKbps(
-                    width,
-                    height,
-                    profile.Fps,
-                    profile.Quality);
+                var bitrateKbps = GpuStreamQualityLadder.ApplyReceiverLimit(
+                    GpuStreamQualityLadder.EstimateBitrateKbps(
+                        width,
+                        height,
+                        profile.Fps,
+                        profile.Quality),
+                    receiverMaxBitrateKbps,
+                    profile.BitrateScale);
                 process = runtime.Start(
                     encoder,
                     outputIndex,
@@ -167,11 +192,14 @@ namespace VibeDeck.Host.Streaming
                 var framesSent = await H264WebRtcRelay.RelayAsync(
                     process.StandardOutput.BaseStream,
                     peer,
+                    transport,
                     h264PayloadTypeId,
                     profile.Fps,
+                    bitrateKbps,
                     metricsLease,
                     recordEncodedFrames: true,
                     healthCheck,
+                    canDownshift,
                     cancellationToken);
 
                 if (!cancellationToken.IsCancellationRequested &&

@@ -10,6 +10,18 @@ Product installer assets for the one-click Windows install path.
 4. **Firewall rule** — inbound allow for `VibeDeck.Host.exe` (LAN phone access).
 5. **Data** — `%ProgramData%\VibeDeck` (certs, devices, quotas, custom sources).
 
+## Which command should I use?
+
+| Goal | Command |
+|---|---|
+| Web UI iteration | `scripts\build-and-install-windows.ps1 -FastLocal -WebOnly -SkipTests` |
+| Host/C# iteration | `scripts\build-and-install-windows.ps1 -FastLocal -SkipTests` |
+| Release or clean install artifact | `scripts\package-windows-setup.ps1` |
+
+The two `FastLocal` commands require an existing canonical Setup installation.
+They create a same-AppId overlay and are never release artifacts. Windows
+notification packaging remains separate.
+
 ## Build
 
 From repo root:
@@ -33,6 +45,31 @@ scripts\package-windows-setup.ps1 -SkipInno   # payload only
 ```
 
 For a complete local one-click build and installation, double-click `install.bat`. For an in-place update, double-click `update.bat`; it silently stops the old Host, runs Setup, preserves `%ProgramData%\VibeDeck`, restarts the Host, and verifies the installed product.
+
+For rapid iteration against an existing canonical installation, build and run a
+same-AppId changed-file overlay Setup:
+
+```powershell
+scripts\build-and-install-windows.ps1 -FastLocal -SkipTests
+```
+
+`-FastLocal` incrementally refreshes the full publish cache, compares it with
+`C:\Program Files\VibeDeck`, and packages only changed Host/runtime files plus
+the complete replaceable web trees. It does not include unchanged .NET runtime,
+cloudflared, or the independently installed notification companion. The output
+`VibeDeck-FastLocal-Setup-<version>.exe` is local-only and must never be
+published or used for a clean install. Omit `-SkipTests` when the relevant source
+checks have not already been run.
+
+When every intended change is under `src\VibeDeck.Host\wwwroot`, use the
+web-only path. It skips `dotnet publish` entirely:
+
+```powershell
+scripts\build-and-install-windows.ps1 -FastLocal -WebOnly -SkipTests
+```
+
+Do not use `-WebOnly` after changing C#, the project file, NuGet dependencies,
+connectors, installers, or other non-web product files.
 
 Fallback install without Setup.exe (elevated):
 

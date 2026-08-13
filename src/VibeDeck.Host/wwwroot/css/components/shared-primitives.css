@@ -73,10 +73,10 @@ body:is(.viewer-fullscreen, .dashboard-viewer, .deck-window).mode-sideboard .sid
   height: auto;
   border: 0;
   border-radius: 0;
-  padding: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top)))
+  padding: var(--viewer-surface-padding, calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top)))
     calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right)))
     calc(8px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)))
-    calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left)));
+    calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left))));
 }
 
 body:is(.viewer-fullscreen, .dashboard-viewer, .deck-window).mode-quota .quota-view.active,
@@ -86,32 +86,10 @@ body:is(.viewer-fullscreen, .dashboard-viewer, .deck-window).mode-sideboard .sid
   align-self: stretch;
 }
 
-/* Single-line labels and metadata that must truncate rather than grow cards.
- * Keep this cross-owner contract centralized because several later
- * tablet/E-Ink selectors intentionally re-assert truncation after a more
- * general portrait wrapping rule. The groups below are arranged by owner so
- * future maintenance does not require decoding one undifferentiated list. */
-
-/* App shell / device management. */
-:is(.brand-copy span, .trusted-device-main strong, .trusted-device-main span),
-/* Custom Cards / Activity Feed. */
-:is(.custom-card-title, .custom-card-footer, .custom-source-name, .activity-from),
-/* Metric Card. */
-.metric-sub,
-.metric-card .side-kicker,
-body.tablet-client.viewport-portrait.mode-sideboard #systemSideboardPage.dashboard-grid .metric-sub,
-body.eink-client #systemSideboardPage.dashboard-grid .metric-sub,
-/* Quota / Quota Mini. */
-:is(.quota-mini-credit, .quota-help-summary-label, .quota-account-email, .quota-action-status),
-:is(.quota-window small, .quota-local-card strong, .quota-local-card span),
-body.tablet-client.mode-sideboard .quota-mini-value-row span,
-body.tablet-client.viewport-landscape.mode-quota .quota-credit-row,
-/* Sideboard feeds / process list. */
-.feed-list li,
-body.eink-client #systemSideboardPage.dashboard-grid .feed-list li,
-body.eink-client #systemSideboardPage.dashboard-grid .side-load .side-summary span,
-.process-list li > span,
-body.tablet-client.mode-sideboard #systemSideboardPage.dashboard-grid .feed-list li {
+/* Only genuinely compact identity labels opt into truncation. Status copy,
+ * metrics, quota identities, and feed rows belong to their component owner
+ * and may wrap or expose a local scroller instead of being silently cut. */
+:is(.brand-copy span, .custom-card-title, .custom-source-name, .activity-from) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -121,7 +99,7 @@ body.tablet-client.mode-sideboard #systemSideboardPage.dashboard-grid .feed-list
  * hierarchy and cannot explain consequences clearly enough for destructive
  * actions, so all surfaces share this one modal contract. */
 .vibe-confirm-overlay[hidden] {
-  display: none !important;
+  display: none;
 }
 
 .vibe-confirm-overlay {
@@ -136,8 +114,8 @@ body.tablet-client.mode-sideboard #systemSideboardPage.dashboard-grid .feed-list
   -webkit-backdrop-filter: blur(8px);
 }
 
-body.confirm-open {
-  overflow: hidden !important;
+html body.confirm-open {
+  overflow: hidden;
 }
 
 .vibe-confirm-card {

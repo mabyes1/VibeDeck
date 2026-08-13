@@ -12,11 +12,14 @@ namespace VibeDeck.Host.Streaming
         public static async Task<int> RelayAsync(
             Stream output,
             RTCPeerConnection peer,
+            H264WebRtcTransport transport,
             int h264PayloadTypeId,
             int fps,
+            int targetBitrateKbps,
             H264StreamMetricsLease metrics,
             bool recordEncodedFrames,
             Func<TimeSpan, bool> shouldDownshift,
+            bool canDownshift,
             CancellationToken cancellationToken)
         {
             var buffer = new byte[32 * 1024];
@@ -24,6 +27,7 @@ namespace VibeDeck.Host.Streaming
             var cadence = new H264FrameCadencePlanner(fps);
             var clock = Stopwatch.StartNew();
             var framesSent = 0;
+            transport.SetTargetBitrate(targetBitrateKbps);
 
             while (!cancellationToken.IsCancellationRequested && peer.connectionState == RTCPeerConnectionState.connected)
             {
@@ -41,13 +45,16 @@ namespace VibeDeck.Host.Streaming
                         return framesSent;
                     }
 
-                    // Send each encoded access unit as soon as it is ready. The
-                    // encoder/capture pipeline already establishes the source
-                    // cadence; waiting here adds a stable one-frame feedback
-                    // delay on interactive pointer movement. Keep RTP timing
-                    // fixed so removing this wait does not reintroduce the old
-                    // variable-duration timestamps.
-                    peer.VideoStream.SendH264Frame(cadence.DurationTicks, h264PayloadTypeId, accessUnit);
+                    // Keep RTP timestamps fixed to the requested frame cadence.
+                    // The transport applies a small token-bucket pace inside
+                    // each access unit so a large IDR does not hit Wi-Fi as one
+                    // packet burst, while retaining a short interactive burst
+                    // allowance for pointer-driven desktop updates.
+                    await transport.SendAccessUnitAsync(
+                        cadence.DurationTicks,
+                        h264PayloadTypeId,
+                        accessUnit,
+                        cancellationToken).ConfigureAwait(false);
                     framesSent++;
                     if (recordEncodedFrames)
                     {
@@ -57,6 +64,16 @@ namespace VibeDeck.Host.Streaming
                     if (shouldDownshift?.Invoke(clock.Elapsed) == true)
                     {
                         throw new GpuStreamDownshiftException();
+                    }
+
+                    var recoveryAction = transport.ConsumeRecoveryAction(canDownshift);
+                    if (recoveryAction == H264RecoveryAction.Downshift)
+                    {
+                        throw new GpuStreamDownshiftException("WebRTC packet loss requires a lower bitrate tier.");
+                    }
+                    if (recoveryAction == H264RecoveryAction.RestartForKeyFrame)
+                    {
+                        throw new H264KeyFrameRequestException();
                     }
                 }
             }
@@ -69,6 +86,19 @@ namespace VibeDeck.Host.Streaming
     {
         public GpuStreamDownshiftException()
             : base("GPU capture could not sustain the target frame rate.")
+        {
+        }
+
+        public GpuStreamDownshiftException(string message)
+            : base(message)
+        {
+        }
+    }
+
+    internal sealed class H264KeyFrameRequestException : Exception
+    {
+        public H264KeyFrameRequestException()
+            : base("The receiver requested a fresh H.264 key frame.")
         {
         }
     }

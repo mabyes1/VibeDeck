@@ -1,9 +1,9 @@
 /* E-Ink app-shell exclusions. Visual primitives live in eink-primitives.css. */
 body.eink-client #displayMode,
-body.eink-client .display-view,
+body.eink-client .display-view.app-view,
 body.eink-client #keepAwake,
-body.eink-client header .panel {
-  display: none !important;
+body.eink-client header .panel.panel {
+  display: none;
 }
     *,
     *::before,
@@ -25,7 +25,8 @@ body.eink-client header .panel {
     }
 
     header {
-      padding: calc(14px + var(--safe-area-inset-top, env(safe-area-inset-top))) calc(18px + var(--safe-area-inset-right, env(safe-area-inset-right))) 14px calc(18px + var(--safe-area-inset-left, env(safe-area-inset-left)));
+      container: app-header / inline-size;
+      padding: calc(clamp(8px, 1.5vw, 14px) + var(--safe-area-inset-top, env(safe-area-inset-top))) calc(clamp(10px, 2vw, 18px) + var(--safe-area-inset-right, env(safe-area-inset-right))) clamp(8px, 1.5vw, 14px) calc(clamp(10px, 2vw, 18px) + var(--safe-area-inset-left, env(safe-area-inset-left)));
       background: rgba(15, 23, 32, .82);
       backdrop-filter: blur(20px) saturate(140%);
       -webkit-backdrop-filter: blur(20px) saturate(140%);
@@ -39,10 +40,10 @@ body.eink-client header .panel {
 
     main {
       display: grid;
-      padding: 16px;
-      padding-left: calc(16px + var(--safe-area-inset-left, env(safe-area-inset-left)));
-      padding-right: calc(16px + var(--safe-area-inset-right, env(safe-area-inset-right)));
-      padding-bottom: calc(16px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
+      padding: clamp(8px, 1.5vw, 16px);
+      padding-left: calc(clamp(8px, 1.5vw, 16px) + var(--safe-area-inset-left, env(safe-area-inset-left)));
+      padding-right: calc(clamp(8px, 1.5vw, 16px) + var(--safe-area-inset-right, env(safe-area-inset-right)));
+      padding-bottom: calc(clamp(8px, 1.5vw, 16px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
       min-height: 0;
     }
 
@@ -67,9 +68,9 @@ body.eink-client header .panel {
     body.viewer-immersive {
       background: #000;
       grid-template-rows: 1fr;
-      width: 100dvw;
-      height: 100dvh;
-      min-height: 100dvh;
+      width: var(--viewer-width, 100vw);
+      height: var(--viewer-height, 100vh);
+      min-height: var(--viewer-height, 100vh);
       overflow: hidden;
       position: fixed;
       inset: 0;
@@ -82,7 +83,7 @@ body.eink-client header .panel {
 
     body.dashboard-viewer > header,
     body.viewer-immersive > header {
-      display: none !important;
+      display: none;
     }
 
     body.deck-window {
@@ -96,7 +97,7 @@ body.eink-client header .panel {
 
     body.deck-window > header,
     body.deck-window .exit-viewer {
-      display: none !important;
+      display: none;
     }
 
     body.deck-window main {
@@ -122,10 +123,10 @@ body.eink-client header .panel {
     body.viewer-immersive main {
       padding: 0;
       background: #000;
-      width: 100dvw;
-      height: 100dvh;
-      min-height: 100dvh;
-      max-height: 100dvh;
+      width: var(--viewer-width, 100vw);
+      height: var(--viewer-height, 100vh);
+      min-height: var(--viewer-height, 100vh);
+      max-height: var(--viewer-height, 100vh);
       overflow-y: auto;
       overflow-x: hidden;
     }
@@ -293,14 +294,17 @@ html[data-device-preview] body::-webkit-scrollbar {
     /* Windows console: settings are a dedicated product page. Everyday views
        keep a compact header and own the entire remaining viewport. */
     body.pc-console {
-      height: 100dvh;
+      height: var(--viewer-height, 100vh);
       min-height: 0;
       overflow: hidden;
     }
 
     body.pc-console:not(.mode-setup) main {
       min-height: 0;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
     }
 
     body.pc-console:not(.mode-setup) .app-view.active {
@@ -312,38 +316,17 @@ html[data-device-preview] body::-webkit-scrollbar {
       justify-self: stretch;
     }
 
-    /* Phone client: content-first. PC console keeps full connect/pairing chrome. */
-    body.phone-client header {
-      grid-template-columns: 1fr;
-      gap: 10px;
-      padding: calc(10px + var(--safe-area-inset-top, env(safe-area-inset-top))) calc(12px + var(--safe-area-inset-right, env(safe-area-inset-right))) 10px calc(12px + var(--safe-area-inset-left, env(safe-area-inset-left)));
-    }
-
-    body.phone-client .brand-copy span {
+    /* Unpaired remote browsers only expose the pairing gate. */
+    body.remote-client:not(.device-trusted) header,
+    body.remote-client:not(.device-trusted) .display-view,
+    body.remote-client:not(.device-trusted) .sideboard-view {
       display: none;
     }
 
-    body.phone-client:not(.device-trusted):not(.pc-console) header,
-    body.phone-client:not(.device-trusted):not(.pc-console) .display-view,
-    body.phone-client:not(.device-trusted):not(.pc-console) .sideboard-view {
-      display: none !important;
-    }
-
-    body.phone-client:not(.device-trusted):not(.pc-console) main {
+    body.remote-client:not(.device-trusted) main {
       display: grid;
       place-items: start center;
       padding-top: max(28px, var(--safe-area-inset-top, env(safe-area-inset-top)));
-    }
-
-    body.phone-client .panel {
-      order: 5;
-    }
-
-    body.phone-client main {
-      padding: 10px;
-      padding-left: calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left)));
-      padding-right: calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right)));
-      padding-bottom: calc(10px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
     }
 
     /*
@@ -361,8 +344,8 @@ html[data-device-preview] body::-webkit-scrollbar {
       position: fixed;
       top: 0;
       left: 100%;
-      width: 100dvh;
-      height: 100dvw;
+      width: var(--viewer-width, 100vh);
+      height: var(--viewer-height, 100vw);
       max-width: none;
       max-height: none;
       margin: 0;
@@ -374,81 +357,13 @@ html[data-device-preview] body::-webkit-scrollbar {
       grid-template-rows: auto 1fr;
     }
 
-    /*
-     * Logical landscape chrome (CSS force-rotate OR real landscape).
-     * The generic @media (max-width: 960px) portrait compaction sets
-     * utility buttons to width:100%, which turns Fullscreen into a full bar
-     * once the rotated logical width exceeds a phone portrait width.
-     */
-    html.phone-force-landscape body.force-landscape.phone-client.device-trusted header,
-    body.phone-client.device-trusted.viewport-landscape header {
-      gap: 6px;
-      padding: 6px 10px;
-      padding-left: calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left, 0px)));
-      padding-right: calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right, 0px)));
-    }
-
-    html.phone-force-landscape body.force-landscape.phone-client.device-trusted .brand,
-    body.phone-client.device-trusted.viewport-landscape .brand {
-      display: none;
-    }
-
-    html.phone-force-landscape body.force-landscape.phone-client.device-trusted main,
-    body.phone-client.device-trusted.viewport-landscape main {
-      width: 100%;
-      min-height: 0;
-      padding: 8px 10px;
-      padding-left: calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left, 0px)));
-      padding-right: calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right, 0px)));
-      padding-bottom: calc(8px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
-    }
-
-    html.phone-force-landscape body.force-landscape.phone-client.device-trusted .app-view.active,
-    body.phone-client.device-trusted.viewport-landscape .app-view.active {
-      width: 100%;
-      max-width: none;
-      justify-self: stretch;
-      min-height: 0;
-    }
-
-    /* Portrait phone: content scrolls under a short chrome bar. */
-    body.phone-client.viewport-portrait {
-      height: 100dvh;
-      max-height: 100dvh;
-      overflow: hidden;
-    }
-
-    body.phone-client.viewport-portrait header {
-      gap: 8px;
-      padding: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top))) calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right))) 8px calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left)));
-    }
-
-    body.phone-client.viewport-portrait .brand {
-      display: none;
-    }
-
-    body.phone-client.viewport-portrait main {
-      min-height: 0;
-      overflow-y: auto;
-      overflow-x: hidden;
-      -webkit-overflow-scrolling: touch;
-      padding: 8px;
-      padding-left: calc(8px + var(--safe-area-inset-left, env(safe-area-inset-left)));
-      padding-right: calc(8px + var(--safe-area-inset-right, env(safe-area-inset-right)));
-      padding-bottom: calc(12px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
-      align-content: start;
-    }
-
-    body.ios-client.phone-client.device-trusted header {
-      gap: 6px;
-    }
-
-    @media (max-width: 760px) {
-      header {
-        grid-template-columns: 1fr;
-        gap: 12px;
-        padding: calc(10px + var(--safe-area-inset-top, env(safe-area-inset-top))) calc(12px + var(--safe-area-inset-right, env(safe-area-inset-right))) 12px calc(12px + var(--safe-area-inset-left, env(safe-area-inset-left)));
+    @container app-header (max-width: 48rem) {
+      .brand,
+      .top-controls {
+        grid-column: 1 / -1;
       }
+
+      .brand-copy span { display: none; }
 
       .brand-mark {
         width: 34px;
@@ -473,5 +388,8 @@ html[data-device-preview] body::-webkit-scrollbar {
       input {
         width: 100%;
       }
+    }
 
+    @container app-header (max-width: 36rem) {
+      .brand { display: none; }
     }

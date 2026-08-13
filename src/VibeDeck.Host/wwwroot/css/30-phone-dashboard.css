@@ -1,11 +1,13 @@
-/* Dedicated phone dashboard. Desktop and e-ink keep the configurable grid. */
+/* Compact dashboard selected by the space the Sideboard actually receives.
+ * This deliberately does not key off a device name, user agent, orientation,
+ * or body class: split-screen PC windows and unknown form factors get the same
+ * readable result as a narrow phone viewport. */
 .mobile-overview {
   display: none;
 }
 
-@media (max-width: 1100px) {
-  body.phone-client:not(.tablet-client):not(.eink-client).mode-sideboard .mobile-overview {
-    display: flex;
+.mobile-overview {
+    display: none;
     flex-direction: column;
     gap: 8px;
     min-width: 0;
@@ -85,10 +87,6 @@
     min-height: 28px;
     color: var(--side-muted, #a5bbb8);
     font-size: 14px;
-  }
-
-  body.phone-client:not(.tablet-client):not(.eink-client).viewport-landscape.mode-sideboard:is(.dashboard-viewer, .viewer-fullscreen) #mobileActivityOpen {
-    margin-inline-end: 56px;
   }
 
   #mobileSystemStatus {
@@ -378,7 +376,79 @@
     margin-top: auto;
   }
 
-  body.mobile-detail-open {
-    overflow: hidden !important;
+/* Modern engines select this presentation with a native container query. The
+ * semantic class is maintained from the same measured container width so
+ * Chromium 101-era clients get the identical component contract. */
+@container sideboard-view (max-width: 44rem) {
+  .mobile-overview { display: flex; }
+}
+
+body:not(.eink-client) .sideboard-view.space-sideboard-compact .mobile-overview { display: flex; }
+
+/* Below this content width two full action labels and a quota identity no
+ * longer form honest horizontal rows. Stack those rows based on available
+ * component space, regardless of whether the narrow surface is a phone or a
+ * resized PC window. */
+@container sideboard-view (max-width: 18rem) {
+  .mobile-overview-head,
+  .mobile-quota-strip {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
   }
+
+  .mobile-overview-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .mobile-overview-actions button,
+  .mobile-quota-strip > span {
+    min-width: 0;
+  }
+
+  .mobile-quota-strip > span:last-child {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .mobile-quota-strip small,
+  .mobile-quota-strip b {
+    overflow-wrap: anywhere;
+  }
+}
+
+body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-overview-head,
+body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-quota-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+
+body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-overview-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+}
+
+body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-overview-actions button,
+body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-quota-strip > span {
+  min-width: 0;
+}
+
+body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-quota-strip > span:last-child {
+  justify-items: start;
+  text-align: left;
+}
+
+body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-quota-strip small,
+body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-quota-strip b {
+  overflow-wrap: anywhere;
+}
+
+/* A detail panel is a modal document surface. Locking the document is a state
+ * boundary, not a viewport or device override. */
+body.mobile-detail-open {
+  overflow: hidden;
 }

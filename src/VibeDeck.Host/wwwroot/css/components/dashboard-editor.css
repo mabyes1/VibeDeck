@@ -199,32 +199,32 @@
   box-shadow: 0 18px 60px rgba(0,0,0,.62);
 }
 
-/* E-ink editor: read mode stays a one-screen dashboard, edit mode may scroll. */
-body.dashboard-edit-mode.eink-client.dashboard-viewer,
-body.dashboard-edit-mode.eink-client.viewer-immersive {
-  height: auto !important;
-  min-height: 100dvh !important;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
-  position: absolute !important;
+/* Editing is one content-sized workspace on every capable surface. Read mode
+ * may use a one-screen canvas; the editor must grow with its toolbar/cards and
+ * expose one safe document scroller instead of device-specific fixed heights. */
+body.dashboard-edit-mode {
+  position: static;
+  width: 100%;
+  height: auto;
+  min-height: var(--viewer-height, 100vh);
+  overflow-x: clip;
+  overflow-y: auto;
 }
 
-body.dashboard-edit-mode.eink-client main,
-body.dashboard-edit-mode.eink-client .sideboard-view.active {
-  height: auto !important;
-  min-height: 100dvh !important;
-  overflow: visible !important;
+body.dashboard-edit-mode main,
+body.dashboard-edit-mode .sideboard-view.active,
+body.dashboard-edit-mode .sideboard-shell.dashboard-editing {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
 }
 
-body.dashboard-edit-mode.eink-client .sideboard-shell.dashboard-editing {
-  height: auto !important;
-  min-height: 100dvh !important;
-  overflow: visible !important;
-}
-
-body.dashboard-edit-mode.eink-client .sideboard-shell.dashboard-editing #systemSideboardPage.dashboard-grid {
-  height: calc(100dvh - 92px) !important;
-  min-height: 820px !important;
+body.dashboard-edit-mode .sideboard-shell.dashboard-editing #systemSideboardPage.dashboard-grid {
+  height: auto;
+  min-height: calc(var(--viewer-height, 100vh) - var(--dashboard-editor-chrome, 8rem));
+  grid-template-rows: repeat(var(--dashboard-row-count, 6), minmax(min-content, 1fr));
+  overflow: visible;
 }
 
 body.eink-client .dashboard-edit-toggle {
@@ -303,36 +303,7 @@ body.eink-client .dashboard-config-panel {
    Hide the underlying viewer exit button so fixed viewer chrome cannot cover
    editor controls on narrow or E-Ink layouts. */
 body.dashboard-edit-mode .exit-viewer {
-  display: none !important;
-}
-
-/* Tablet read mode is intentionally one-screen. Editing is a workspace: keep
-   card rows large enough to remain legible and let the page scroll instead of
-   compressing the dashboard underneath the inspector. */
-body.dashboard-edit-mode.tablet-client:not(.eink-client) {
-  height: auto !important;
-  min-height: 100dvh !important;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
-}
-
-body.dashboard-edit-mode.tablet-client:not(.eink-client) main,
-body.dashboard-edit-mode.tablet-client:not(.eink-client) .sideboard-view.active,
-body.dashboard-edit-mode.tablet-client:not(.eink-client) .sideboard-shell.dashboard-editing {
-  height: auto !important;
-  min-height: 0 !important;
-  overflow: visible !important;
-}
-
-body.dashboard-edit-mode.tablet-client:not(.eink-client) .sideboard-shell.dashboard-editing #systemSideboardPage.dashboard-grid {
-  height: max(720px, calc(100dvh - 120px)) !important;
-  min-height: 720px !important;
-  overflow: hidden !important;
-}
-
-body.dashboard-edit-mode.tablet-client:not(.eink-client).viewport-landscape .sideboard-shell.dashboard-editing #systemSideboardPage.dashboard-grid {
-  height: max(520px, calc(100dvh - 90px)) !important;
-  min-height: 520px !important;
+  display: none;
 }
 
 body.eink-client .dashboard-card-editor {

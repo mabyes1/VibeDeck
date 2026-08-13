@@ -20,3 +20,16 @@ export function isIphoneUA() {
 export function isMobileUA() {
   return isIosUA() || /Android|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || "");
 }
+
+// Prefer the low-latency path based on browser/runtime capability, not device
+// class. Desktop browsers are at least as capable of receiving WebRTC H.264 as
+// mobile browsers; an insecure non-loopback origin is the only common case
+// where the browser path must stay on JPEG.
+export function shouldPreferWebRtcDisplay({
+  forced = false,
+  hasPeerConnection = false,
+  secureContext = false,
+  loopback = false,
+} = {}) {
+  return Boolean(forced || (hasPeerConnection && (secureContext || loopback)));
+}

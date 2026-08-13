@@ -21,6 +21,7 @@ namespace VibeDeck.Host.Streaming
         private readonly CloudflareTurnCredentialService turnCredentials;
         private readonly AuditTrailService audit;
         private readonly ConcurrentDictionary<Guid, WebRtcSession> sessions = new ConcurrentDictionary<Guid, WebRtcSession>();
+        private readonly object sessionRegistrationSync = new object();
 
         public WebRtcH264Service(
             H264AnnexBStreamer h264,
@@ -40,7 +41,8 @@ namespace VibeDeck.Host.Streaming
             int fps,
             int quality,
             CancellationToken cancellationToken = default,
-            string trustedDeviceId = null)
+            string trustedDeviceId = null,
+            int receiverMaxBitrateKbps = 0)
         {
             if (string.IsNullOrWhiteSpace(offerSdp))
             {
@@ -73,6 +75,7 @@ namespace VibeDeck.Host.Streaming
                 // Include local addresses for LAN use, and STUN/TURN candidates
                 // for cross-network clients. TURN credentials are short lived.
                 X_ICEIncludeAllInterfaceAddresses = true,
+                X_UseRtpFeedbackProfile = true,
                 iceServers = ToSipsIceServers(iceConfiguration.IceServers)
             };
             var peer = new RTCPeerConnection(configuration);
@@ -85,7 +88,7 @@ namespace VibeDeck.Host.Streaming
                         VideoCodecsEnum.H264,
                         102,
                         90000,
-                        "packetization-mode=1;profile-level-id=42e01f"))
+                        H264WebRtcCodecContract.SdpFormatParameters))
                 },
                 MediaStreamStatusEnum.SendOnly);
             peer.addTrack(track);
@@ -97,7 +100,8 @@ namespace VibeDeck.Host.Streaming
                 fps,
                 quality,
                 iceConfiguration.TurnAvailable ? "turn-ready" : "direct-stun",
-                trustedDeviceId);
+                trustedDeviceId,
+                receiverMaxBitrateKbps);
             peer.onconnectionstatechange += state => OnConnectionStateChanged(session, state);
             peer.oniceconnectionstatechange += state =>
             {
@@ -117,28 +121,38 @@ namespace VibeDeck.Host.Streaming
             });
             if (result != SetDescriptionResultEnum.OK)
             {
+                session.Transport.Dispose();
                 peer.Close("Invalid WebRTC offer.");
                 throw new InvalidOperationException($"WebRTC offer rejected: {result}.");
             }
 
-            var answer = peer.createAnswer(null);
-            await peer.setLocalDescription(answer);
-            // SIPSorcery gathers host ICE candidates asynchronously.  Returning
-            // the SDP created above can therefore omit the server candidate and
-            // leaves Safari stuck in "checking" before it ever receives H.264.
-            // Wait briefly, then return the actual local description populated
-            // by setLocalDescription.
-            await WaitForIceGatheringAsync(peer, 1500);
-            sessions[session.Id] = session;
-            RecordSessionEvent(session, "created", "ready");
-
-            return new WebRtcOfferAnswer
+            RegisterReplacingDeviceSessions(session);
+            try
             {
-                Type = "answer",
-                Sdp = peer.localDescription != null
+                var answer = peer.createAnswer(null);
+                await peer.setLocalDescription(answer);
+                // SIPSorcery gathers host ICE candidates asynchronously.  Returning
+                // the SDP created above can therefore omit the server candidate and
+                // leaves Safari stuck in "checking" before it ever receives H.264.
+                // Wait briefly, then return the actual local description populated
+                // by setLocalDescription.
+                await WaitForIceGatheringAsync(peer, 1500);
+                RecordSessionEvent(session, "created", "ready");
+                var answerSdp = peer.localDescription != null
                     ? peer.localDescription.sdp.ToString()
-                    : answer.sdp
-            };
+                    : answer.sdp;
+
+                return new WebRtcOfferAnswer
+                {
+                    Type = "answer",
+                    Sdp = H264RtcpFeedbackNegotiator.AddLossRecoveryFeedback(offerSdp, answerSdp)
+                };
+            }
+            catch
+            {
+                CloseSession(session, "WebRTC answer failed");
+                throw;
+            }
         }
 
         private static async Task WaitForIceGatheringAsync(RTCPeerConnection peer, int timeoutMs)
@@ -185,10 +199,17 @@ namespace VibeDeck.Host.Streaming
                 state == RTCPeerConnectionState.failed ? "warning" : "information");
             if (state == RTCPeerConnectionState.connected)
             {
+                Interlocked.Increment(ref session.DisconnectedGeneration);
                 if (Interlocked.Exchange(ref session.StreamStarted, 1) == 0)
                 {
                     _ = Task.Run(() => StreamSessionAsync(session));
                 }
+                return;
+            }
+
+            if (state == RTCPeerConnectionState.disconnected)
+            {
+                ScheduleDisconnectedCleanup(session);
                 return;
             }
 
@@ -213,7 +234,9 @@ namespace VibeDeck.Host.Streaming
                     CreatedAt = session.CreatedAt.ToString("O"),
                     ConnectionState = session.LastConnectionState,
                     IceState = session.LastIceState,
-                    TransportPlan = session.TransportPlan
+                    TransportPlan = session.TransportPlan,
+                    ReceiverMaxBitrateKbps = session.ReceiverMaxBitrateKbps,
+                    Transport = session.Transport.GetSnapshot()
                 })
                 .ToArray();
             return new WebRtcDiagnosticsSnapshot
@@ -229,9 +252,11 @@ namespace VibeDeck.Host.Streaming
             {
                 await h264.StreamToWebRtcAsync(
                     session.Peer,
+                    session.Transport,
                     session.DeviceName,
                     session.Fps,
                     session.Quality,
+                    session.ReceiverMaxBitrateKbps,
                     session.Cancellation.Token);
             }
             catch (OperationCanceledException) when (session.Cancellation.IsCancellationRequested)
@@ -296,6 +321,7 @@ namespace VibeDeck.Host.Streaming
             Console.Error.WriteLine($"[WebRTC] {session.Id} closing: {reason}");
             RecordSessionEvent(session, "closed", reason, "information");
             session.Cancellation.Cancel();
+            session.Transport.Dispose();
             try
             {
                 session.Peer.Close(reason);
@@ -303,7 +329,57 @@ namespace VibeDeck.Host.Streaming
             catch
             {
             }
-            session.Cancellation.Dispose();
+        }
+
+        private void RegisterReplacingDeviceSessions(WebRtcSession session)
+        {
+            var replaced = new List<WebRtcSession>();
+            lock (sessionRegistrationSync)
+            {
+                if (!string.IsNullOrWhiteSpace(session.TrustedDeviceId))
+                {
+                    foreach (var existing in sessions.Values)
+                    {
+                        if (existing.Id != session.Id &&
+                            string.Equals(
+                                existing.TrustedDeviceId,
+                                session.TrustedDeviceId,
+                                StringComparison.Ordinal))
+                        {
+                            sessions.TryRemove(existing.Id, out _);
+                            replaced.Add(existing);
+                        }
+                    }
+                }
+                sessions[session.Id] = session;
+            }
+
+            foreach (var existing in replaced)
+            {
+                CloseSession(existing, "replaced by reconnect from the same device");
+            }
+        }
+
+        private void ScheduleDisconnectedCleanup(WebRtcSession session)
+        {
+            var generation = Interlocked.Increment(ref session.DisconnectedGeneration);
+            var cancellationToken = session.Cancellation.Token;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(15), cancellationToken).ConfigureAwait(false);
+                    if (!cancellationToken.IsCancellationRequested &&
+                        generation == Volatile.Read(ref session.DisconnectedGeneration) &&
+                        string.Equals(session.LastConnectionState, "disconnected", StringComparison.OrdinalIgnoreCase))
+                    {
+                        CloseSession(session, "WebRTC disconnected timeout");
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                }
+            });
         }
 
         private void RecordSessionEvent(WebRtcSession session, string action, string outcome, string severity = "information")
@@ -353,13 +429,16 @@ namespace VibeDeck.Host.Streaming
             public string TrustedDeviceId { get; }
             public int Fps { get; }
             public int Quality { get; }
+            public int ReceiverMaxBitrateKbps { get; }
             public string TransportPlan { get; }
+            public H264WebRtcTransport Transport { get; }
             public DateTimeOffset CreatedAt { get; } = DateTimeOffset.UtcNow;
             public CancellationTokenSource Cancellation { get; } = new CancellationTokenSource();
             public string LastConnectionState = "new";
             public string LastIceState = "new";
             public int StreamStarted;
             public int Closed;
+            public int DisconnectedGeneration;
 
             public WebRtcSession(
                 Guid id,
@@ -368,15 +447,20 @@ namespace VibeDeck.Host.Streaming
                 int fps,
                 int quality,
                 string transportPlan,
-                string trustedDeviceId = null)
+                string trustedDeviceId = null,
+                int receiverMaxBitrateKbps = 0)
             {
                 Id = id;
                 Peer = peer;
                 DeviceName = deviceName;
                 Fps = Math.Max(1, Math.Min(60, fps));
                 Quality = Math.Max(25, Math.Min(85, quality));
+                ReceiverMaxBitrateKbps = receiverMaxBitrateKbps <= 0
+                    ? 0
+                    : Math.Max(500, Math.Min(10000, receiverMaxBitrateKbps));
                 TransportPlan = transportPlan ?? "direct-stun";
                 TrustedDeviceId = trustedDeviceId;
+                Transport = new H264WebRtcTransport(peer);
             }
         }
     }
@@ -401,5 +485,7 @@ namespace VibeDeck.Host.Streaming
         public string ConnectionState { get; set; }
         public string IceState { get; set; }
         public string TransportPlan { get; set; }
+        public int ReceiverMaxBitrateKbps { get; set; }
+        public H264TransportSnapshot Transport { get; set; }
     }
 }

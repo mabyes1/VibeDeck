@@ -137,14 +137,14 @@
   100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
 }
 
-body.phone-client #keepAwake,
-body.phone-client #fullscreen {
+body:not(.pc-console) #keepAwake,
+body:not(.pc-console) #fullscreen {
   min-height: 36px;
 }
 
 /* LCD touch clients use the same dark visual language as the content cards.
  * Reserve the stark black/white selection treatment for E-Ink. */
-body.phone-client:not(.eink-client) .view-switcher .mode-button.active {
+body:not(.pc-console):not(.eink-client) .view-switcher .mode-button.active {
   background: linear-gradient(180deg, rgba(143, 209, 255, .20), rgba(112, 217, 139, .10));
   color: var(--text);
   box-shadow:
@@ -153,17 +153,10 @@ body.phone-client:not(.eink-client) .view-switcher .mode-button.active {
     0 5px 16px rgba(0, 0, 0, .20);
 }
 
-body.phone-client:not(.eink-client).viewport-portrait.mode-display #einkModeToggle,
-body.phone-client:not(.eink-client).viewport-portrait.mode-display #refresh,
-body.phone-client:not(.eink-client).viewport-portrait.mode-display #displaySettingsToggle {
-  min-height: 34px;
-  height: 34px;
-}
-
 body.pc-console:not(.deck-window) #einkModeToggle,
 body.pc-console:not(.deck-window) #keepAwake,
 body.pc-console:not(.deck-window) #fullscreen {
-  display: none !important;
+  display: none;
 }
 
 /* Desktop console keeps the primary navigation visually calm. The generic
@@ -194,12 +187,12 @@ body.pc-console:not(.deck-window) .locale-control select {
    surface. Stream status still belongs to Display; routine product
    maintenance still belongs to Setup. */
 body.pc-console:not(.deck-window):not(.mode-display) .utility-controls .status {
-  display: none !important;
+  display: none;
 }
 
 body.pc-console:not(.deck-window):not(.mode-setup) #productUpdate,
 body.pc-console:not(.deck-window):not(.mode-setup) #productUpdateStatus {
-  display: none !important;
+  display: none;
 }
 
 body.pc-console:not(.deck-window):not(.mode-setup) #productUpdate:is(
@@ -210,239 +203,99 @@ body.pc-console:not(.deck-window):not(.mode-setup) #productUpdate:is(
   [data-update-state="launching"],
   [data-update-state="failed"]
 ) {
-  display: inline-flex !important;
+  display: inline-flex;
 }
 
-@media (max-width: 760px) {
-  .top-controls {
-    width: 100%;
-  }
-
-  .view-switcher {
-    display: flex;
-    width: 100%;
-  }
-
-  body.pc-console .view-switcher {
-    display: flex;
-  }
+/* Header chrome responds to the space its component receives, independent of
+   browser identity, orientation labels, or a device model allow-list. */
+@container app-header (max-width: 32rem) {
+  .top-controls { gap: 8px; }
 
   .view-switcher .mode-button {
-    width: auto;
+    min-height: 40px;
+    font-size: 14px;
+    font-weight: 700;
   }
 
-  .utility-controls {
-    display: flex;
-    flex-wrap: nowrap;
-    width: 100%;
-  }
-
-  .utility-controls select,
   .utility-controls button {
-    width: auto;
+    min-width: 0;
+    padding-inline: 6px;
+    font-size: 12px;
+  }
+
+  #rotation,
+  body:not(.eink-client) #fullscreen {
+    display: none;
+  }
+
+  .utility-controls .status {
+    min-height: 32px;
+    font-size: 12px;
   }
 }
 
-body.phone-client.viewport-portrait .top-controls {
-  gap: 8px;
-}
-
-body.phone-client.viewport-portrait .view-switcher {
-  width: 100%;
-}
-
-body.phone-client.viewport-portrait .view-switcher .mode-button {
-  min-height: 40px;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-body.phone-client.viewport-portrait .utility-controls {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 6px;
-}
-
-body.phone-client.viewport-portrait .utility-controls button {
-  min-width: 0;
-  padding-inline: 6px;
-  font-size: 12px;
-}
-
-body.phone-client.viewport-portrait #rotation,
-body.phone-client.viewport-portrait:not(.eink-client) #fullscreen {
-  display: none;
-}
-
-body.phone-client.viewport-portrait .utility-controls .status {
-  min-height: 32px;
-  font-size: 12px;
-}
-
-body.phone-client.viewport-portrait.display-unavailable .utility-controls .status {
+body.display-unavailable .utility-controls .status {
   display: none;
 }
 
 /* Trusted phone dashboards keep only product-level escape hatches visible. */
-body.phone-client.device-trusted:not(.mode-display) .utility-controls {
+body.device-trusted:not(.pc-console):not(.mode-display) .utility-controls {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
 }
 
-body.phone-client.device-trusted:not(.mode-display) .utility-controls > * {
+body.device-trusted:not(.pc-console):not(.mode-display) .utility-controls > * {
   display: none;
 }
 
-body.phone-client.device-trusted:not(.mode-display) .utility-controls .locale-control,
-body.phone-client.device-trusted:not(.mode-display) .utility-controls #refresh,
-body.phone-client.device-trusted:not(.mode-display) .utility-controls #fullscreen {
+body.device-trusted:not(.pc-console):not(.mode-display) .utility-controls .locale-control,
+body.device-trusted:not(.pc-console):not(.mode-display) .utility-controls #refresh,
+body.device-trusted:not(.pc-console):not(.mode-display) .utility-controls #fullscreen {
   display: inline-flex;
   width: auto;
   flex: 0 0 auto;
 }
 
-body.phone-client.device-trusted:not(.mode-display) .utility-controls #refresh {
+body.device-trusted:not(.pc-console):not(.mode-display) .utility-controls #refresh {
   min-height: 36px;
 }
 
-body.phone-client.device-trusted:not(.mode-display) .locale-control select {
+body.device-trusted:not(.pc-console):not(.mode-display) .locale-control select {
   min-height: 44px;
   max-width: 148px;
 }
 
-body.ios-client.phone-client .utility-controls #keepAwake {
+body.ios-client .utility-controls #keepAwake {
   display: inline-flex;
 }
 
-body.phone-client #keepAwake.active {
+body #keepAwake.active {
   background: rgba(112, 217, 139, .22);
   border-color: rgba(112, 217, 139, .5);
   color: #9dffb8;
 }
 
-body.phone-client.device-trusted.mode-display #displaySettingsToggle {
+body.device-trusted:not(.pc-console).mode-display #displaySettingsToggle {
   display: inline-flex;
 }
 
-@media (max-width: 1100px) {
-  body.phone-client.device-trusted:not(.eink-client) .utility-controls #fullscreen {
+@container app-header (min-width: 48rem) {
+  body.device-trusted:not(.pc-console):not(.mode-display) .utility-controls > * {
+    display: initial;
+  }
+
+  body.device-trusted:not(.pc-console):not(.mode-display) .utility-controls .locale-control,
+  body.device-trusted:not(.pc-console):not(.mode-display) .utility-controls #fullscreen {
     display: inline-flex;
   }
-}
-
-/* Logical landscape chrome keeps the same two-row navigation/utility contract.
-   Unknown Custom Deck names stay inside the horizontally scrollable nav row. */
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted .top-controls,
-body.phone-client.device-trusted.viewport-landscape .top-controls {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  gap: 6px;
-  width: 100%;
-  align-items: stretch;
-  justify-content: stretch;
-}
-
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted .view-switcher,
-body.phone-client.device-trusted.viewport-landscape .view-switcher {
-  display: flex;
-  flex-wrap: nowrap;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  justify-self: stretch;
-}
-
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted .view-switcher .mode-button,
-body.phone-client.device-trusted.viewport-landscape .view-switcher .mode-button {
-  width: auto;
-  flex: 0 0 auto;
-  padding-inline: 12px;
-}
-
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted .view-switcher .custom-deck-tab,
-body.phone-client.device-trusted.viewport-landscape .view-switcher .custom-deck-tab {
-  min-width: 0;
-  max-width: 170px;
-}
-
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls,
-body.phone-client.device-trusted.viewport-landscape .utility-controls {
-  display: flex;
-  flex-wrap: nowrap;
-  width: 100%;
-  max-width: 100%;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 6px;
-  justify-self: stretch;
-}
-
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls .locale-control,
-body.phone-client.device-trusted.viewport-landscape .utility-controls .locale-control {
-  margin-left: auto;
-}
-
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls > *,
-body.phone-client.device-trusted.viewport-landscape .utility-controls > * {
-  display: initial;
-  width: auto;
-  max-width: none;
-  flex: 0 0 auto;
-}
-
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls select,
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls button,
-body.phone-client.device-trusted.viewport-landscape .utility-controls select,
-body.phone-client.device-trusted.viewport-landscape .utility-controls button {
-  width: auto;
-  min-width: 0;
-  min-height: 36px;
-  padding-inline: 10px;
-}
-
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls #fullscreen,
-body.phone-client.device-trusted.viewport-landscape .utility-controls #fullscreen,
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls .locale-control,
-body.phone-client.device-trusted.viewport-landscape .utility-controls .locale-control {
-  display: inline-flex;
-}
-
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted .utility-controls #fullscreen,
-body.phone-client.device-trusted.viewport-landscape .utility-controls #fullscreen {
-  max-width: 140px;
-  white-space: nowrap;
-}
-
-/* Tablet Display keeps view navigation and utilities on separate full rows. */
-body.tablet-client.device-trusted.viewport-landscape.mode-display .top-controls {
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  align-items: stretch;
-}
-
-body.tablet-client.device-trusted.viewport-landscape.mode-display .view-switcher,
-body.tablet-client.device-trusted.viewport-landscape.mode-display .utility-controls {
-  width: 100%;
-  max-width: none;
-  justify-self: stretch;
-}
-
-body.tablet-client.device-trusted.viewport-landscape.mode-display .view-switcher .mode-button {
-  flex: 1 1 0;
-  text-align: center;
-}
-
-body.tablet-client.device-trusted.viewport-landscape.mode-display .utility-controls {
-  flex-wrap: nowrap;
 }
 
 /* Device-type override stays contextual. Reconnect remains globally
    discoverable because it refreshes Host, trust, display, Sideboard and
    quota state rather than only the active stream. */
-body.phone-client.device-trusted.mode-display:not(.display-settings-open):not(.eink-client) #einkModeToggle {
+body.device-trusted:not(.pc-console).mode-display:not(.display-settings-open):not(.eink-client) #einkModeToggle {
   display: none;
 }
 
@@ -472,7 +325,6 @@ body.eink-client .status .dot.online {
 
 body.eink-client .mode-button {
   min-height: 42px;
-  height: 42px;
   border: 2px solid #24241f;
   border-radius: 2px;
   color: #171714;
@@ -485,7 +337,6 @@ body.eink-client #einkModeToggle,
 body.eink-client #displaySettingsToggle,
 body.eink-client #refresh {
   min-height: 42px;
-  height: 42px;
 }
 
 body.eink-client #einkModeToggle.active {
@@ -503,12 +354,12 @@ body.eink-client .utility-controls {
   flex-wrap: nowrap;
 }
 
-body.eink-client.phone-client.device-trusted:not(.mode-display) .utility-controls #einkModeToggle {
+body.eink-client.device-trusted:not(.pc-console):not(.mode-display) .utility-controls #einkModeToggle {
   display: inline-flex;
 }
 
-body.eink-client.phone-client.device-trusted:not(.mode-display) .utility-controls #einkModeToggle,
-body.eink-client.phone-client.device-trusted:not(.mode-display) .utility-controls #fullscreen {
+body.eink-client.device-trusted:not(.pc-console):not(.mode-display) .utility-controls #einkModeToggle,
+body.eink-client.device-trusted:not(.pc-console):not(.mode-display) .utility-controls #fullscreen {
   align-items: center;
   justify-content: center;
   min-height: 44px;

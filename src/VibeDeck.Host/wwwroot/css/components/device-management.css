@@ -292,15 +292,15 @@ body.pc-console.mode-setup .driver-state.warn {
 }
 
 .trusted-device-more:not([open]) > :not(summary) {
-  display: none !important;
+  display: none;
 }
 
 body.pc-console:not(.mode-setup) header .device-management-panel,
-body.phone-client .device-management-panel,
+body.remote-client .device-management-panel,
 body.eink-client .device-management-panel {
   display: none;
 }
 
-body.phone-client:not(.device-trusted) .trusted-devices {
+body.remote-client:not(.device-trusted) .trusted-devices {
   display: none;
 }

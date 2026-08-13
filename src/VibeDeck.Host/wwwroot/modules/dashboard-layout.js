@@ -19,7 +19,6 @@ const SYSTEM_CARD_TITLES = {
 export function createDashboardLayoutController({
   fetchJsonOrThrow,
   isEinkClient,
-  isTabletClient = () => false,
   openCardSettings,
   openSourceManager,
   openSourceForm,
@@ -54,13 +53,15 @@ export function createDashboardLayoutController({
   let loadGeneration = 0;
 
   function getProfile() {
-    if (isEinkClient()) return window.innerWidth >= window.innerHeight ? "eink-landscape" : "eink-portrait";
-    if (isTabletClient()) return window.innerWidth >= window.innerHeight ? "tablet-landscape" : "tablet-portrait";
+    const bounds = shell.getBoundingClientRect();
+    const width = bounds.width || window.innerWidth;
+    const height = bounds.height || window.innerHeight;
+    if (isEinkClient()) return width >= height ? "eink-landscape" : "eink-portrait";
     return "default";
   }
 
   function maxRows() {
-    return profile.startsWith("tablet-") || profile.endsWith("portrait") ? 10 : 6;
+    return profile.endsWith("portrait") ? 10 : 6;
   }
 
   function cardNodes() {
@@ -327,20 +328,19 @@ export function createDashboardLayoutController({
   }
 
   function applyNodeLayout(node, item) {
-    // The legacy e-ink stylesheet used !important to force every card into one
-    // column. Persisted dashboard coordinates must win over that old fallback.
-    node.style.setProperty("grid-column", `${item.column + 1} / span ${item.width}`, "important");
-    node.style.setProperty("grid-row", `${item.row + 1} / span ${item.height}`, "important");
+    node.style.gridColumn = `${item.column + 1} / span ${item.width}`;
+    node.style.gridRow = `${item.row + 1} / span ${item.height}`;
   }
 
   function apply() {
     const addedMissingCards = addMissingCards();
+    grid.style.setProperty("--dashboard-row-count", String(maxRows()));
     const nodes = new Map(cardNodes().map(node => [node.dataset.dashboardKey, node]));
     for (const [key, node] of nodes) {
       const item = itemFor(key);
       const visible = Boolean(item?.visible);
       removeEditorChrome(node);
-      node.classList.toggle("dashboard-card-hidden", !visible);
+      node.hidden = !visible;
       node.classList.toggle("dashboard-card-selected", editing && visible && key === selectedKey);
       node.toggleAttribute("aria-hidden", !visible);
       if (editing && visible) node.setAttribute("aria-selected", key === selectedKey ? "true" : "false");
@@ -404,8 +404,6 @@ export function createDashboardLayoutController({
     const visible = items.filter(item => item.visible).length;
     const profileLabel = profile === "eink-landscape" ? "電子書橫向"
       : profile === "eink-portrait" ? "電子書直向"
-      : profile === "tablet-landscape" ? "平板橫向"
-      : profile === "tablet-portrait" ? "平板直向"
       : "一般版面";
     setStatus(`${tLegacy(profileLabel)} · ${visible} ${tLegacy("張卡片")} · ${tLegacy("單屏")} ${maxRows()} ${tLegacy("列")}`);
   }

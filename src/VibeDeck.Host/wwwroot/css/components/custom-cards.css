@@ -1,12 +1,14 @@
 /* Custom Cards -----------------------------------------------------------
  * Owns Windows notification integration, card rendering, card settings,
- * source management, credentials, and phone-portrait Custom Cards layout.
+ * source management, credentials, and container-driven compact layout.
  * Dashboard editor owns the overlay shell; E-Ink final readability stays in
  * eink-dashboard-content.css. */
 
 .custom-sideboard-page {
+  container: custom-cards / inline-size;
   display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: 8px;
   min-height: 0;
   min-width: 0;
@@ -84,7 +86,7 @@
 
 .custom-card-settings-form {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
   align-items: end;
   gap: 8px;
 }
@@ -209,7 +211,7 @@
 
 .custom-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   align-content: start;
   gap: 8px;
   min-width: 0;
@@ -232,9 +234,11 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 8px;
-  min-height: 142px;
+  min-height: 0;
   padding: 10px;
-  overflow: hidden;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .custom-card-header {
@@ -452,7 +456,7 @@
 
 .custom-source-form,
 .custom-credential-panel {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
   gap: 7px;
   padding: 10px;
 }
@@ -494,51 +498,46 @@
   font-size: 11px;
 }
 
-/* Phone portrait keeps management controls stacked and finger-friendly. */
-body.phone-client.viewport-portrait .custom-sideboard-page {
-  grid-column: 1;
-  grid-template-rows: auto auto auto;
-  gap: 10px;
-}
+/* Management controls stack when this page itself becomes narrow, including
+ * desktop split views and unknown device sizes. */
+@container custom-cards (max-width: 42rem) {
+  .windows-notification-control {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
-body.phone-client.viewport-portrait .custom-cards-top,
-body.phone-client.viewport-portrait .custom-manager-header {
-  align-items: stretch;
-  flex-direction: column;
-}
+  .windows-notification-control p,
+  .windows-notification-control .custom-cards-toolbar {
+    grid-column: 1;
+    grid-row: auto;
+  }
 
-body.phone-client.viewport-portrait .custom-cards-toolbar,
-body.phone-client.viewport-portrait .custom-source-actions,
-body.phone-client.viewport-portrait .custom-source-form-actions {
-  justify-content: stretch;
-}
+  .custom-cards-top,
+  .custom-manager-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
 
-body.phone-client.viewport-portrait .custom-cards-toolbar button,
-body.phone-client.viewport-portrait .custom-manager-header button,
-body.phone-client.viewport-portrait .custom-source-actions button,
-body.phone-client.viewport-portrait .custom-source-form-actions button {
-  flex: 1 1 auto;
-  min-height: 40px;
-}
+  .custom-cards-toolbar,
+  .custom-source-actions,
+  .custom-source-form-actions {
+    justify-content: stretch;
+  }
 
-body.phone-client.viewport-portrait .custom-cards-grid {
-  grid-template-columns: 1fr;
-  overflow: visible;
-}
+  .custom-cards-toolbar button,
+  .custom-manager-header button,
+  .custom-source-actions button,
+  .custom-source-form-actions button {
+    flex: 1 1 auto;
+    min-height: 40px;
+  }
 
-body.phone-client.viewport-portrait .custom-source-row {
-  align-items: stretch;
-  flex-direction: column;
-}
+  .custom-cards-grid {
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+  }
 
-body.phone-client.viewport-portrait .custom-source-form {
-  grid-template-columns: 1fr;
-}
-
-body.phone-client.viewport-portrait .custom-source-form > strong,
-body.phone-client.viewport-portrait .custom-credential-panel > strong,
-body.phone-client.viewport-portrait .custom-credential-panel > span,
-body.phone-client.viewport-portrait .custom-credential-panel > textarea,
-body.phone-client.viewport-portrait .custom-source-form-actions {
-  grid-column: 1;
+  .custom-source-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }

@@ -4,6 +4,7 @@ param(
     [switch]$Source,
     [switch]$Payload,
     [switch]$Installed,
+    [switch]$Responsive,
     [string]$PayloadPath,
     [switch]$RequireVirtualDisplay
 )
@@ -53,6 +54,19 @@ if ($Source) {
             if ($LASTEXITCODE -ne 0) { throw "JavaScript syntax check failed: $($_.FullName)" }
         }
 
+    Write-Check "Browser unit and responsive-layout contract tests"
+    $browserTestFiles = @(
+        Get-ChildItem @(
+            (Join-Path $repoRoot "tests\js"),
+            (Join-Path $repoRoot "tests\wwwroot")
+        ) -Filter "*.test.mjs" -File -ErrorAction Stop |
+            Sort-Object FullName |
+            ForEach-Object FullName
+    )
+    Assert-Product ($browserTestFiles.Count -gt 0) "No browser contract tests were found."
+    & $node.Source --test @browserTestFiles
+    if ($LASTEXITCODE -ne 0) { throw "Browser unit or responsive-layout contract tests failed." }
+
     Write-Check "Managed connector Worker tests"
     $workerRoot = Join-Path $repoRoot "workers\vibedeck-connect-code"
     Push-Location $workerRoot
@@ -70,6 +84,7 @@ if ($Source) {
         "scripts\build-and-install-windows.ps1",
         "scripts\uninstall-windows-product.ps1",
         "scripts\package-windows-setup.ps1",
+        "scripts\windows-setup\SetupPackaging.psm1",
         "scripts\package-windows-notifications.ps1",
         "scripts\repair-installed-autostart.ps1",
         "scripts\test-product-flow.ps1",
@@ -95,6 +110,25 @@ if ($Source) {
     Assert-Product ($projectText -notmatch "WindowsServices|Logging\.EventLog") "Host still references Windows Service packages."
     $readme = Get-Content (Join-Path $repoRoot "README.md") -Raw
     Assert-Product ($readme -notmatch "apps/android|package-release\.ps1") "README still points to a deprecated product path."
+}
+
+if ($Responsive) {
+    Assert-Product $Source "-Responsive requires the source checks. Do not combine it with only -Payload or -Installed."
+    Write-Check "Continuous responsive browser matrix"
+    $listener = Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+    Assert-Product ($null -ne $listener) "The source Host is not listening on port 5000. Start it with start.bat before using -Responsive."
+    $hostProcess = Get-Process -Id $listener.OwningProcess -ErrorAction Stop
+    $hostPath = [IO.Path]::GetFullPath($hostProcess.Path)
+    Assert-Product ($hostPath.StartsWith($repoRoot, [StringComparison]::OrdinalIgnoreCase)) "Port 5000 is not owned by the source Host: $hostPath"
+    $npm = Get-Command npm.cmd -ErrorAction Stop
+    Push-Location $repoRoot
+    try {
+        & $npm.Source run test:responsive
+        if ($LASTEXITCODE -ne 0) { throw "Responsive browser matrix failed." }
+    }
+    finally {
+        Pop-Location
+    }
 }
 
 if ($Payload) {

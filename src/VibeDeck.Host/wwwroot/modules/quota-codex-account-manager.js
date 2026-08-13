@@ -29,8 +29,6 @@ export function createCodexAccountManager({
   document,
   t,
   tLegacy,
-  isMobileClient,
-  isEinkQuotaClient,
   fetchJsonOrThrow,
   confirmAction,
   runQuotaButton,
@@ -41,24 +39,11 @@ export function createCodexAccountManager({
 }) {
   function render(options = {}) {
     const embedded = Boolean(options.embedded);
-    const compactMobile = !embedded && isMobileClient() && !isEinkQuotaClient();
-    const compactDesktop = !embedded && document.body.classList.contains("pc-console");
-    const compactManager = compactMobile || compactDesktop;
     const card = document.createElement(embedded ? "div" : "article");
     card.className = embedded
       ? "quota-eink-account-controls"
-      : `quota-account-card quota-codex-switcher${compactMobile ? " is-compact-mobile" : ""}${compactDesktop ? " is-compact-desktop" : ""}`;
+      : "quota-account-card quota-codex-switcher";
     if (!embedded) card.dataset.statusKey = "codex:switcher";
-
-    if (!embedded && !compactManager) {
-      const head = document.createElement("div");
-      head.className = "quota-account-head";
-      const title = document.createElement("span");
-      title.className = "quota-account-email";
-      title.textContent = t("ui.codexAccountSwitcher");
-      head.append(title);
-      card.append(head);
-    }
 
     const row = document.createElement("div");
     row.className = "quota-codex-switch-row";
@@ -89,9 +74,9 @@ export function createCodexAccountManager({
     );
     row.append(select, toolbox);
 
-    if (compactManager) {
+    if (!embedded) {
       const manager = document.createElement("details");
-      manager.className = compactMobile ? "quota-mobile-account-manager" : "quota-desktop-account-manager";
+      manager.className = "quota-account-manager";
       const summary = document.createElement("summary");
       summary.textContent = t("ui.codexManageAccounts");
       manager.append(summary, row);

@@ -3,9 +3,13 @@
    setup panels, diagnostics surface, and setup-mode visibility contracts. */
 
 .setup-panels {
+  container: setup-panels / inline-size;
   order: 6;
   grid-column: 1 / -1;
   display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   flex-wrap: wrap;
   gap: 8px;
   border-top: 1px solid rgba(255, 255, 255, .07);
@@ -36,6 +40,8 @@
   border-top: 0;
   padding-top: 0;
   flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid rgba(255, 255, 255, .08);
   border-radius: 8px;
   background: rgba(9, 14, 20, .36);
@@ -46,7 +52,7 @@
 }
 
 .setup-panels .panel:not([open]) > :not(summary) {
-  display: none !important;
+  display: none;
 }
 
 .setup-panels .panel summary {
@@ -89,7 +95,7 @@
 .diagnostics-panel {
   order: 4;
   grid-column: 1 / -1;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(8, 13, 19, .28);
@@ -167,17 +173,15 @@
 }
 
 .diagnostics-panel.is-open {
-  display: flex;
-  flex-direction: column;
-  height: min(34dvh, 260px);
+  display: grid;
+  grid-template-rows: auto auto;
+  height: auto;
 }
 
 .diagnostics-panel.is-open .diagnostics-panel-content {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
+  display: grid;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .diagnostics-panel-content > p {
@@ -213,13 +217,12 @@
 .diagnostics-list {
   display: grid;
   gap: 7px;
-  max-height: 340px;
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
   padding-right: 2px;
 }
 
 .diagnostics-panel.is-open .diagnostics-list {
-  flex: 1 1 auto;
   min-height: 0;
   max-height: none;
 }
@@ -307,30 +310,18 @@ body.pc-console.mode-setup main {
   display: none;
 }
 
-body.phone-client .new-device-panel,
-body.phone-client .diagnostics-panel,
-body.phone-client.device-trusted .driver-state {
+body.remote-client .new-device-panel,
+body.remote-client .diagnostics-panel,
+body.remote-client.device-trusted .driver-state {
   display: none;
 }
 
-body.phone-client.device-trusted:not(.mode-display) .setup-panels {
+body.remote-client.device-trusted .setup-panels {
   display: none;
 }
 
-body.phone-client.device-trusted .setup-panels {
-  display: none;
-}
-
-body.phone-client.device-trusted.mode-display.display-settings-open .setup-panels {
+body.remote-client.device-trusted.mode-display.display-settings-open .setup-panels {
   display: flex;
-}
-
-body.phone-client.viewport-portrait .panel:not(.setup-panels .panel) {
-  display: none;
-}
-
-body.phone-client.viewport-portrait .setup-panels {
-  justify-content: center;
 }
 
 body.eink-client .setup-panels,

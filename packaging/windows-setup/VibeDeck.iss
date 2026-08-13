@@ -33,11 +33,20 @@ DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 LicenseFile=..\..\LICENSE
 OutputDir={#MyOutputDir}
+#ifdef FastLocal
+OutputBaseFilename=VibeDeck-FastLocal-Setup-{#MyAppVersion}
+#else
 OutputBaseFilename=VibeDeck-Setup-{#MyAppVersion}
+#endif
 SetupIconFile=vibedeck.ico
 UninstallDisplayIcon={app}\vibedeck.ico
+#ifdef FastLocal
+Compression=none
+SolidCompression=no
+#else
 Compression=lzma2
 SolidCompression=yes
+#endif
 WizardStyle=modern
 LanguageDetectionMethod=uilanguage
 ShowLanguageDialog=auto
@@ -104,9 +113,11 @@ Name: "{commonappdata}\VibeDeck\logs"
 ; Remove replaceable web/runtime trees so deleted modules cannot survive an upgrade.
 Type: filesandordirs; Name: "{app}\wwwroot"
 Type: filesandordirs; Name: "{app}\Installers"
+#ifndef FastLocal
 Type: filesandordirs; Name: "{app}\runtimes"
 Type: filesandordirs; Name: "{app}\connectors"
 Type: filesandordirs; Name: "{app}\licenses"
+#endif
 ; Remove the pre-0.1.1 binary name after upgrading.
 ; Remove the pre-0.1.18 script launchers after upgrading.
 Type: files; Name: "{app}\Open-VibeDeck.cmd"

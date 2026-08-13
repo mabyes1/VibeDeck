@@ -1,6 +1,6 @@
 /* Pairing / connection surface --------------------------------------------
  * Owns QR pairing, connection status/actions, endpoint repair, and the
- * narrow-phone setup geometry around the new-device panel. */
+ * space-driven setup geometry around the new-device panel. */
 
 /* Untrusted-phone rescue / onboarding. */
 body.eink-client .connect-panel { display: none; }
@@ -167,7 +167,7 @@ body.eink-client .pair-success-banner { display: none; }
   order: initial;
   grid-column: auto;
   display: grid;
-  grid-template-columns: minmax(230px, 280px) minmax(0, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
   gap: 18px;
   align-items: start;
   padding: 16px;
@@ -190,7 +190,35 @@ body.eink-client .pair-success-banner { display: none; }
 }
 
 .new-device-panel:not([open]) > .new-device-panel-content {
-  display: none !important;
+  display: none;
+}
+
+.new-device-panel {
+  container: pairing-panel / inline-size;
+}
+
+.new-device-panel,
+.new-device-panel-content,
+.new-device-panel .connect-panel,
+.new-device-panel .connect-qr,
+.new-device-panel .connect-copy {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.new-device-panel-content,
+.new-device-panel .connect-copy,
+.new-device-panel .connect-title,
+.new-device-panel .pairing-guide {
+  overflow-wrap: anywhere;
+}
+
+.new-device-panel pre,
+.new-device-panel code,
+.new-device-panel a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .connect-qr {
@@ -313,13 +341,13 @@ body.eink-client .pair-success-banner { display: none; }
   font-weight: 700;
 }
 
-body.phone-client .device-connection-code {
+body.remote-client .device-connection-code {
   display: none;
 }
 
 .pairing-guide {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
   gap: 10px;
 }
 
@@ -393,7 +421,6 @@ body.phone-client .device-connection-code {
   gap: 6px 9px;
   align-items: start;
   min-width: 0;
-  min-height: 76px;
   padding: 12px;
   border: 1px solid rgba(255,255,255,.08);
   border-radius: 7px;
@@ -528,7 +555,7 @@ body.phone-client .device-connection-code {
   white-space: nowrap;
 }
 
-body.phone-client .public-endpoint-panel {
+body.remote-client .public-endpoint-panel {
   display: none;
 }
 
@@ -537,30 +564,25 @@ body.phone-client .public-endpoint-panel {
   overflow-wrap: anywhere;
 }
 
-/* Phone trust states: trusted clients no longer need pairing chrome; untrusted
- * clients keep only the compact connection status needed to request trust. */
-body.phone-client.device-trusted .connect-panel {
+/* Remote trust states: paired browsers no longer need pairing chrome;
+ * unpaired browsers keep only the status needed to request trust. */
+body.remote-client.device-trusted .connect-panel {
   display: none;
 }
 
-body.phone-client:not(.device-trusted) .connect-panel {
-  grid-template-columns: 1fr;
+body.remote-client:not(.device-trusted) .connect-panel {
   padding: 12px;
   gap: 10px;
 }
 
-body.phone-client:not(.device-trusted) .connect-qr,
-body.phone-client:not(.device-trusted) .pairing-guide,
-body.phone-client:not(.device-trusted) .connect-title,
-body.phone-client:not(.device-trusted) .connect-links {
+body.remote-client:not(.device-trusted) .connect-qr,
+body.remote-client:not(.device-trusted) .pairing-guide,
+body.remote-client:not(.device-trusted) .connect-title,
+body.remote-client:not(.device-trusted) .connect-links {
   display: none;
 }
 
 /* PC pairing states. */
-body.pc-console .connect-panel {
-  grid-template-columns: 1fr;
-}
-
 body.pc-console:not(.pairing-active) .connect-qr,
 body.pc-console:not(.pairing-active) .pairing-guide,
 body.pc-console:not(.pairing-active) .connect-status,
@@ -569,7 +591,6 @@ body.pc-console:not(.pairing-active) #httpsCertLink {
 }
 
 body.pc-console.pairing-active .connect-panel {
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
@@ -601,7 +622,7 @@ body.pc-console .connect-title span {
   font-size: 15px;
 }
 
-@media (max-width: 720px) {
+@container setup-panels (max-width: 45rem) {
   .public-endpoint-controls {
     grid-template-columns: 1fr 1fr;
   }
@@ -611,16 +632,11 @@ body.pc-console .connect-title span {
   }
 }
 
-@media (max-width: 760px) {
+@container pairing-panel (max-width: 48rem) {
   .connect-panel {
     grid-column: 1 / -1;
-    grid-template-columns: 1fr;
     gap: 12px;
     padding: 12px;
-  }
-
-  body.pc-console.pairing-active .connect-panel {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .connect-qr {
@@ -645,11 +661,6 @@ body.pc-console .connect-title span {
     font-size: 20px;
   }
 
-  .pairing-guide {
-    grid-template-columns: 1fr;
-    gap: 7px;
-  }
-
   .pairing-step {
     min-height: 0;
     padding: 10px;
@@ -659,7 +670,7 @@ body.pc-console .connect-title span {
 
 }
 
-@media (max-width: 420px) {
+@container pairing-panel (max-width: 30rem) {
   .connect-qr {
     grid-template-columns: 1fr;
     justify-items: center;
@@ -668,92 +679,16 @@ body.pc-console .connect-title span {
   .connect-qr span {
     text-align: center;
   }
-}
 
-/* Phone setup: desktop pairing geometry must never leak into a narrow screen. */
-body.phone-client.mode-setup .new-device-panel,
-body.phone-client.mode-setup .new-device-panel-content,
-body.phone-client.mode-setup .new-device-panel .connect-panel,
-body.phone-client.mode-setup .new-device-panel .connect-qr,
-body.phone-client.mode-setup .new-device-panel .connect-copy {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-}
-
-body.phone-client.mode-setup .new-device-panel *,
-body.phone-client.mode-setup .new-device-panel *::before,
-body.phone-client.mode-setup .new-device-panel *::after {
-  min-width: 0;
-  max-width: 100%;
-}
-
-body.phone-client.mode-setup .new-device-panel pre,
-body.phone-client.mode-setup .new-device-panel code,
-body.phone-client.mode-setup .new-device-panel a {
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-body.phone-client.mode-setup .new-device-panel-content {
-  overflow: hidden;
-}
-
-body.phone-client.mode-setup .new-device-panel .connect-panel {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
-}
-
-body.phone-client.mode-setup .new-device-panel .connect-qr {
-  grid-template-columns: minmax(96px, 132px) minmax(0, 1fr);
-  grid-template-rows: auto;
-  align-items: center;
-  justify-items: start;
-}
-
-body.phone-client.mode-setup .new-device-panel .connect-panel img {
-  width: 100%;
-  max-width: 132px;
-}
-
-body.phone-client.mode-setup .new-device-panel .connect-copy,
-body.phone-client.mode-setup .new-device-panel .connect-title,
-body.phone-client.mode-setup .new-device-panel .pairing-guide {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-body.phone-client:not(.eink-client).mode-setup summary,
-body.phone-client:not(.eink-client).mode-setup button,
-body.phone-client:not(.eink-client).mode-setup input:not([type="hidden"]),
-body.phone-client:not(.eink-client).mode-setup select {
-  min-height: 34px;
-}
-
-body:not(.eink-client) #newDeviceConnectPanel > summary {
-  min-height: 34px;
-  height: 34px;
-}
-
-@media (max-width: 480px) {
-  body.phone-client.mode-setup .new-device-panel-content {
+  .new-device-panel-content {
     padding: 10px;
   }
 
-  body.phone-client.mode-setup .new-device-panel .connect-panel {
+  .new-device-panel .connect-panel {
     padding: 0;
   }
 
-  body.phone-client.mode-setup .new-device-panel .connect-qr {
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: center;
-  }
-
-  body.phone-client.mode-setup .new-device-panel .connect-panel img {
+  .new-device-panel .connect-panel img {
     max-width: min(240px, 100%);
-  }
-
-  body.phone-client.mode-setup .new-device-panel .connect-qr span {
-    text-align: center;
   }
 }

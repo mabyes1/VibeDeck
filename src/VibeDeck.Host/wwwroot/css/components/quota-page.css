@@ -2,10 +2,30 @@
  * Final owner for quota-page structure and responsive presentation. */
 
 .quota-view {
+  container: quota-view / inline-size;
   width: min(100%, 860px);
+  height: max-content;
+  min-width: 0;
   justify-self: center;
-  align-self: center;
+  align-self: start;
   min-height: 0;
+}
+
+body.mode-quota .quota-view.active {
+  height: max-content;
+  min-height: 0;
+  align-self: start;
+}
+
+body.mode-quota main {
+  min-width: 0;
+  min-height: 0;
+  align-content: start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
 }
 
 .quota-shell {
@@ -34,12 +54,13 @@
   --quota-footer-gap: 10px;
   --quota-footer-padding-top: 10px;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto;
   gap: 12px;
   width: 100%;
-  min-height: 360px;
+  min-width: 0;
+  min-height: 0;
   padding: 12px;
-  overflow: hidden;
+  overflow: visible;
   color: var(--quota-ink);
   background:
     radial-gradient(circle at 62% 52%, rgba(77, 207, 255, .16), transparent 28%),
@@ -124,8 +145,7 @@
 }
 
 .quota-help-summary,
-body.phone-client:not(.eink-client) .quota-mobile-account-manager > summary,
-body.pc-console.mode-quota .quota-desktop-account-manager > summary,
+.quota-account-manager > summary,
 body.eink-client.mode-quota .quota-eink-account-manager > summary {
   display: flex;
   align-items: center;
@@ -145,8 +165,7 @@ body.eink-client.mode-quota .quota-eink-account-manager > summary {
 }
 
 .quota-help-summary::-webkit-details-marker,
-body.phone-client:not(.eink-client) .quota-mobile-account-manager > summary::-webkit-details-marker,
-body.pc-console.mode-quota .quota-desktop-account-manager > summary::-webkit-details-marker,
+.quota-account-manager > summary::-webkit-details-marker,
 body.eink-client.mode-quota .quota-eink-account-manager > summary::-webkit-details-marker { display: none; }
 
 .quota-help-summary::after {
@@ -215,14 +234,19 @@ body.eink-client .quota-help-summary::after { transition: none; }
 .quota-grid {
   display: grid;
   grid-template-columns: 1fr;
+  grid-auto-rows: max-content;
   gap: 8px;
+  height: auto;
   min-height: 0;
   align-content: start;
 }
 
 .quota-account-page {
   display: grid;
+  grid-auto-rows: max-content;
+  height: auto;
   min-height: 0;
+  align-self: start;
 }
 
 .quota-account-switcher {
@@ -240,7 +264,7 @@ body.eink-client .quota-help-summary::after { transition: none; }
   display: grid;
   place-items: center;
   width: 24px;
-  height: 24px;
+  aspect-ratio: 1;
   min-height: 24px;
   padding: 0;
   border: 1px solid rgba(255,255,255,.12);
@@ -273,23 +297,26 @@ body.eink-client .quota-help-summary::after { transition: none; }
   display: grid;
   grid-template-rows: auto auto auto auto auto;
   gap: var(--quota-account-gap);
+  min-width: 0;
   min-height: 0;
+  height: auto;
+  align-self: start;
   padding: var(--quota-account-padding);
   border: 1px solid rgba(255,255,255,.12);
   background:
     linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.025)),
     var(--quota-panel);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
-  overflow: hidden;
+  overflow: visible;
 }
 
-body:not(.eink-client) .quota-toolbox button[data-quota-action$="-delete"] {
+body:not(.eink-client) .quota-toolbox > button[data-quota-action$="-delete"] {
   border-color: rgba(255, 133, 133, .22);
   background: rgba(96, 31, 38, .10);
   color: #ffb4b4;
 }
 
-body:not(.eink-client) .quota-toolbox button[data-quota-action$="-delete"]:hover {
+body:not(.eink-client) .quota-toolbox > button[data-quota-action$="-delete"]:hover {
   border-color: rgba(255, 133, 133, .38);
   background: rgba(112, 37, 45, .18);
   color: #ffd0d0;
@@ -311,8 +338,15 @@ body:not(.eink-client) .quota-toolbox button[data-quota-action$="-delete"]:hover
 }
 
 .quota-account-email {
+  min-width: 0;
   font-size: var(--quota-email-size);
   font-weight: 800;
+  line-height: 1.2;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .quota-pill {
@@ -434,6 +468,7 @@ body:not(.eink-client) .quota-toolbox button[data-quota-action$="-delete"]:hover
 .quota-toolbox {
   justify-self: end;
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 4px;
   border: 1px solid rgba(255,255,255,.12);
@@ -441,11 +476,11 @@ body:not(.eink-client) .quota-toolbox button[data-quota-action$="-delete"]:hover
   background: rgba(255,255,255,.06);
 }
 
-.quota-toolbox button {
+.quota-toolbox > button {
   display: grid;
   place-items: center;
   width: 28px;
-  height: 28px;
+  aspect-ratio: 1;
   min-height: 28px;
   padding: 0;
   border: 0;
@@ -455,7 +490,7 @@ body:not(.eink-client) .quota-toolbox button[data-quota-action$="-delete"]:hover
   font-size: 14px;
 }
 
-body:not(.eink-client) .quota-toolbox button {
+body:not(.eink-client) .quota-toolbox > button {
   width: auto;
   min-width: 28px;
   padding: 0 8px;
@@ -464,8 +499,8 @@ body:not(.eink-client) .quota-toolbox button {
   white-space: nowrap;
 }
 
-.quota-toolbox button:hover { background: rgba(255,255,255,.1); }
-.quota-toolbox button:disabled { cursor: wait; opacity: .48; }
+.quota-toolbox > button:hover { background: rgba(255,255,255,.1); }
+.quota-toolbox > button:disabled { cursor: wait; opacity: .48; }
 
 .quota-more-actions {
   position: relative;
@@ -475,8 +510,8 @@ body:not(.eink-client) .quota-toolbox button {
 .quota-more-actions > summary {
   display: grid;
   place-items: center;
-  min-width: 32px;
-  min-height: 32px;
+  min-width: 40px;
+  min-height: 40px;
   padding: 0 8px;
   border: 1px solid rgba(255,255,255,.16);
   border-radius: 999px;
@@ -504,27 +539,22 @@ body:not(.eink-client) .quota-toolbox button {
 }
 
 .quota-more-actions > div button {
-  width: 100% !important;
-  min-width: 0 !important;
+  width: 100%;
+  min-width: 0;
   min-height: 34px;
-  padding: 7px 10px !important;
-  border: 1px solid rgba(255,255,255,.16) !important;
+  padding: 7px 10px;
+  border: 1px solid rgba(255,255,255,.16);
   border-radius: 6px;
-  background: rgba(255,255,255,.05) !important;
-  color: var(--quota-ink) !important;
+  background: rgba(255,255,255,.05);
+  color: var(--quota-ink);
   text-align: left;
-  white-space: normal !important;
+  white-space: normal;
 }
 
 .quota-more-actions > div button.is-danger {
-  border-color: rgba(255, 133, 133, .35) !important;
-  background: rgba(96, 31, 38, .16) !important;
-  color: #ffd0d0 !important;
-}
-
-body.phone-client:not(.eink-client) .quota-more-actions > summary {
-  min-width: 40px;
-  min-height: 40px;
+  border-color: rgba(255, 133, 133, .35);
+  background: rgba(96, 31, 38, .16);
+  color: #ffd0d0;
 }
 
 .quota-action-status {
@@ -575,20 +605,20 @@ body:is(.viewer-fullscreen, .dashboard-viewer).mode-quota .quota-shell {
 
 body.deck-window.mode-quota .quota-shell {
   grid-template-rows: auto minmax(0, 1fr);
-  height: 100vh;
-  min-height: 0;
+  height: auto;
+  min-height: 100%;
 }
 
 body.deck-window.mode-quota .quota-grid,
 body.deck-window.mode-quota .quota-account-page {
-  height: 100%;
+  height: auto;
   min-height: 0;
-  align-content: stretch;
+  align-content: start;
 }
 
 body.deck-window.mode-quota .quota-account-card {
-  height: 100%;
-  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  height: auto;
+  grid-template-rows: auto auto auto auto auto;
 }
 
 body.deck-window.mode-quota .quota-pair { align-items: stretch; }
@@ -623,8 +653,8 @@ body.pc-console.mode-quota .quota-shell {
   --quota-window-label-size: 12px;
   --quota-window-value-size: 22px;
   --quota-credit-size: 18px;
-  height: 100%;
-  min-height: 0;
+  height: max-content;
+  min-height: 100%;
   gap: 14px;
   padding: 16px;
   border-color: rgba(143, 209, 255, .13);
@@ -654,422 +684,201 @@ body.pc-console.mode-quota .quota-account-card {
     0 10px 30px rgba(0, 0, 0, .14);
 }
 
-body.pc-console.mode-quota .quota-page-button {
-  width: 32px;
-  height: 32px;
-  min-height: 32px;
-}
+body.pc-console.mode-quota .quota-page-button { width: 32px; min-height: 32px; }
 
-body.pc-console.mode-quota .quota-toolbox button {
+body.pc-console.mode-quota .quota-toolbox > button {
   min-height: 32px;
   padding: 6px 10px;
 }
 
 body.pc-console.mode-quota .quota-window small { font-size: 12px; }
 
-body.pc-console.mode-quota .quota-codex-switcher.is-compact-desktop {
+.quota-codex-switcher {
   padding: 0;
   border: 0;
   background: transparent;
 }
 
-body.pc-console.mode-quota .quota-desktop-account-manager {
-  overflow: hidden;
+.quota-account-manager {
   border: 1px solid rgba(255, 255, 255, .11);
   border-radius: 10px;
   background: linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .018));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025);
 }
 
-body.pc-console.mode-quota .quota-desktop-account-manager > summary {
+.quota-account-manager > summary {
   min-height: 40px;
   padding: 9px 12px;
   color: var(--quota-ink);
   font-size: 14px;
 }
 
-body.pc-console.mode-quota .quota-desktop-account-manager > summary::after {
+.quota-account-manager > summary::after {
   content: "＋";
   flex: 0 0 auto;
   font-size: 18px;
   line-height: 1;
 }
 
-body.pc-console.mode-quota .quota-desktop-account-manager[open] > summary {
+.quota-account-manager[open] > summary {
   border-bottom: 1px solid rgba(255, 255, 255, .12);
 }
 
-body.pc-console.mode-quota .quota-desktop-account-manager[open] > summary::after { content: "−"; }
+.quota-account-manager[open] > summary::after { content: "−"; }
 
-body.pc-console.mode-quota .quota-desktop-account-manager .quota-codex-switch-row { padding: 10px; }
+.quota-account-manager .quota-codex-switch-row { padding: 10px; }
 
-/* Tablet landscape quota: reading first, account management second. */
-body.tablet-client.viewport-landscape.mode-quota .quota-view {
-  width: 100%;
-  max-width: none;
-  min-height: 0;
-  align-self: stretch;
+/* A wide quota container can use the extra inline space regardless of device. */
+@container quota-view (min-width: 42rem) {
+  .quota-account-card,
+  .quota-account-card > *,
+  .quota-pair,
+  .quota-provider,
+  .quota-footer {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .quota-provider {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto auto;
+  }
+
+  .quota-provider-title { grid-column: 1 / -1; }
 }
 
-body.tablet-client.viewport-landscape.mode-quota .quota-account-card,
-body.tablet-client.viewport-landscape.mode-quota .quota-account-card > *,
-body.tablet-client.viewport-landscape.mode-quota .quota-pair,
-body.tablet-client.viewport-landscape.mode-quota .quota-provider,
-body.tablet-client.viewport-landscape.mode-quota .quota-footer {
+body.pc-console.mode-quota .quota-view.active {
+  height: max-content;
+  min-height: 100%;
+  align-self: start;
+}
+
+body.mode-quota :is(.quota-account-card, .quota-account-card > *, .quota-pair, .quota-provider, .quota-footer) {
   min-width: 0;
   max-width: 100%;
 }
 
-body.tablet-client.viewport-landscape.mode-quota .quota-shell {
-  --quota-provider-gap: 5px 14px;
-  --quota-window-gap: 3px 8px;
-  --quota-credit-size: 13px;
-  min-height: 0;
-  gap: 8px;
-  padding: 10px 12px;
+/* Compact quota composition follows the component's own available width, so
+ * narrow desktop panes and unknown devices receive the same readable flow. */
+@container quota-view (max-width: 44rem) {
+  body:not(.eink-client) .quota-shell {
+    --quota-title-size: clamp(18px, 6.5cqi, 30px);
+    --quota-meta-size: clamp(11px, 3.3cqi, 14px);
+    --quota-tab-gap: 6px;
+    --quota-tab-min-height: 32px;
+    --quota-tab-padding: 7px 12px;
+    --quota-account-gap: 14px;
+    --quota-email-size: clamp(15px, 4.8cqi, 22px);
+    --quota-pair-gap: 16px;
+    --quota-provider-gap: 12px;
+    --quota-provider-title-size: clamp(14px, 4.2cqi, 18px);
+    --quota-window-gap: 6px 8px;
+    --quota-window-label-size: clamp(11px, 3.4cqi, 14px);
+    --quota-window-value-size: clamp(16px, 5cqi, 22px);
+    --quota-credit-line: 1.25;
+    --quota-footer-gap: 8px;
+    grid-template-rows: auto auto auto;
+    align-content: start;
+    height: auto;
+    min-height: 0;
+    padding: 12px 12px calc(18px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom))) 12px;
+    overflow: visible;
+  }
+
+  body:not(.eink-client) .quota-top {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  body:not(.eink-client) .quota-status { justify-self: start; }
+
+  body:not(.eink-client) .quota-title {
+    flex-wrap: wrap;
+    white-space: normal;
+    align-items: center;
+  }
+
+  body:not(.eink-client) :is(.quota-grid, .quota-account-page, .quota-account-card) {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  body:not(.eink-client) .quota-account-head {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-items: start;
+  }
+
+  body:not(.eink-client) .quota-check { grid-row: 1; }
+
+  body:not(.eink-client) .quota-account-switcher {
+    grid-column: 2 / -1;
+    grid-row: 2;
+    justify-self: start;
+    white-space: normal;
+  }
+
+  body:not(.eink-client) .quota-pill {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  body:not(.eink-client) .quota-pair { grid-template-columns: minmax(0, 1fr); }
+
+  body:not(.eink-client) .quota-window small {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.2;
+  }
+
+  body:not(.eink-client) .quota-credit-row { flex-wrap: wrap; }
+
+  body:not(.eink-client) .quota-footer {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+  }
+
+  body:not(.eink-client) .quota-toolbox {
+    justify-self: start;
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+
+  body:not(.eink-client) .quota-toolbox > button {
+    flex: 1 1 min(8rem, 100%);
+    min-height: 40px;
+    padding: 7px 10px;
+    line-height: 1.25;
+    white-space: normal;
+  }
+
+  body:not(.eink-client) .quota-action-status { white-space: normal; }
 }
 
-body.tablet-client.viewport-landscape.mode-quota .quota-provider {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: auto minmax(0, 1fr);
-}
-
-body.tablet-client.viewport-landscape.mode-quota .quota-provider-title { grid-column: 1 / -1; }
-
-body.tablet-client.viewport-landscape.mode-quota .quota-window {
-  align-content: start;
-}
-
-body.tablet-client.viewport-landscape.mode-quota .quota-credit-row {
-  min-width: 0;
-  line-height: 1.2;
-}
-
-body.tablet-client.viewport-landscape.mode-quota .quota-toolbox { flex-wrap: nowrap; }
-
-body.tablet-client.viewport-landscape.mode-quota .quota-toolbox button {
-  min-height: 32px;
-  padding-inline: 9px;
-}
-
-body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota {
-  height: 100vh;
-  height: 100dvh;
-  min-height: 0;
-  overflow: hidden;
-}
-
-body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota :is(main, .quota-view.active, .quota-shell) {
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-}
-
-body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota .quota-shell {
-  --quota-account-gap: 6px;
-  --quota-account-padding: 10px 12px;
-  --quota-footer-gap: 6px;
-  --quota-footer-padding-top: 6px;
-  grid-template-rows: auto minmax(0, 1fr);
-}
-
-body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota :is(.quota-grid, .quota-account-page) {
-  height: 100%;
-  min-height: 0;
-}
-
-body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota .quota-codex-switcher { display: none; }
-
-body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota .quota-account-card {
-  display: grid;
-  grid-template-rows: auto max-content auto auto auto;
-  height: auto;
-  min-height: 0;
-  overflow: hidden;
-}
-
-body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota :is(.quota-pair, .quota-provider) { min-height: max-content; }
-
-body.tablet-client:is(.dashboard-viewer, .viewer-immersive).viewport-landscape.mode-quota .quota-footer {
-  grid-template-columns: minmax(0, auto) 1fr auto;
-}
-
-/* Generic portrait contract. */
-body.viewport-portrait .quota-view {
+body:is(.viewer-fullscreen, .dashboard-viewer).mode-quota .quota-view.active {
   width: 100%;
-  justify-self: stretch;
-  align-self: start;
-}
-
-body.viewport-portrait .quota-shell {
-  --quota-title-size: clamp(18px, 6.5vw, 30px);
-  --quota-meta-size: clamp(11px, 3.3vw, 14px);
-  --quota-tab-gap: 6px;
-  --quota-tab-min-height: 32px;
-  --quota-tab-padding: 7px 12px;
-  --quota-account-gap: 14px;
-  --quota-email-size: clamp(15px, 4.8vw, 22px);
-  --quota-pair-gap: 16px;
-  --quota-provider-gap: 12px;
-  --quota-provider-title-size: clamp(14px, 4.2vw, 18px);
-  --quota-window-gap: 6px 8px;
-  --quota-window-label-size: clamp(11px, 3.4vw, 14px);
-  --quota-window-value-size: clamp(16px, 5vw, 22px);
-  --quota-credit-line: 1.25;
-  --quota-footer-gap: 8px;
-  grid-template-rows: auto auto;
-  align-content: start;
-  min-height: auto;
-  height: auto;
-  overflow: visible;
-  padding: 12px 12px calc(18px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom))) 12px;
-}
-
-body.viewport-portrait .quota-top {
-  grid-template-columns: 1fr;
-  align-items: start;
-}
-
-body.viewport-portrait .quota-status { justify-self: start; }
-
-body.viewport-portrait .quota-title {
-  flex-wrap: wrap;
-  white-space: normal;
-  align-items: center;
-}
-
-body.viewport-portrait .quota-grid { overflow: visible; }
-
-body.viewport-portrait .quota-account-card {
-  overflow: visible;
-}
-
-body.viewport-portrait .quota-account-head {
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-rows: auto auto;
-  align-items: start;
-}
-
-body.viewport-portrait .quota-check { grid-row: 1; }
-
-body.viewport-portrait .quota-account-email {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  line-height: 1.2;
-}
-
-body.viewport-portrait .quota-account-switcher {
-  grid-column: 2 / -1;
-  grid-row: 2;
-  justify-self: start;
-}
-
-body.viewport-portrait .quota-pill {
-  grid-column: 3;
-  grid-row: 1;
-  justify-self: end;
-}
-
-body.viewport-portrait .quota-pair {
-  grid-template-columns: 1fr;
-}
-
-body.viewport-portrait .quota-window small {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  line-height: 1.2;
-}
-
-body.viewport-portrait .quota-credit-row {
-  flex-wrap: wrap;
-}
-
-body.viewport-portrait .quota-footer {
-  grid-template-columns: 1fr;
-  justify-items: start;
-}
-
-body.viewport-portrait .quota-toolbox {
-  justify-self: start;
-  flex-wrap: wrap;
-}
-
-body.viewport-portrait .quota-action-status { white-space: normal; }
-
-body:is(.viewer-fullscreen, .dashboard-viewer).mode-quota.viewport-portrait main { overflow-y: auto; }
-
-body:is(.viewer-fullscreen, .dashboard-viewer).mode-quota.viewport-portrait .quota-view.active {
-  width: 100%;
-  height: auto;
+  height: max-content;
   min-height: var(--viewer-height);
   align-self: start;
   align-content: start;
-  overflow-y: auto;
+  overflow: visible;
 }
 
-body:is(.viewer-fullscreen, .dashboard-viewer).mode-quota.viewport-portrait .quota-shell {
+body:is(.viewer-fullscreen, .dashboard-viewer).mode-quota .quota-shell {
   align-content: start;
   min-height: var(--viewer-height);
   height: auto;
   overflow: visible;
-  padding: calc(10px + var(--safe-area-inset-top, env(safe-area-inset-top))) calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right))) calc(18px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom))) calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left)));
+  padding: calc(10px + var(--safe-area-inset-top, env(safe-area-inset-top))) calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right))) calc(64px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom))) calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left)));
 }
 
-/* Phone quota ------------------------------------------------------------- */
-body.phone-client:not(.device-trusted):not(.pc-console) .quota-view {
-  display: none !important;
-}
-
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-quota .quota-shell,
-body.phone-client.device-trusted.viewport-landscape.mode-quota .quota-shell {
-  width: 100%;
-  max-width: none;
-  min-height: 0;
-}
-
-body.phone-client.viewport-portrait .quota-view {
-  max-width: none;
-}
-
-body.phone-client.viewport-portrait .quota-shell {
-  min-height: 0;
-  border-radius: 12px;
-  padding: 12px;
-}
-
-body.phone-client.viewport-portrait .quota-top {
-  gap: 8px;
-}
-
-body.phone-client.viewport-portrait:not(.eink-client) .quota-account-card { border-radius: 10px; }
-
-body.phone-client.viewport-portrait:not(.eink-client) .quota-top {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-body.phone-client:not(.eink-client) .quota-toolbox {
-  justify-self: stretch;
-  display: flex;
-  flex-wrap: wrap;
-  border-radius: 8px;
-}
-
-body.phone-client:not(.eink-client) .quota-toolbox button {
-  flex: 1 1 calc(50% - 4px);
-  min-width: min(128px, 100%);
-  min-height: 40px;
-  padding: 7px 10px;
-  font-size: 12px;
-  line-height: 1.25;
-  white-space: normal;
-}
-
-body.phone-client:not(.eink-client) .quota-tab,
-body.phone-client:not(.eink-client) .quota-page-button { min-height: 36px; }
-
-body.phone-client:not(.eink-client) .quota-page-button {
-  width: 32px;
-  height: 36px;
-}
-
-body.phone-client:not(.tablet-client):not(.eink-client).viewport-landscape.mode-quota:is(.dashboard-viewer, .viewer-fullscreen) .quota-account-switcher {
-  margin-inline-end: 56px;
-}
-
-body.phone-client:not(.tablet-client):not(.eink-client).viewport-landscape.mode-quota:is(.dashboard-viewer, .viewer-fullscreen) .quota-toolbox {
-  margin-inline-end: 56px;
-}
-
-/* Phone landscape has plenty of horizontal room but very little vertical room.
- * Keep the primary account actions on one visible row instead of inheriting the
- * portrait-friendly 50% button widths that can push Delete below the viewport. */
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-quota:not(.eink-client) main,
-body.phone-client.device-trusted.viewport-landscape.mode-quota:not(.eink-client) main {
-  overflow-x: hidden;
-  overflow-y: auto;
-  align-content: start;
-  -webkit-overflow-scrolling: touch;
-}
-
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-quota:not(.eink-client) .quota-footer,
-body.phone-client.device-trusted.viewport-landscape.mode-quota:not(.eink-client) .quota-footer {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-quota:not(.eink-client) .quota-footer > span:nth-child(2),
-body.phone-client.device-trusted.viewport-landscape.mode-quota:not(.eink-client) .quota-footer > span:nth-child(2) {
+/* Unpaired remote browsers never expose quota data. */
+body.remote-client:not(.device-trusted) .quota-view {
   display: none;
 }
-
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-quota:not(.eink-client) .quota-toolbox,
-body.phone-client.device-trusted.viewport-landscape.mode-quota:not(.eink-client) .quota-toolbox {
-  justify-self: end;
-  flex-wrap: nowrap;
-  width: auto;
-  max-width: 100%;
-}
-
-html.phone-force-landscape body.force-landscape.phone-client.device-trusted.mode-quota:not(.eink-client) .quota-toolbox button,
-body.phone-client.device-trusted.viewport-landscape.mode-quota:not(.eink-client) .quota-toolbox button {
-  flex: 0 1 auto;
-  min-width: 0;
-  min-height: 34px;
-  padding: 6px 9px;
-  white-space: nowrap;
-}
-
-body.phone-client:not(.eink-client) .quota-codex-select { min-height: 40px; }
-
-body.phone-client:not(.eink-client) .quota-codex-switcher.is-compact-mobile {
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-
-body.phone-client:not(.eink-client) .quota-codex-switcher.is-compact-mobile .quota-action-status:empty {
-  display: none;
-}
-
-body.phone-client:not(.eink-client) .quota-mobile-account-manager {
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, .14);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, .035);
-}
-
-body.phone-client:not(.eink-client) .quota-mobile-account-manager > summary {
-  min-height: 44px;
-  padding: 9px 11px;
-  font-size: 14px;
-}
-
-body.phone-client:not(.eink-client) .quota-mobile-account-manager > summary::after {
-  content: "＋";
-  font-size: 18px;
-  line-height: 1;
-}
-
-body.phone-client:not(.eink-client) .quota-mobile-account-manager[open] > summary {
-  border-bottom: 1px solid rgba(255, 255, 255, .12);
-}
-
-body.phone-client:not(.eink-client) .quota-mobile-account-manager[open] > summary::after { content: "−"; }
-
-body.phone-client:not(.eink-client) .quota-mobile-account-manager .quota-codex-switch-row { padding: 10px; }
-
-body.phone-client:not(.eink-client) #quotaSummary,
-body.phone-client:not(.eink-client) #quotaUpdated,
-body.phone-client:not(.eink-client) .quota-help-block,
-body.phone-client:not(.eink-client) .quota-help-block li,
-body.phone-client:not(.eink-client) .quota-help-summary-hint,
-body.phone-client:not(.eink-client) .quota-action-status,
-body.phone-client:not(.eink-client) .quota-account-switcher,
-body.phone-client:not(.eink-client) .quota-pill,
-body.phone-client:not(.eink-client) .quota-active-badge,
-body.phone-client:not(.eink-client) .quota-window small,
-body.phone-client:not(.eink-client) .quota-time { font-size: 12px; }
 
 .quota-time.quota-stale {
   border: 1px solid rgba(242, 180, 95, .62);
@@ -1086,86 +895,7 @@ body.phone-client:not(.eink-client) .quota-time { font-size: 12px; }
   line-height: 1.45;
 }
 
-body.phone-client:not(.eink-client) .quota-window span { font-size: 12px; }
-
-body.phone-client:not(.eink-client) .quota-credit-row {
-  font-size: var(--eink-dashboard-min-font);
-  line-height: 1.2;
-}
-
 body.mode-quota .quota-help { display: none; }
-
-/* Phone quota follows the usable viewport rather than desktop card minima. */
-@media (max-width: 960px) {
-  body.phone-client:not(.eink-client).mode-quota main {
-    min-height: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    align-content: start;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  body.phone-client:not(.eink-client).mode-quota .quota-view {
-    width: 100%;
-    max-width: none;
-    height: auto;
-    min-height: 0;
-    justify-self: stretch;
-    align-self: start;
-  }
-
-  body.phone-client:not(.eink-client).mode-quota .quota-shell {
-    min-height: 0;
-    height: auto;
-    grid-template-rows: auto auto;
-    align-content: start;
-    overflow: visible;
-  }
-
-  body.phone-client:not(.eink-client).mode-quota .quota-grid,
-  body.phone-client:not(.eink-client).mode-quota .quota-account-page,
-  body.phone-client:not(.eink-client).mode-quota .quota-account-card {
-    height: auto;
-    min-height: 0;
-    overflow: visible;
-  }
-
-  body.phone-client:not(.eink-client).mode-quota .quota-grid { grid-auto-rows: max-content; }
-
-  body.phone-client:not(.eink-client).mode-quota .quota-account-card {
-    display: block;
-    min-height: max-content;
-    align-self: start;
-  }
-
-  body.phone-client:not(.eink-client).mode-quota .quota-account-card > * + * { margin-top: 10px; }
-}
-
-@media (max-width: 960px) and (orientation: landscape) {
-  body.phone-client:not(.eink-client).mode-quota header {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 6px;
-    padding-top: calc(6px + var(--safe-area-inset-top, env(safe-area-inset-top)));
-    padding-bottom: 6px;
-  }
-
-  body.phone-client:not(.eink-client).mode-quota .brand { display: none; }
-
-  body.phone-client:not(.eink-client).mode-quota .top-controls {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 6px;
-    width: 100%;
-  }
-
-  body.phone-client:not(.eink-client).mode-quota .utility-controls { gap: 5px; }
-
-  body.phone-client:not(.eink-client).mode-quota .utility-controls button {
-    min-height: 36px;
-    padding-inline: 8px;
-  }
-
-  body.phone-client:not(.eink-client).mode-quota main { padding-top: 8px; }
-}
 
 /* Quota account source switcher ------------------------------------------ */
 .quota-codex-switcher { grid-template-rows: auto auto auto; }
@@ -1400,7 +1130,7 @@ body.eink-client .quota-toolbox {
   background: transparent;
 }
 
-body.eink-client .quota-toolbox button {
+body.eink-client .quota-toolbox > button {
   flex: 1 1 152px;
   width: auto;
   min-width: 0;
@@ -1417,7 +1147,7 @@ body.eink-client .quota-toolbox button {
 
 body.eink-client .quota-page-button {
   width: 44px;
-  height: 44px;
+  aspect-ratio: 1;
   border: 3px solid #24241f;
   font-size: 20px;
   font-weight: 800;
@@ -1453,14 +1183,14 @@ body.eink-client .quota-time.quota-stale {
   text-decoration-style: double;
 }
 
-@media (orientation: portrait), (max-width: 760px) {
+@container quota-view (max-width: 47.5rem) {
   body.eink-client .quota-pair { grid-template-columns: 1fr; }
 }
 
 body.eink-client:is(.dashboard-viewer, .viewer-immersive, .viewer-fullscreen) .quota-view.active,
 body.eink-client.mode-quota .quota-shell {
   height: auto;
-  min-height: 100dvh;
+  min-height: var(--viewer-height, 100vh);
   overflow: visible;
 }
 
@@ -1556,7 +1286,7 @@ body.eink-client.mode-quota .quota-eink-overview-footer {
 
 body.eink-client.mode-quota .quota-eink-overview-footer .quota-toolbox { width: auto; }
 
-body.eink-client.mode-quota .quota-eink-overview-footer .quota-toolbox button {
+body.eink-client.mode-quota .quota-eink-overview-footer .quota-toolbox > button {
   flex: 0 1 auto;
   width: auto;
   padding: 6px 14px;
@@ -1565,7 +1295,7 @@ body.eink-client.mode-quota .quota-eink-overview-footer .quota-toolbox button {
 /* Quota cards keep their primary refresh action in the lower-right corner.
    Lift the fixed viewer exit control above that action on E-Ink layouts so
    the two independent controls never compete for the same touch target. */
-body.eink-client.viewport-landscape.mode-quota:is(.dashboard-viewer, .viewer-fullscreen) .exit-viewer {
+body.eink-client.mode-quota:is(.dashboard-viewer, .viewer-fullscreen) .exit-viewer {
   bottom: calc(76px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
 }
 
@@ -1611,7 +1341,7 @@ body.eink-client.mode-quota .quota-eink-account-controls .quota-toolbox {
   gap: 10px;
 }
 
-body.eink-client.mode-quota .quota-eink-account-controls .quota-toolbox button {
+body.eink-client.mode-quota .quota-eink-account-controls .quota-toolbox > button {
   width: 100%;
   min-height: 52px;
   padding: 6px 12px;

@@ -121,42 +121,66 @@ body.pc-console.mode-sideboard .activity-feed-item:hover {
   text-align: center;
 }
 
-/* Phone dashboard readability. The separate mobile overview preview remains
-   owned by phone-dashboard.css. */
-body.phone-client:not(.eink-client) .activity-feed-filters button,
-body.phone-client:not(.eink-client) .activity-feed-meta,
-body.phone-client:not(.eink-client) .activity-feed-text,
-body.phone-client:not(.eink-client) .activity-feed-empty {
-  font-size: 17px;
+/* Mid-sized Sideboard density follows component space, not a tablet flag. */
+@container sideboard-view (min-width: 44.01rem) and (max-width: 64rem) {
+  .activity-feed-card {
+    gap: 4px;
+  }
+
+  .activity-feed-filters button {
+    min-height: 30px;
+    padding: 2px 8px;
+    font-size: 13px;
+  }
+
+  .activity-feed-item {
+    padding: 4px 6px;
+  }
+
+  .activity-feed-meta {
+    font-size: 12px;
+    line-height: 1.15;
+  }
+
+  .activity-feed-text,
+  .activity-feed-empty {
+    font-size: 15px;
+    line-height: 1.22;
+  }
+
+  .activity-feed-text {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
 }
 
-/* Trusted tablet sideboard density. */
-body.tablet-client:not(.eink-client).mode-sideboard .activity-feed-card {
+body:not(.eink-client) .sideboard-view.space-sideboard-mid .activity-feed-card {
   gap: 4px;
 }
 
-body.tablet-client:not(.eink-client).mode-sideboard .activity-feed-filters button {
+body:not(.eink-client) .sideboard-view.space-sideboard-mid .activity-feed-filters button {
   min-height: 30px;
   padding: 2px 8px;
   font-size: 13px;
 }
 
-body.tablet-client:not(.eink-client).mode-sideboard .activity-feed-item {
+body:not(.eink-client) .sideboard-view.space-sideboard-mid .activity-feed-item {
   padding: 4px 6px;
 }
 
-body.tablet-client:not(.eink-client).mode-sideboard .activity-feed-meta {
+body:not(.eink-client) .sideboard-view.space-sideboard-mid .activity-feed-meta {
   font-size: 12px;
   line-height: 1.15;
 }
 
-body.tablet-client:not(.eink-client).mode-sideboard .activity-feed-text,
-body.tablet-client:not(.eink-client).mode-sideboard .activity-feed-empty {
+body:not(.eink-client) .sideboard-view.space-sideboard-mid :is(.activity-feed-text, .activity-feed-empty) {
   font-size: 15px;
   line-height: 1.22;
 }
 
-body.tablet-client:not(.eink-client).mode-sideboard .activity-feed-text {
+body:not(.eink-client) .sideboard-view.space-sideboard-mid .activity-feed-text {
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
@@ -247,26 +271,19 @@ body.eink-client .activity-feed-list::-webkit-scrollbar-thumb {
   background: #000;
 }
 
-body.eink-client.viewport-portrait .activity-feed-meta {
-  font-size: 16px;
-  line-height: 1.15;
-}
+@container eink-card (max-width: 26rem) {
+  body.eink-client .activity-feed-meta {
+    font-size: 16px;
+    line-height: 1.15;
+  }
 
-body.eink-client.viewport-portrait .activity-feed-text {
-  display: -webkit-box;
-  overflow: hidden;
-  font-size: 20px;
-  line-height: 1.18;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
+  body.eink-client .activity-feed-text {
+    font-size: 20px;
+    line-height: 1.18;
+  }
 
-body.eink-client.viewport-portrait .activity-feed-item {
-  padding: 5px 7px;
-}
-
-body.eink-client.viewport-portrait .activity-feed-list {
-  gap: 5px;
+  body.eink-client .activity-feed-item { padding: 5px 7px; }
+  body.eink-client .activity-feed-list { gap: 5px; }
 }
 
 @container eink-card (max-width: 280px) {

@@ -15,8 +15,11 @@
       --green: #70d98b;
       --yellow: #ffd27a;
       --blue: #8fd1ff;
-      --viewer-width: 100dvw;
-      --viewer-height: 100dvh;
+      /* JavaScript replaces these with visualViewport pixels. vh/vw keep old
+         Chromium usable before that first measurement; dvh/dvw are an optional
+         progressive enhancement, never the sole sizing contract. */
+      --viewer-width: 100vw;
+      --viewer-height: 100vh;
       /* premium gradient tokens */
       --grad-accent: linear-gradient(90deg, #8fd1ff 0%, #70d98b 100%);
 }

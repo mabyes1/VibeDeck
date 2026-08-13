@@ -1,0 +1,12 @@
+{
+  "name": "vibedeck-development",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"tests/{js,wwwroot}/*.test.mjs\"",
+    "test:responsive": "playwright test tests/visual --workers=1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}

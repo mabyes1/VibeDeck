@@ -103,7 +103,8 @@ namespace VibeDeck.Host
                         Math.Max(25, Math.Min(85, request.Quality)),
                         context.RequestAborted,
                         context.RequestServices.GetRequiredService<DeviceTrustService>()
-                            .ResolveDeviceId(ReadDeviceToken(context)));
+                            .ResolveDeviceId(ReadDeviceToken(context)),
+                        Math.Max(0, Math.Min(10000, request.ReceiverMaxBitrateKbps)));
                     context.Response.ContentType = "application/json";
                     context.Response.Headers["Cache-Control"] = "no-store";
                     await context.Response.WriteAsync(JsonSerializer.Serialize(answer));
