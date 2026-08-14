@@ -53,7 +53,8 @@ import { createSideboardController } from "./modules/sideboard.js?v=51";
 import { createMobileOverviewController } from "./modules/mobile-overview.js?v=3";
 import { createResponsiveSpaceController } from "./modules/responsive-space.js?v=1";
 import { isFullscreenDisplayStreaming as isFullscreenDisplayStreamingPolicy } from "./modules/dashboard-background-policy.js?v=1";
-import { createStreamController } from "./modules/stream-controller.js?v=52";
+import { createStreamController } from "./modules/stream-controller.js?v=53";
+import { createStreamDebugOverlay } from "./modules/stream-debug-overlay.js?v=1";
 import { tuneVideoReceiver } from "./modules/stream-tuning.js?v=47";
 import { applyFeedbackState } from "./modules/feedback-state.js?v=1";
 import { confirmAction } from "./modules/ui-confirm.js?v=1";
@@ -120,6 +121,12 @@ import {
     const displaySourceKind = document.getElementById("displaySourceKind");
     const remoteKeyboardButton = document.getElementById("remoteKeyboardButton");
     const remoteKeyboardInput = document.getElementById("remoteKeyboardInput");
+    const streamDebugToggle = document.getElementById("streamDebugToggle");
+    const streamDebugBar = document.getElementById("streamDebugBar");
+    const streamDebugSummary = document.getElementById("streamDebugSummary");
+    const streamDebugClient = document.getElementById("streamDebugClient");
+    const streamDebugHost = document.getElementById("streamDebugHost");
+    const streamDebugTransport = document.getElementById("streamDebugTransport");
     const displayEmptyState = document.getElementById("displayEmptyState");
     const displayStreamStateMessage = document.getElementById("displayStreamStateMessage");
     const displayStreamRetry = document.getElementById("displayStreamRetry");
@@ -325,6 +332,7 @@ import {
     let lastUrl = null;
     let inputSocket = null;
     let streamController = null;
+    let streamDebugOverlay = null;
     let streamStats = null;
     let activeMode = "display";
     let dashboardConnectionState = "connecting";
@@ -2752,6 +2760,25 @@ import {
     }
 
     try {
+      streamDebugOverlay = createStreamDebugOverlay({
+        elements: {
+          toggle: streamDebugToggle,
+          bar: streamDebugBar,
+          summary: streamDebugSummary,
+          client: streamDebugClient,
+          host: streamDebugHost,
+          transport: streamDebugTransport,
+        },
+        fetchJsonOrThrow,
+        getDeviceName: displaySources.getSelectedName,
+      });
+      streamDebugOverlay.wire();
+    } catch (error) {
+      console.error("stream debug overlay failed", error);
+      streamDebugOverlay = null;
+    }
+
+    try {
       streamController = createStreamController({
         elements: { screen, rtcScreen },
         getWsBase: () => wsBase,
@@ -2773,6 +2800,7 @@ import {
         recordJpegFrame: recordFrame,
         fetchJsonOrThrow,
         tuneVideoReceiver,
+        onStreamStats: stats => streamDebugOverlay?.updateClientStats(stats),
         reportDiagnostic: report => {
           fetchJsonOrThrow("/api/stream/diagnostics", {
             method: "POST",

@@ -15,7 +15,8 @@ namespace VibeDeck.Host.Tests
                 targetFps: 30,
                 targetQuality: 40,
                 targetBitrateKbps: 1200,
-                capturePath: "old-session");
+                capturePath: "old-session",
+                deviceName: "DISPLAY-OLD");
             oldSession.RecordEncodedBytes(50);
             oldSession.RecordQueuedFrame();
 
@@ -25,7 +26,8 @@ namespace VibeDeck.Host.Tests
                 targetFps: 30,
                 targetQuality: 48,
                 targetBitrateKbps: 2542,
-                capturePath: "new-session");
+                capturePath: "new-session",
+                deviceName: "DISPLAY-NEW");
             newSession.RecordEncodedBytes(100);
             newSession.RecordQueuedFrame();
 
@@ -41,6 +43,7 @@ namespace VibeDeck.Host.Tests
             Assert.Equal(576, active.Height);
             Assert.Equal(2542, active.TargetBitrateKbps);
             Assert.Equal("new-session", active.CapturePath);
+            Assert.Equal("DISPLAY-NEW", active.DeviceName);
             Assert.Equal(100, active.EncodedBytes);
             Assert.Equal(1, active.QueuedFrames);
 

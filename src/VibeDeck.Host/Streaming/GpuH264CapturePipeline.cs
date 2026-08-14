@@ -93,6 +93,7 @@ namespace VibeDeck.Host.Streaming
                                     peer,
                                     transport,
                                     h264PayloadTypeId,
+                                    display.DeviceName,
                                     display.OutputIndex,
                                     dimensions.Width,
                                     dimensions.Height,
@@ -144,6 +145,7 @@ namespace VibeDeck.Host.Streaming
             RTCPeerConnection peer,
             H264WebRtcTransport transport,
             int h264PayloadTypeId,
+            string deviceName,
             int outputIndex,
             int width,
             int height,
@@ -185,7 +187,8 @@ namespace VibeDeck.Host.Streaming
                     "d3d11-gpu",
                     encoder,
                     profile.Name,
-                    downshiftCount);
+                    downshiftCount,
+                    deviceName);
 
                 var health = canDownshift ? new GpuStreamHealthMonitor(profile.Fps) : null;
                 Func<TimeSpan, bool> healthCheck = health == null ? null : health.RecordFrame;

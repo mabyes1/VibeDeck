@@ -91,6 +91,9 @@ namespace VibeDeck.Host.Streaming
             lock (cacheSync)
             {
                 PruneCache(DateTimeOffset.UtcNow);
+                var pacingDebtMs = Math.Max(
+                    0d,
+                    (Volatile.Read(ref nextPacedSendSeconds) - pacingClock.Elapsed.TotalSeconds) * 1000d);
                 return new H264TransportSnapshot
                 {
                     TargetBitrateKbps = Volatile.Read(ref targetBitrateKbps),
@@ -98,7 +101,8 @@ namespace VibeDeck.Host.Streaming
                     NackRequests = Interlocked.Read(ref nackRequests),
                     PacketsRetransmitted = Interlocked.Read(ref packetsRetransmitted),
                     PliRequests = Interlocked.Read(ref pliRequests),
-                    CachedPackets = cache.Count
+                    CachedPackets = cache.Count,
+                    PacingDebtMs = Math.Round(pacingDebtMs, 1)
                 };
             }
         }
@@ -515,5 +519,6 @@ namespace VibeDeck.Host.Streaming
         public long PacketsRetransmitted { get; set; }
         public long PliRequests { get; set; }
         public int CachedPackets { get; set; }
+        public double PacingDebtMs { get; set; }
     }
 }

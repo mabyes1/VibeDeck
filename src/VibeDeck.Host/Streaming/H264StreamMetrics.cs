@@ -31,6 +31,7 @@ namespace VibeDeck.Host.Streaming
         private string encoder;
         private string qualityTier;
         private int downshiftCount;
+        private string deviceName;
 
         internal H264StreamMetricsLease Start(
             int width,
@@ -41,7 +42,8 @@ namespace VibeDeck.Host.Streaming
             string capturePath = null,
             string encoder = null,
             string qualityTier = null,
-            int downshiftCount = 0)
+            int downshiftCount = 0,
+            string deviceName = null)
         {
             lock (syncRoot)
             {
@@ -66,6 +68,7 @@ namespace VibeDeck.Host.Streaming
                 this.encoder = encoder ?? string.Empty;
                 this.qualityTier = qualityTier ?? "requested";
                 this.downshiftCount = Math.Max(0, downshiftCount);
+                this.deviceName = deviceName ?? string.Empty;
                 ResetWindow();
                 return new H264StreamMetricsLease(this, ownerId);
             }
@@ -142,7 +145,8 @@ namespace VibeDeck.Host.Streaming
                     CapturePath = capturePath,
                     Encoder = encoder,
                     QualityTier = qualityTier,
-                    DownshiftCount = downshiftCount
+                    DownshiftCount = downshiftCount,
+                    DeviceName = deviceName
                 };
             }
         }
@@ -232,5 +236,6 @@ namespace VibeDeck.Host.Streaming
         public string Encoder { get; set; }
         public string QualityTier { get; set; }
         public int DownshiftCount { get; set; }
+        public string DeviceName { get; set; }
     }
 }

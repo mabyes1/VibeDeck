@@ -161,6 +161,71 @@ body.physical-display-source .display-source-kind {
   border-color: var(--green);
 }
 
+.stream-debug-toggle {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding-inline: 10px;
+  white-space: nowrap;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: .04em;
+}
+
+.stream-debug-toggle[aria-pressed="true"] {
+  color: #071017;
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+.stream-debug-bar {
+  position: absolute;
+  z-index: 11;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 3px;
+  width: min(calc(100% - 20px), 920px);
+  max-height: min(40%, 220px);
+  padding: 8px 10px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgba(143, 209, 255, .28);
+  border-radius: 9px;
+  background: rgba(5, 9, 13, .88);
+  color: rgba(225, 237, 246, .86);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.stream-debug-bar[hidden] {
+  display: none;
+}
+
+.stream-debug-bar strong {
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.stream-debug-bar span {
+  overflow-wrap: anywhere;
+}
+
+body.viewer-fullscreen.mode-display .stream-debug-bar {
+  position: fixed;
+  bottom: calc(8px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+}
+
+body.stream-debug-visible.remote-client.device-trusted.mode-display .display-view.active::after {
+  display: none;
+}
+
 .remote-keyboard-input {
   position: fixed;
   z-index: -1;
@@ -220,6 +285,10 @@ body.viewer-fullscreen.mode-display .display-toolbar {
 
   .remote-keyboard-button {
     padding-inline: 10px;
+  }
+
+  .stream-debug-toggle {
+    padding-inline: 9px;
   }
 
   .display-toolbar:not(.is-collapsed) {

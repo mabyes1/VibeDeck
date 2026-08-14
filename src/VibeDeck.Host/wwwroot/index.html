@@ -17,7 +17,7 @@
   <link id="manifestLink" rel="manifest" href="/manifest.json?v=53">
   <link rel="icon" type="image/svg+xml" href="/icons/vibedeck.svg?v=1" sizes="any">
   <title>VibeDeck</title>
-  <link rel="stylesheet" href="/index.css?v=139">
+  <link rel="stylesheet" href="/index.css?v=140">
   <style>
     /* Pairing is the recovery path: keep it usable even if an old iOS asset or
        a later boot request fails. JS only hides it after trust is confirmed. */
@@ -401,6 +401,7 @@
           </label>
           <span id="displaySourceKind" class="display-source-kind" role="status"></span>
           <button id="remoteKeyboardButton" class="remote-keyboard-button" type="button" aria-pressed="false" data-i18n="ui.remoteKeyboard">⌨ 鍵盤</button>
+          <button id="streamDebugToggle" class="stream-debug-toggle" type="button" aria-pressed="false" title="Stream diagnostics">DEBUG</button>
         </div>
       </div>
       <div id="displayEmptyState" class="display-empty-state">
@@ -421,6 +422,12 @@
       </div>
       <img id="screen" class="screen-media" alt="VibeDeck 顯示器串流">
       <video id="rtcScreen" class="screen-media" autoplay playsinline muted hidden aria-label="VibeDeck WebRTC 顯示器串流"></video>
+      <aside id="streamDebugBar" class="stream-debug-bar" hidden aria-live="polite">
+        <strong id="streamDebugSummary">等待串流診斷資料</strong>
+        <span id="streamDebugClient">CLIENT waiting</span>
+        <span id="streamDebugHost">HOST waiting</span>
+        <span id="streamDebugTransport">TRANSPORT waiting</span>
+      </aside>
       <textarea id="remoteKeyboardInput"
         class="remote-keyboard-input"
         rows="1"
@@ -874,6 +881,6 @@
 
   <button id="exitViewer" class="exit-viewer" type="button" aria-label="Exit viewer">×</button>
 
-  <script type="module" src="/index.js?v=146"></script>
+  <script type="module" src="/index.js?v=147"></script>
 </body>
 </html>

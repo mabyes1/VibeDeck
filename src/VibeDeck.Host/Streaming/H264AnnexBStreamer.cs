@@ -90,7 +90,7 @@ namespace VibeDeck.Host.Streaming
                 var rawFrame = new byte[frameBytes];
 
                 ReplaceActiveStream(streamCts);
-                metricsLease = metrics.Start(width, height, fps, quality, bitrateKbps);
+                metricsLease = metrics.Start(width, height, fps, quality, bitrateKbps, deviceName: deviceName);
 
                 var outputTask = RelayEncodedOutputAsync(process.StandardOutput.BaseStream, socket, metricsLease, streamToken);
                 errorTask = DrainErrorAsync(process.StandardError);
@@ -231,7 +231,8 @@ namespace VibeDeck.Host.Streaming
                         bitrateKbps,
                         "bitmap-pipe",
                         encoderName,
-                        profile.Name);
+                        profile.Name,
+                        deviceName: deviceName);
                     var outputTask = H264WebRtcRelay.RelayAsync(
                         process.StandardOutput.BaseStream,
                         peer,

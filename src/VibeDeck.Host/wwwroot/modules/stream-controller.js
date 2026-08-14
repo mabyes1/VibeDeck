@@ -54,6 +54,7 @@ export function createStreamController({
   fetchJsonOrThrow,
   tuneVideoReceiver,
   reportDiagnostic = () => {},
+  onStreamStats = () => {},
   createRetryScheduler = createWebRtcRetryScheduler,
   getNow = () => Date.now(),
 }) {
@@ -152,6 +153,7 @@ export function createStreamController({
       clearInterval(statsTimer);
       statsTimer = null;
     }
+    try { onStreamStats(null); } catch { }
     elements.rtcScreen.srcObject = null;
     elements.rtcScreen.hidden = true;
     elements.screen.hidden = false;
@@ -501,6 +503,9 @@ export function createStreamController({
           previous,
           now,
           resolveVideoRttSeconds(reports, selectedPair));
+        if (stats.interval) {
+          try { onStreamStats({ ...stats.interval, path: selectedPath }); } catch { }
+        }
         const fullscreenDisplay = globalThis.document?.body?.classList?.contains("viewer-fullscreen");
         if (stats.interval && !fullscreenDisplay) {
           const interval = stats.interval;

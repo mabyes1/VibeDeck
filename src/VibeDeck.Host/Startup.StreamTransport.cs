@@ -128,6 +128,41 @@ namespace VibeDeck.Host
                 }), context.RequestAborted);
             });
 
+            endpoints.MapGet("/api/stream/client-diagnostics", async context =>
+            {
+                if (!await RequireTrustedDeviceAsync(context)) return;
+
+                var deviceName = context.Request.Query["deviceName"].ToString();
+                var h264Snapshot = context.RequestServices.GetRequiredService<H264StreamMetrics>().GetSnapshot();
+                var webRtc = context.RequestServices.GetRequiredService<WebRtcH264Service>().GetDiagnostics();
+                var session = webRtc.ActiveSessions
+                    .Where(item => string.IsNullOrWhiteSpace(deviceName) ||
+                        string.Equals(item.DeviceName, deviceName, StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(item => item.CreatedAt)
+                    .FirstOrDefault();
+                var h264 = h264Snapshot.Active &&
+                    (string.IsNullOrWhiteSpace(deviceName) ||
+                    string.Equals(h264Snapshot.DeviceName, deviceName, StringComparison.OrdinalIgnoreCase))
+                    ? h264Snapshot
+                    : null;
+
+                context.Response.ContentType = "application/json";
+                context.Response.Headers["Cache-Control"] = "no-store";
+                await context.Response.WriteAsync(JsonSerializer.Serialize(new
+                {
+                    generatedAt = DateTimeOffset.UtcNow.ToString("O"),
+                    h264,
+                    session = session == null ? null : new
+                    {
+                        session.ConnectionState,
+                        session.IceState,
+                        session.TransportPlan,
+                        session.ReceiverMaxBitrateKbps,
+                        session.Transport
+                    }
+                }), context.RequestAborted);
+            });
+
             endpoints.MapPost("/api/stream/diagnostics", async context =>
             {
                 if (!await RequireTrustedDeviceAsync(context)) return;
