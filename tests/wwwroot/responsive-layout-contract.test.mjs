@@ -46,6 +46,10 @@ test("dashboard row geometry comes from the persisted layout model", async () =>
   ]);
 
   assert.match(shell, /repeat\(var\(--dashboard-row-count,\s*6\)/);
+  assert.match(shell, /\.sideboard-shell\s*\{[\s\S]*display:\s*grid/);
+  assert.match(shell, /grid-template-rows:\s*repeat\(var\(--dashboard-row-count,\s*6\),\s*minmax\(0,\s*1fr\)\)/);
+  assert.doesNotMatch(shell, /grid-template-rows:\s*repeat\(var\(--dashboard-row-count,\s*6\),\s*minmax\(90px/);
+  assert.doesNotMatch(shell, /#systemSideboardPage\.dashboard-grid\s*\{[^}]*min-height:\s*520px/);
   assert.match(editor, /repeat\(var\(--dashboard-row-count,\s*6\)/);
   assert.match(controller, /grid\.style\.setProperty\("--dashboard-row-count",\s*String\(maxRows\(\)\)\)/);
   assert.match(controller, /node\.hidden\s*=\s*!visible/);
@@ -113,6 +117,7 @@ test("quota identity text can break at arbitrary narrow widths", async () => {
   assert.match(mini, /\.quota-mini-card\s*\{[^}]*overflow:\s*auto/);
   assert.match(mini, /\.quota-mini-credit\s*\{[^}]*overflow-wrap:\s*anywhere/);
   assert.doesNotMatch(mini, /\.quota-mini-credit\s*\{[^}]*text-overflow:\s*ellipsis/);
+  assert.equal((mini.match(/body\.eink-client \.quota-mini-card\s*\{/g) || []).length, 1);
 });
 
 test("Custom Cards management responds to its own container", async () => {

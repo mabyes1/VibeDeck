@@ -215,3 +215,55 @@ test.describe("continuous E-Ink Sideboard", () => {
     });
   }
 });
+
+test.describe("App theme controls", () => {
+  test("appearance controls live in Setup and update shared theme tokens", async ({ page }) => {
+    await openSideboard(page, { name: "theme-picker", width: 1_280, height: 800 });
+    await expect(page.locator(".setup-panels #appThemeColorA")).toHaveCount(1);
+    await expect(page.locator("#sideboardShell #appThemeColorA")).toHaveCount(0);
+    await page.locator('[data-app-palette="aurora"]').evaluate(button => button.click());
+    await expect(page.locator("#appThemeColorA")).toHaveValue("#155d4a");
+    await expect(page.locator("#appThemeColorB")).toHaveValue("#173d57");
+    await expect(page.locator("html")).toHaveCSS("--theme-palette-a", "#155d4a");
+    await expect(page.locator("#sideboardShell")).toHaveCSS("--side-palette-a", "#155d4a");
+    await page.locator("#appThemeBackgroundMode").evaluate(select => {
+      select.value = "solid";
+      select.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await expect(page.locator("html")).toHaveAttribute("data-theme-background", "solid");
+    await page.locator("#appThemeGlassOpacity").evaluate(input => {
+      input.value = "10";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await expect(page.locator("html")).toHaveCSS("--theme-glass", "rgba(255, 255, 255, 0.100)");
+  });
+
+  test("E-Ink keeps appearance settings out of the reading surface", async ({ page }) => {
+    await openSideboard(page, {
+      name: "eink-theme-picker",
+      width: 794,
+      height: 1_054,
+      device: "boox-go-color-7",
+      eink: true,
+    });
+    await expect(page.locator(".appearance-theme-panel")).toBeHidden();
+  });
+
+  test("custom wallpaper is compressed, applied, and removable", async ({ page }) => {
+    await openSideboard(page, { name: "theme-wallpaper", width: 1_280, height: 800 });
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGMMqFjAwMDAxMDAwMDAAAAQugFsZnyF3gAAAABJRU5ErkJggg==",
+      "base64",
+    );
+    await page.locator("#appThemeBackgroundUpload").setInputFiles({
+      name: "wallpaper.png",
+      mimeType: "image/png",
+      buffer: png,
+    });
+    await expect(page.locator("html")).toHaveAttribute("data-theme-background", "image");
+    await expect(page.locator("html")).toHaveCSS("--theme-background-image", /data:image\/webp;base64/);
+    await page.locator("#appThemeBackgroundClear").evaluate(button => button.click());
+    await expect(page.locator("html")).toHaveAttribute("data-theme-background", "gradient");
+    await expect(page.locator("html")).toHaveCSS("--theme-background-image", "none");
+  });
+});

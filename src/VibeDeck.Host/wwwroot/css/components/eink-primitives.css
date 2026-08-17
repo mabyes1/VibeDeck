@@ -140,7 +140,6 @@ body.eink-client :is(.custom-cards-toolbar, .custom-manager-header, .custom-sour
   white-space: nowrap;
 }
 
-body.eink-client .skin-picker button.active,
 body.eink-client :is(.mode-button, .quota-tab).active {
   color: #fff;
   background: #24241f;

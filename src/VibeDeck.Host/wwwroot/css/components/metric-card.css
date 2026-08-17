@@ -33,36 +33,43 @@
   min-width: 0;
   min-height: 0;
   padding: var(--metric-card-padding);
-  border: 1px solid rgba(255,255,255,.09);
-  border-radius: 8px;
-  background: rgba(255,255,255,.03);
+  border: 1px solid var(--side-glass-line);
+  border-radius: 12px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .052), rgba(255, 255, 255, .006)),
+    var(--side-glass-bg);
   overflow: auto;
   overscroll-behavior: contain;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .055),
+    0 10px 28px rgba(0, 0, 0, .10);
+  backdrop-filter: blur(var(--side-glass-blur)) saturate(118%);
+  -webkit-backdrop-filter: blur(var(--side-glass-blur)) saturate(118%);
   transition: transform .2s cubic-bezier(.4, 0, .2, 1), box-shadow .2s ease, border-color .2s ease;
 }
 
 .metric-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(143,209,255,.22);
-  box-shadow: 0 6px 20px rgba(0,0,0,.32);
+  transform: translateY(-1px);
+  border-color: var(--side-glass-line-hover);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .075),
+    0 14px 34px rgba(0, 0, 0, .17);
 }
 
 body.pc-console.mode-sideboard .metric-card {
-  border-color: rgba(255, 255, 255, .095);
-  border-radius: 10px;
+  border-color: var(--side-glass-line);
+  border-radius: 12px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .014)),
-    rgba(10, 17, 22, .72);
+    linear-gradient(145deg, rgba(255, 255, 255, .052), rgba(255, 255, 255, .006)),
+    var(--side-glass-bg);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .03),
-    0 7px 20px rgba(0, 0, 0, .10);
+    inset 0 1px 0 rgba(255, 255, 255, .055),
+    0 10px 28px rgba(0, 0, 0, .10);
 }
 
 body.pc-console.mode-sideboard .metric-card:hover {
   transform: translateY(-1px);
-  border-color: rgba(143, 209, 255, .23);
+  border-color: var(--side-glass-line-hover);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .04),
     0 10px 24px rgba(0, 0, 0, .20);
@@ -94,7 +101,7 @@ body.pc-console.mode-sideboard .metric-card:hover {
   grid-column: 1 / -1;
   grid-row: 2;
   min-width: 0;
-  color: rgba(247,242,232,.68);
+  color: rgba(247, 242, 232, .68);
   font-size: var(--metric-sub-size);
   line-height: var(--metric-sub-line);
 }
@@ -106,7 +113,7 @@ body.pc-console.mode-sideboard .metric-card:hover {
   height: var(--metric-bar-height);
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(255,255,255,.1);
+  background: rgba(255, 255, 255, .1);
 }
 
 .mini-bar span {

@@ -58,7 +58,9 @@ then final component owners, then narrow overlays.
 ### Foundation and compatibility
 
 - `00-base-tokens.css`: global tokens and hard document contracts such as
-  `[hidden]`.
+  `[hidden]`. The application palette is exposed here through `--theme-*`
+  tokens; runtime values are owned by `modules/app-theme.js` and are shared by
+  Setup, Display, Sideboard, Quota, and the app shell rather than by a page skin.
 - `10-core.css`: application shell, shared viewer geometry, remote trust gating,
   base controls, and PC console behavior.
 - `components/access-gates.css`: remote Host authentication, iOS install hint,

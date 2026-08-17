@@ -79,10 +79,17 @@
   text-overflow: ellipsis;
 }
 
+.quota-mini-card select:focus-visible {
+  border-color: var(--side-accent);
+  outline: 2px solid color-mix(in srgb, var(--side-accent) 70%, transparent);
+  outline-offset: 2px;
+}
+
 .quota-mini-value-row strong {
   flex: 0 0 auto;
   color: var(--side-accent);
   font-size: var(--quota-mini-value-size);
+  font-weight: 800;
   line-height: var(--quota-mini-value-line);
 }
 
@@ -116,20 +123,20 @@
 }
 
 body.pc-console.mode-sideboard .quota-mini-card select {
-  border-color: rgba(255, 255, 255, .11);
+  border-color: var(--side-glass-line);
   border-radius: 7px;
-  background: rgba(5, 12, 16, .62);
+  background: rgba(7, 9, 14, .46);
 }
 
 body.pc-console.mode-sideboard .quota-mini-bar {
-  border-color: rgba(255, 255, 255, .10);
+  border-color: var(--side-glass-line);
   border-radius: 999px;
   background: rgba(255, 255, 255, .07);
 }
 
 body.pc-console.mode-sideboard .quota-mini-bar span {
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--side-accent), #f7cc8f);
+  background: var(--grad-accent);
 }
 
 /* Mid-sized Sideboard density follows available component width. */
@@ -227,7 +234,6 @@ body.eink-client .quota-mini-card select {
   background: #fffef8;
   line-height: 1.2;
 }
-
 body.eink-client .quota-mini-credit {
   min-height: 1lh;
 }

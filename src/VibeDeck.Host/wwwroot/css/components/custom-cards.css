@@ -225,9 +225,12 @@
 .custom-sources-manager,
 .custom-credential-panel {
   min-width: 0;
-  border: 1px solid var(--side-line);
-  background: rgba(17,25,30,.9);
-  border-radius: 8px;
+  border: 1px solid var(--side-glass-line, var(--side-line));
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.052), rgba(255,255,255,.006)),
+    var(--side-glass-bg, rgba(17,25,30,.72));
+  border-radius: 12px;
+  box-shadow: var(--side-glass-shadow, 0 14px 38px rgba(0,0,0,.16)), inset 0 1px 0 rgba(255,255,255,.05);
 }
 
 .custom-card {
@@ -239,6 +242,8 @@
   overflow: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  backdrop-filter: blur(var(--side-glass-blur, 22px)) saturate(118%);
+  -webkit-backdrop-filter: blur(var(--side-glass-blur, 22px)) saturate(118%);
 }
 
 .custom-card-header {

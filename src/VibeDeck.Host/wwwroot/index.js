@@ -50,6 +50,7 @@ import { createHostAuthController } from "./modules/host-auth-controller.js?v=1"
 import { createCustomDeckController } from "./modules/custom-deck-controller.js?v=1";
 import { createQuotaMiniCardController } from "./modules/quota-mini-card.js?v=59";
 import { createSideboardController } from "./modules/sideboard.js?v=51";
+import { createAppThemeController } from "./modules/app-theme.js?v=2";
 import { createMobileOverviewController } from "./modules/mobile-overview.js?v=3";
 import { createResponsiveSpaceController } from "./modules/responsive-space.js?v=1";
 import { isFullscreenDisplayStreaming as isFullscreenDisplayStreamingPolicy } from "./modules/dashboard-background-policy.js?v=1";
@@ -227,6 +228,7 @@ import {
     const customDeckRefresh = document.getElementById("customDeckRefresh");
     let customDeckController = null;
     const sideboardShell = document.getElementById("sideboardShell");
+    createAppThemeController();
     const systemSideboardPage = document.getElementById("systemSideboardPage");
     const customSideboardPage = document.getElementById("customSideboardPage");
     const sideboardPageTabs = document.getElementById("sideboardPageTabs");
@@ -978,16 +980,6 @@ import {
     function shouldStartInViewer() {
       const value = new URLSearchParams(location.search).get("viewer");
       return value === "1" || value === "true";
-    }
-
-    function setSideSkin(skin) {
-      const nextSkin = ["command", "dial", "focus"].includes(skin) ? skin : "command";
-      sideboardShell.classList.remove("skin-command", "skin-dial", "skin-focus");
-      sideboardShell.classList.add(`skin-${nextSkin}`);
-      for (const button of document.querySelectorAll("[data-side-skin]")) {
-        button.classList.toggle("active", button.dataset.sideSkin === nextSkin);
-      }
-      localStorage.setItem("vibeDeckSideSkin", nextSkin);
     }
 
     function setBar(element, value) {
@@ -3031,9 +3023,6 @@ import {
     document.querySelectorAll("[data-dashboard-mode]").forEach(button => {
       button.addEventListener("click", () => setMode(button.dataset.dashboardMode));
     });
-    for (const button of document.querySelectorAll("[data-side-skin]")) {
-      button.addEventListener("click", () => setSideSkin(button.dataset.sideSkin));
-    }
     const keepAwakeButton = document.getElementById("keepAwake");
     if (keepAwakeButton) {
       keepAwakeButton.addEventListener("click", keepAwakeController.toggle);
@@ -3216,7 +3205,6 @@ import {
       updateViewportSize();
       applyRotation();
       applyOrientation();
-      setSideSkin(localStorage.getItem("vibeDeckSideSkin") || "command");
       if (deckWindow) {
         document.title = "VibeDeck Deck";
         setMode(getInitialMode() === "quota" ? "quota" : "sideboard");

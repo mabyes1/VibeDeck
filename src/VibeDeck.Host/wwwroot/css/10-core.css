@@ -17,25 +17,76 @@ body.eink-client header .panel.panel {
       display: grid;
       grid-template-rows: auto 1fr;
       overflow-x: hidden;
-      background:
-        radial-gradient(circle at 18% 0%, rgba(112, 217, 139, .08), transparent 32rem),
-        linear-gradient(180deg, #101820, #0d131a);
+      position: relative;
+      isolation: isolate;
+      background: #090c12;
       -webkit-user-select: none;
       user-select: none;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      inset: calc(-1 * var(--theme-background-blur) - 3vmax);
+      background-position: var(--theme-background-position);
+      background-repeat: no-repeat;
+      background-size: var(--theme-background-fit);
+      filter: blur(var(--theme-background-blur));
+      transform: scale(1.035);
+    }
+
+    html[data-theme-background="gradient"] body::before {
+      background-image:
+        radial-gradient(ellipse at -8% -10%, var(--theme-palette-a-soft), transparent 56%),
+        radial-gradient(ellipse at 108% 110%, var(--theme-palette-b-soft), transparent 60%),
+        linear-gradient(var(--theme-gradient-angle), var(--theme-palette-a-faint), transparent 46%, var(--theme-palette-b-faint)),
+        linear-gradient(155deg, #0c0e14 0%, #0b1119 54%, #09121b 100%);
+    }
+
+    html[data-theme-background="solid"] body::before {
+      background: var(--theme-palette-a);
+    }
+
+    html[data-theme-background="image"] body::before {
+      background-image: var(--theme-background-image);
+      background-color: #090c12;
+    }
+
+    body::after {
+      inset: 0;
+      background:
+        linear-gradient(rgba(4, 6, 10, var(--theme-background-dim)), rgba(4, 6, 10, var(--theme-background-dim))),
+        radial-gradient(circle at 50% 36%, transparent 28%, rgba(0, 0, 0, .14) 100%);
+    }
+
+    body > header,
+    body > main,
+    body > .exit-viewer,
+    body > .vibe-confirm-overlay {
+      position: relative;
+      z-index: 1;
     }
 
     header {
       container: app-header / inline-size;
       padding: calc(clamp(8px, 1.5vw, 14px) + var(--safe-area-inset-top, env(safe-area-inset-top))) calc(clamp(10px, 2vw, 18px) + var(--safe-area-inset-right, env(safe-area-inset-right))) clamp(8px, 1.5vw, 14px) calc(clamp(10px, 2vw, 18px) + var(--safe-area-inset-left, env(safe-area-inset-left)));
-      background: rgba(15, 23, 32, .82);
-      backdrop-filter: blur(20px) saturate(140%);
-      -webkit-backdrop-filter: blur(20px) saturate(140%);
-      border-bottom: 1px solid rgba(143, 209, 255, .12);
+      background:
+        linear-gradient(110deg, var(--theme-palette-a-faint), transparent 38%, var(--theme-palette-b-faint)),
+        var(--theme-glass-strong);
+      backdrop-filter: blur(var(--theme-glass-blur)) saturate(116%);
+      -webkit-backdrop-filter: blur(var(--theme-glass-blur)) saturate(116%);
+      border-bottom: 1px solid var(--theme-line);
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
       gap: 14px 18px;
       align-items: start;
-      box-shadow: 0 1px 0 rgba(143, 209, 255, .08), 0 18px 48px rgba(0, 0, 0, .32);
+      box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .025), 0 18px 48px rgba(0, 0, 0, .24);
     }
 
     main {
@@ -58,6 +109,13 @@ body.eink-client header .panel.panel {
 
     body.viewer-fullscreen {
       background: #000;
+    }
+
+    body.viewer-fullscreen::before,
+    body.viewer-fullscreen::after,
+    body.eink-client::before,
+    body.eink-client::after {
+      display: none;
     }
 
     body.viewer-fullscreen > header {
@@ -109,6 +167,15 @@ body.eink-client header .panel.panel {
       background: #000;
     }
 
+    body.deck-window.mode-sideboard main,
+    body.deck-window.mode-quota main,
+    body.dashboard-viewer.mode-sideboard main,
+    body.dashboard-viewer.mode-quota main,
+    body.viewer-immersive.mode-sideboard main,
+    body.viewer-immersive.mode-quota main {
+      background: transparent;
+    }
+
     body.deck-window .app-view.active,
     body.dashboard-viewer .app-view.active,
     body.viewer-immersive .app-view.active {
@@ -134,6 +201,13 @@ body.eink-client header .panel.panel {
     body.eink-client.dashboard-viewer main,
     body.eink-client.viewer-immersive main {
       background: #f2f0e8;
+    }
+
+    body:not(.eink-client).dashboard-viewer.mode-sideboard main,
+    body:not(.eink-client).dashboard-viewer.mode-quota main,
+    body:not(.eink-client).viewer-immersive.mode-sideboard main,
+    body:not(.eink-client).viewer-immersive.mode-quota main {
+      background: transparent;
     }
 
     body.dashboard-viewer .app-view.active,
@@ -175,7 +249,7 @@ body.eink-client header .panel.panel {
       place-items: center;
       width: 38px;
       height: 38px;
-      border: 1px solid rgba(112, 217, 139, .52);
+      border: 1px solid var(--theme-accent-line);
       border-radius: 8px;
       background: #0d131a;
       color: #70d98b;
@@ -183,12 +257,12 @@ body.eink-client header .panel.panel {
       font-size: 19px;
       font-weight: 800;
       line-height: 1;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 0 12px rgba(112, 217, 139, .18);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 0 12px var(--theme-accent-soft);
       transition: box-shadow 0.3s ease;
     }
 
     .brand-mark:hover {
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 0 24px rgba(112, 217, 139, .36);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 0 24px var(--theme-accent-line);
     }
 
     .brand-copy {

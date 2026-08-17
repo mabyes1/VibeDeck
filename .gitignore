@@ -9,6 +9,7 @@ certs/
 outputs/
 artifacts/
 workers/**/.wrangler/
+%SystemDrive%/
 
 # Driver build output
 driver/**/x64/

@@ -37,12 +37,20 @@
   color: var(--side-muted);
   font: inherit;
   font-weight: 700;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.activity-feed-filters button:hover {
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
 }
 
 .activity-feed-filters button.active {
   border-color: var(--side-accent);
   background: var(--side-accent);
   color: #071015;
+  font-weight: 700;
 }
 
 .activity-feed-filter-select {
@@ -68,24 +76,31 @@
 
 .activity-feed-item {
   min-width: 0;
-  padding: 6px 8px;
-  border: 1px solid var(--side-line);
-  background: rgba(7, 16, 21, .46);
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, .06);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .025);
+  transition: all .15s ease;
+}
+
+.activity-feed-item:hover {
+  border-color: rgba(255, 255, 255, .15);
+  background: rgba(255, 255, 255, .05);
 }
 
 body.pc-console.mode-sideboard .activity-feed-filters button {
-  border-radius: 7px;
+  border-radius: 999px;
 }
 
 body.pc-console.mode-sideboard .activity-feed-item {
-  border-color: rgba(255, 255, 255, .09);
-  border-radius: 7px;
-  background: linear-gradient(90deg, rgba(126, 217, 232, .035), rgba(7, 16, 21, .34) 42%);
+  border-color: rgba(255, 255, 255, .075);
+  border-radius: 8px;
+  background: linear-gradient(100deg, var(--side-palette-b-faint), rgba(255, 255, 255, .012) 44%);
 }
 
 body.pc-console.mode-sideboard .activity-feed-item:hover {
-  border-color: rgba(126, 217, 232, .20);
-  background: linear-gradient(90deg, rgba(126, 217, 232, .07), rgba(7, 16, 21, .42) 46%);
+  border-color: var(--side-glass-line-hover);
+  background: linear-gradient(100deg, var(--side-palette-b-faint), rgba(255, 255, 255, .035) 48%);
 }
 
 .activity-feed-meta {
