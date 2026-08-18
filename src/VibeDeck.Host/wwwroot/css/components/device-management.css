@@ -96,8 +96,8 @@
 }
 
 .device-management-more > summary {
-  border: 1px solid #3a4a5f;
-  background: #223040;
+  border: 1px solid var(--theme-line);
+  background: var(--theme-control);
   color: var(--text);
   cursor: pointer;
   font-size: 18px;
@@ -117,10 +117,12 @@
   min-width: max(150px, max-content);
   max-width: min(280px, 80vw);
   padding: 6px;
-  border: 1px solid rgba(255,255,255,.16);
-  border-radius: 8px;
-  background: #111922;
-  box-shadow: 0 12px 30px rgba(0,0,0,.35);
+  border: 1px solid var(--theme-line-strong);
+  border-radius: var(--theme-surface-radius, 12px);
+  background: var(--theme-surface-strong);
+  box-shadow: var(--theme-surface-shadow);
+  backdrop-filter: blur(var(--theme-glass-blur)) saturate(116%);
+  -webkit-backdrop-filter: blur(var(--theme-glass-blur)) saturate(116%);
 }
 
 .device-management-more > div button {
@@ -210,30 +212,28 @@
 }
 
 body.pc-console.mode-setup .trusted-devices {
-  border-color: rgba(143, 209, 255, .13);
-  border-radius: 12px;
-  background:
-    linear-gradient(180deg, rgba(143, 209, 255, .025), rgba(255, 255, 255, .012)),
-    rgba(9, 15, 21, .48);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .025),
-    0 10px 28px rgba(0, 0, 0, .10);
+  border-color: var(--theme-line);
+  border-radius: var(--theme-surface-radius, 12px);
+  background: var(--theme-surface);
+  box-shadow: var(--theme-surface-shadow);
+  backdrop-filter: blur(var(--theme-glass-blur)) saturate(112%);
+  -webkit-backdrop-filter: blur(var(--theme-glass-blur)) saturate(112%);
 }
 
 body.pc-console.mode-setup .trusted-device-row {
-  border-color: rgba(255, 255, 255, .085);
+  border-color: var(--theme-line);
   border-radius: 9px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, .026), rgba(255, 255, 255, .010));
+  background: var(--theme-control);
 }
 
 body.pc-console.mode-setup .trusted-device-row:hover {
-  border-color: rgba(143, 209, 255, .18);
-  background: linear-gradient(90deg, rgba(143, 209, 255, .045), rgba(255, 255, 255, .014));
+  border-color: var(--theme-line-strong);
+  background: var(--theme-control-hover);
 }
 
 body.pc-console.mode-setup .trusted-device-row.is-connected {
-  border-color: rgba(112, 217, 139, .38);
-  background: linear-gradient(90deg, rgba(112, 217, 139, .09), rgba(16, 30, 25, .34) 44%, rgba(255, 255, 255, .012));
+  border-color: var(--theme-accent-line);
+  background: var(--theme-control-hover);
   box-shadow: inset 3px 0 0 rgba(112, 217, 139, .72);
 }
 

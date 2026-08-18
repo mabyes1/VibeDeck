@@ -84,7 +84,11 @@ export function createPairingSessionController({
     if (resolvedInfo?.name) return resolvedInfo.name;
     if (isBooxPreview()) return "BOOX Go Color 7";
     if (isEinkClient()) return "E-paper device";
-    if (isIos()) return "iPhone";
+    if (isIos()) {
+      const ipad = /iPad/i.test(navigator.userAgent || "") ||
+        (navigator.platform === "MacIntel" && Number(navigator.maxTouchPoints) > 1);
+      return ipad ? "iPad" : "iPhone";
+    }
     if (/Android/i.test(navigator.userAgent || "")) return "Android device";
     return navigator.platform || "Web device";
   }

@@ -11,7 +11,7 @@ namespace VibeDeck.Host
 {
     public partial class Startup
     {
-        // Read-only onboarding assets phones fetch during pairing/HTTPS setup:
+        // Read-only onboarding assets mobile devices fetch during pairing/HTTPS setup:
         // the pairing QR image and the downloadable local-CA / host certificates.
         // The shared writers WriteQrSvgAsync/BuildQrSvg/WriteCertificateFileAsync
         // remain on the Startup partial class.

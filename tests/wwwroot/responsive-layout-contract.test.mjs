@@ -9,10 +9,9 @@ async function css(path) {
 }
 
 test("compact Sideboard is selected by container space instead of a device selector", async () => {
-  const [phone, shell, compatibility] = await Promise.all([
+  const [phone, shell] = await Promise.all([
     css("30-phone-dashboard.css"),
     css("components/sideboard-shell.css"),
-    readFile(new URL("../../src/VibeDeck.Host/wwwroot/modules/responsive-space.js", import.meta.url), "utf8"),
   ]);
 
   assert.match(shell, /container:\s*sideboard-view\s*\/\s*inline-size/);
@@ -20,12 +19,12 @@ test("compact Sideboard is selected by container space instead of a device selec
   assert.match(phone, /@container\s+sideboard-view\s*\(max-width:\s*44rem\)/);
   assert.match(phone, /@container\s+sideboard-view\s*\(max-width:\s*18rem\)[\s\S]*\.mobile-overview-actions[\s\S]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
   assert.match(shell, /@container sideboard-view[^}]*[\s\S]*\.sideboard-shell\s*\{[^}]*scrollbar-gutter:\s*auto/);
-  assert.match(phone, /space-sideboard-compact[^}]*\.mobile-overview\s*\{\s*display:\s*flex/);
-  assert.match(shell, /space-sideboard-mid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+auto\s+auto/);
-  assert.match(compatibility, /ResizeObserver/);
-  assert.match(compatibility, /sideboardSpaceClasses/);
+  assert.match(phone, /\.mobile-overview-section,[\s\S]*var\(--theme-glass/);
+  assert.doesNotMatch(phone, /background:\s*rgba\(11,\s*27,\s*32,\s*\.88\)/);
+  assert.doesNotMatch(phone, /linear-gradient\(145deg,\s*rgba\(14,\s*34,\s*40/);
+  assert.doesNotMatch(phone + shell, /space-sideboard-(?:micro|compact|mid|wide)/);
   assert.doesNotMatch(phone, /@media\s*\(max-width:\s*1100px\)/);
-  assert.doesNotMatch(phone, /phone-client|tablet-client|viewport-(?:portrait|landscape)/);
+  assert.doesNotMatch(phone, /(?:phone|mobile|tablet)-client|viewport-(?:portrait|landscape)/);
 });
 
 test("dashboard editor is one content-sized scrolling workspace", async () => {
@@ -79,7 +78,7 @@ test("application shell geometry is remote-capability and container driven", asy
   assert.match(index, /"linux-desktop"/);
   assert.match(index, /MOBILE_DEVICE_PREVIEW_KINDS\.has\(devicePreviewKind\)/);
   assert.match(core, /@container\s+app-header\s*\(max-width:\s*48rem\)/);
-  assert.doesNotMatch(core, /body\.phone-client|body\.tablet-client|viewport-(?:portrait|landscape)/);
+  assert.doesNotMatch(core, /body\.(?:phone|mobile|tablet)-client|viewport-(?:portrait|landscape)/);
   assert.doesNotMatch(core, /@media\s*\((?:max|min)-(?:width|height)/);
 });
 
@@ -90,9 +89,9 @@ test("logical landscape chrome consumes one authoritative state class", async ()
     css("components/sideboard-shell.css"),
     css("components/quota-page.css"),
   ]);
-  assert.match(core, /html\.phone-force-landscape body\.force-landscape\s*\{/);
+  assert.match(core, /html\.mobile-force-landscape body\.force-landscape\s*\{/);
   for (const owner of [controls, shell, quota]) {
-    assert.doesNotMatch(owner, /html\.phone-force-landscape body\.force-landscape/);
+    assert.doesNotMatch(owner, /html\.mobile-force-landscape body\.force-landscape/);
   }
 });
 
@@ -120,12 +119,34 @@ test("quota identity text can break at arbitrary narrow widths", async () => {
   assert.equal((mini.match(/body\.eink-client \.quota-mini-card\s*\{/g) || []).length, 1);
 });
 
+test("LCD product surfaces share the Host-owned neutral glass material", async () => {
+  const [tokens, core, quota, setup, pairing] = await Promise.all([
+    css("00-base-tokens.css"),
+    css("10-core.css"),
+    css("components/quota-page.css"),
+    css("components/setup-diagnostics.css"),
+    css("components/pairing-setup.css"),
+  ]);
+
+  assert.match(tokens, /--theme-surface:[\s\S]*var\(--theme-glass\)/);
+  assert.match(tokens, /--theme-surface-strong:[\s\S]*var\(--theme-glass-strong\)/);
+  assert.match(quota, /\.quota-shell\s*\{[\s\S]*background:\s*transparent/);
+  assert.match(quota, /\.quota-account-card\s*\{[\s\S]*background:\s*var\(--theme-surface\)/);
+  assert.doesNotMatch(quota, /\.quota-codex-switcher\s*\{[^}]*background:/);
+  assert.doesNotMatch(quota, /\.quota-codex-switcher\s*\{[^}]*border:/);
+  assert.doesNotMatch(quota, /radial-gradient\(circle at 62% 52%,\s*rgba\(77,\s*207,\s*255/);
+  assert.match(setup, /\.setup-panels \.panel\s*\{[\s\S]*background:\s*var\(--theme-surface\)/);
+  assert.match(pairing, /\.connect-panel\s*\{[\s\S]*background:\s*var\(--theme-surface\)/);
+  assert.match(core, /body\.viewer-immersive \.exit-viewer/);
+  assert.match(core, /\.exit-viewer\s*\{[\s\S]*z-index:\s*5000/);
+});
+
 test("Custom Cards management responds to its own container", async () => {
   const cards = await css("components/custom-cards.css");
   assert.match(cards, /container:\s*custom-cards\s*\/\s*inline-size/);
   assert.match(cards, /repeat\(auto-fit,\s*minmax\(min\(12rem,\s*100%\),\s*1fr\)\)/);
   assert.match(cards, /@container\s+custom-cards\s*\(max-width:\s*42rem\)/);
-  assert.doesNotMatch(cards, /phone-client|viewport-(?:portrait|landscape)/);
+  assert.doesNotMatch(cards, /(?:phone|mobile)-client|viewport-(?:portrait|landscape)/);
   assert.doesNotMatch(cards, /\.custom-card\s*\{[^}]*overflow:\s*hidden/);
 });
 
@@ -152,7 +173,7 @@ test("pairing layout follows its panel instead of a phone identity", async () =>
   assert.match(pairing, /repeat\(auto-fit,\s*minmax\(min\(100%,\s*16rem\),\s*1fr\)\)/);
   assert.match(pairing, /@container\s+pairing-panel\s*\(max-width:\s*48rem\)/);
   assert.match(pairing, /@container\s+pairing-panel\s*\(max-width:\s*30rem\)/);
-  assert.doesNotMatch(pairing, /phone-client\.mode-setup/);
+  assert.doesNotMatch(pairing, /(?:phone|mobile)-client\.mode-setup/);
   assert.doesNotMatch(pairing, /new-device-panel-content\s*\{[^}]*overflow:\s*hidden/);
   assert.doesNotMatch(pairing, /#newDeviceConnectPanel\s*>\s*summary\s*\{[^}]*height:/);
 });
@@ -186,7 +207,7 @@ test("quota account management uses one DOM contract instead of device variants"
   assert.match(manager, /manager\.className\s*=\s*"quota-account-manager"/);
   assert.doesNotMatch(manager, /compactMobile|compactDesktop|isMobileClient/);
   assert.doesNotMatch(quota, /quota-(?:mobile|desktop)-account-manager|is-compact-(?:mobile|desktop)/);
-  assert.doesNotMatch(quota, /body\.phone-client|viewport-(?:portrait|landscape)/);
+  assert.doesNotMatch(quota, /body\.(?:phone|mobile)-client|viewport-(?:portrait|landscape)/);
 });
 
 test("component owners avoid cascade-force important declarations", async () => {
@@ -218,5 +239,5 @@ test("custom Deck help responds to its viewport container", async () => {
   assert.match(deck, /\.custom-deck-view\s*\{[^}]*height:\s*auto;[^}]*align-self:\s*stretch/);
   assert.match(deck, /container:\s*custom-deck-view\s*\/\s*size/);
   assert.match(deck, /@container\s+custom-deck-view\s*\(max-width:\s*48rem\)/);
-  assert.doesNotMatch(deck, /phone-client|viewport-(?:portrait|landscape)|!important/);
+  assert.doesNotMatch(deck, /(?:phone|mobile)-client|viewport-(?:portrait|landscape)|!important/);
 });

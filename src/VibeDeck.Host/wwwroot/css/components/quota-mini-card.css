@@ -71,7 +71,7 @@
   padding: 3px 7px;
   border: 1px solid var(--side-line);
   border-radius: 2px;
-  background: rgba(7, 16, 21, .72);
+  background: rgba(8, 10, 15, .48);
   color: var(--side-text);
   font: inherit;
   font-size: var(--quota-mini-source-size);
@@ -137,59 +137,6 @@ body.pc-console.mode-sideboard .quota-mini-bar {
 body.pc-console.mode-sideboard .quota-mini-bar span {
   border-radius: inherit;
   background: var(--grad-accent);
-}
-
-/* Mid-sized Sideboard density follows available component width. */
-@container sideboard-view (min-width: 44.01rem) and (max-width: 64rem) {
-  .quota-mini-card {
-    --quota-mini-padding: 4px 6px;
-    --quota-mini-gap: 2px;
-    --quota-mini-head-size: 12px;
-    --quota-mini-source-height: 26px;
-    --quota-mini-source-size: 12px;
-    --quota-mini-value-size: 24px;
-    --quota-mini-value-line: 24px;
-    --quota-mini-detail-size: 11px;
-    --quota-mini-detail-line: 12px;
-    --quota-mini-bar-height: 3px;
-    align-content: stretch;
-  }
-
-  .quota-mini-value-row span {
-    min-width: 0;
-    font-size: 11px;
-    line-height: 12px;
-  }
-
-  .quota-mini-credit {
-    min-height: var(--quota-mini-detail-line);
-    line-height: var(--quota-mini-detail-line);
-  }
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid .quota-mini-card {
-  --quota-mini-padding: 4px 6px;
-  --quota-mini-gap: 2px;
-  --quota-mini-head-size: 12px;
-  --quota-mini-source-height: 26px;
-  --quota-mini-source-size: 12px;
-  --quota-mini-value-size: 24px;
-  --quota-mini-value-line: 24px;
-  --quota-mini-detail-size: 11px;
-  --quota-mini-detail-line: 12px;
-  --quota-mini-bar-height: 3px;
-  align-content: stretch;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid .quota-mini-value-row span {
-  min-width: 0;
-  font-size: 11px;
-  line-height: 12px;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid .quota-mini-credit {
-  min-height: var(--quota-mini-detail-line);
-  line-height: var(--quota-mini-detail-line);
 }
 
 /* BOOX / e-ink presentation. Values below are owned in one final block so

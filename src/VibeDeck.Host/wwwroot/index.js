@@ -35,12 +35,12 @@ import { createQuotaCardRenderer } from "./modules/quota-card-renderer.js?v=3";
 import { createDiagnosticsController } from "./modules/diagnostics-controller.js?v=1";
 import { createDeviceManagementView } from "./modules/device-management-view.js?v=1";
 import { createDeviceActionsController } from "./modules/device-actions-controller.js?v=1";
-import { createPairingSessionController } from "./modules/pairing-session-controller.js?v=1";
+import { createPairingSessionController } from "./modules/pairing-session-controller.js?v=2";
 import { createProductUpdateController } from "./modules/product-update-controller.js?v=1";
-import { createDisplayInstallController } from "./modules/display-install-controller.js?v=1";
+import { createDisplayInstallController } from "./modules/display-install-controller.js?v=2";
 import { createTurnSettingsController } from "./modules/turn-settings-controller.js?v=1";
 import { createKeepAwakeController } from "./modules/keep-awake-controller.js?v=1";
-import { createDisplaySourceController } from "./modules/display-source-controller.js?v=1";
+import { createDisplaySourceController } from "./modules/display-source-controller.js?v=2";
 import {
   chooseAutoDisplayMode,
   getAutoModeValue,
@@ -50,11 +50,10 @@ import { createHostAuthController } from "./modules/host-auth-controller.js?v=1"
 import { createCustomDeckController } from "./modules/custom-deck-controller.js?v=1";
 import { createQuotaMiniCardController } from "./modules/quota-mini-card.js?v=59";
 import { createSideboardController } from "./modules/sideboard.js?v=51";
-import { createAppThemeController } from "./modules/app-theme.js?v=2";
+import { createAppThemeController } from "./modules/app-theme.js?v=3";
 import { createMobileOverviewController } from "./modules/mobile-overview.js?v=3";
-import { createResponsiveSpaceController } from "./modules/responsive-space.js?v=1";
 import { isFullscreenDisplayStreaming as isFullscreenDisplayStreamingPolicy } from "./modules/dashboard-background-policy.js?v=1";
-import { createStreamController } from "./modules/stream-controller.js?v=53";
+import { createStreamController } from "./modules/stream-controller.js?v=54";
 import { createStreamDebugOverlay } from "./modules/stream-debug-overlay.js?v=1";
 import { tuneVideoReceiver } from "./modules/stream-tuning.js?v=47";
 import { applyFeedbackState } from "./modules/feedback-state.js?v=1";
@@ -64,7 +63,7 @@ import {
   formatQuotaWindowLabel,
   summarizeQuotaWindow,
 } from "./modules/quota-formatters.js?v=51";
-import { getIntlLocale, initLocale, onLocaleChange, t, tApi, tLegacy, translateText } from "./modules/i18n.js?v=4";
+import { getIntlLocale, initLocale, onLocaleChange, t, tApi, tLegacy, translateText } from "./modules/i18n.js?v=5";
 import {
   DEVICE_TOKEN_KEY,
   DEVICE_ID_KEY,
@@ -89,12 +88,11 @@ import {
   isIphoneUA,
   isMobileUA,
   shouldPreferWebRtcDisplay,
-} from "./modules/env-detect.js?v=2";
+} from "./modules/env-detect.js?v=3";
 import {
   EINK_PREF_KEY,
   readEinkQuery,
   readEinkCookie,
-  looksLikeBooxScreen,
   detectEinkHardware,
 } from "./modules/eink-detect.js?v=1";
 
@@ -228,7 +226,9 @@ import {
     const customDeckRefresh = document.getElementById("customDeckRefresh");
     let customDeckController = null;
     const sideboardShell = document.getElementById("sideboardShell");
-    createAppThemeController();
+    const appThemeController = createAppThemeController({
+      requestJson: (...args) => fetchJsonOrThrow(...args),
+    });
     const systemSideboardPage = document.getElementById("systemSideboardPage");
     const customSideboardPage = document.getElementById("customSideboardPage");
     const sideboardPageTabs = document.getElementById("sideboardPageTabs");
@@ -329,7 +329,6 @@ import {
     const hostAuthPassword = document.getElementById("hostAuthPassword");
     const hostAuthSubmit = document.getElementById("hostAuthSubmit");
     const hostAuthError = document.getElementById("hostAuthError");
-    const responsiveSpaceController = createResponsiveSpaceController();
     const wsBase = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}`;
     let lastUrl = null;
     let inputSocket = null;
@@ -562,7 +561,7 @@ import {
       button.setAttribute("aria-pressed", on ? "true" : "false");
       button.textContent = tLegacy(on ? "電子書 ON" : "電子書");
       button.title = tLegacy(on
-        ? "目前是電子紙版面（資訊板優先、高對比）。再按可切回一般手機版。"
+        ? "目前是電子紙版面（資訊板優先、高對比）。再按可切回一般版面。"
         : "切換成電子紙版面（BOOX / 電子書）。也可在網址加 ?eink=1。");
     }
 
@@ -645,7 +644,7 @@ import {
       const preview = isDevicePreview();
       const previewLocal = isDevicePreviewTrust("local");
       const localConsole = Boolean(deviceLocalRequest) && (!preview || previewLocal);
-      const phoneClient = !localConsole && isMobileClient();
+      const mobileClient = !localConsole && isMobileClient();
       const ios = isIos();
       const eink = isEinkClient();
       const trusted = Boolean(deviceTrusted) || isDevicePreviewTrust("paired");
@@ -655,7 +654,7 @@ import {
       document.body.classList.toggle("eink-client", eink);
       const themeColor = document.querySelector('meta[name="theme-color"]');
       if (themeColor) themeColor.setAttribute("content", eink ? "#f2f0e8" : "#111820");
-      document.body.classList.toggle("phone-client", phoneClient);
+      document.body.classList.toggle("mobile-client", mobileClient);
       document.body.classList.toggle("remote-client", !localConsole);
       document.body.classList.toggle("ios-client", ios && !localConsole);
       document.body.classList.toggle("device-trusted", trusted && !localConsole);
@@ -664,12 +663,12 @@ import {
       if (publicEndpointPanel) publicEndpointPanel.hidden = !localConsole;
       if (turnSettingsPanel) turnSettingsPanel.hidden = !localConsole;
       const pairingRescue = document.getElementById("phonePairRescue");
-      if (pairingRescue) pairingRescue.hidden = !phoneClient || trusted;
+      if (pairingRescue) pairingRescue.hidden = !mobileClient || trusted;
       customCardsController?.syncAccess?.();
       applyForcedLandscape();
       updateIosHomeTip();
       updateEinkToggle();
-      // Phone/PC empty-state CTAs depend on client chrome classes.
+      // Remote-mobile / PC empty-state CTAs depend on client chrome classes.
       displaySources.syncEmptyActions();
     }
 
@@ -701,12 +700,12 @@ import {
       return orientation?.value === "landscape" &&
         !isDeckWindow() &&
         !deviceLocalRequest &&
-        (isMobileClient() || document.body.classList.contains("phone-client"));
+        isMobileClient();
     }
 
     function applyForcedLandscape() {
       if (!shouldForceLandscape()) {
-        document.documentElement.classList.remove("phone-force-landscape");
+        document.documentElement.classList.remove("mobile-force-landscape");
         document.body.classList.remove("force-landscape");
         return;
       }
@@ -715,7 +714,7 @@ import {
       const physicalHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
       const physicalPortrait = physicalHeight >= physicalWidth;
 
-      document.documentElement.classList.toggle("phone-force-landscape", physicalPortrait);
+      document.documentElement.classList.toggle("mobile-force-landscape", physicalPortrait);
       document.body.classList.toggle("force-landscape", physicalPortrait);
 
       // Browser may allow lock only after user gesture / fullscreen; best-effort.
@@ -801,8 +800,15 @@ import {
 
     function isStandaloneApp() {
       if (isDevicePreview()) return true;
-      return window.matchMedia("(display-mode: standalone)").matches ||
+      return window.matchMedia("(display-mode: fullscreen)").matches ||
+        window.matchMedia("(display-mode: standalone)").matches ||
         window.navigator.standalone === true;
+    }
+
+    function shouldAutoEnterInstalledViewer() {
+      if (isDevicePreview() || !deviceTrusted || !isStandaloneApp()) return false;
+      const initialMode = getInitialMode();
+      return initialMode !== "setup" && initialMode !== "deck" && !initialMode.startsWith("deck:");
     }
 
     function isDeckWindow() {
@@ -836,10 +842,7 @@ import {
 
       document.documentElement.style.setProperty("--viewer-width", `${width}px`);
       document.documentElement.style.setProperty("--viewer-height", `${height}px`);
-      document.body.classList.toggle("viewport-portrait", !forceLandscape && height >= width);
-      document.body.classList.toggle("viewport-landscape", forceLandscape || width > height);
       applyForcedLandscape();
-      responsiveSpaceController.refresh();
     }
 
     function describeClient() {
@@ -851,7 +854,7 @@ import {
         return;
       }
 
-      deviceState.textContent = "手機模式。";
+      deviceState.textContent = "行動裝置模式。";
     }
 
     function buildHttpsUrlFromCurrent() {
@@ -865,7 +868,7 @@ import {
       return `https://${host}:5443${path}${search}${hash}`;
     }
 
-    /** iPhone single path: never use HTTP for the app UI. */
+    /** Remote mobile clients use HTTPS for the app UI. */
     function enforceMobileHttpsPath() {
       if (!isMobileClient() || isLoopbackHost()) {
         document.body.classList.remove("mobile-http-blocked");
@@ -877,7 +880,7 @@ import {
         return false;
       }
 
-      // Every phone platform uses one origin and one onboarding path.
+      // Every mobile platform uses one origin and one onboarding path.
       document.body.classList.add("mobile-http-blocked");
       const httpsUrl = buildHttpsUrlFromCurrent();
       const openBtn = document.getElementById("mobileGateOpenHttps");
@@ -919,7 +922,6 @@ import {
       sideboardView.classList.toggle("active", isSideboard);
       quotaView.classList.toggle("active", isQuota);
       customDeckView.classList.toggle("active", isDeck);
-      requestAnimationFrame(() => responsiveSpaceController.refresh());
       displayMode.classList.toggle("active", isDisplay);
       setupMode?.classList.toggle("active", isSetup);
       sideboardMode.classList.toggle("active", isSideboard);
@@ -2014,10 +2016,10 @@ import {
       applyFeedbackState,
       fetchJsonOrThrow,
       isLocalRequest: () => deviceLocalRequest,
-      isPhoneClient: displaySources.isPhoneClient,
+      isRemoteMobileClient: displaySources.isRemoteMobileClient,
       syncEmptyActions: displaySources.syncEmptyActions,
       setAvailability: displaySources.setAvailability,
-      reloadDisplays: loadPhoneDisplay,
+      reloadDisplays: loadDisplays,
       hasVibeDeckDisplay: displaySources.hasVibeDeckDisplay,
       connectVideo,
     });
@@ -2412,10 +2414,12 @@ import {
       }, 250);
 
       // iOS: no Fullscreen API — CSS viewer-fullscreen is the whole path.
-      // Android phone display: same CSS path. Real Fullscreen API + CSS
-      // force-landscape (rotate 90°) fight each other and break landscape layout.
-      // Keep the real Fullscreen API only for non-phone / non-display panels (e.g. BOOX sideboard).
-      const useBrowserFullscreen = !isIos() && !(isDisplayMode && isMobileClient());
+      // Android portrait display can use a CSS 90° rotation. In that one case
+      // the Fullscreen API and the transform fight over the viewport geometry.
+      // A tablet already held landscape does not need the transform, so allow
+      // real browser fullscreen there instead of leaving Chrome chrome visible.
+      const displayUsesCssRotation = isDisplayMode && document.body.classList.contains("force-landscape");
+      const useBrowserFullscreen = !isIos() && !displayUsesCssRotation;
       if (useBrowserFullscreen) {
         const root = document.documentElement;
         const candidates = [
@@ -2481,7 +2485,7 @@ import {
       applyRotation();
     }
 
-    async function loadPhoneDisplay() {
+    async function loadDisplays() {
       let displays;
       try {
         displays = await fetchJsonOrThrow("/api/displays");
@@ -2725,7 +2729,7 @@ import {
       driverState.textContent = result.Message;
       displaySources.resetSelectionName();
       setTimeout(async () => {
-        await loadPhoneDisplay();
+        await loadDisplays();
         connectVideo();
       }, 1200);
     }
@@ -2783,7 +2787,7 @@ import {
           rotationIsAuto: rotation.value === "auto",
         }),
         canUseProtectedConnection,
-        loadPhoneDisplay,
+        loadDisplays,
         prefersWebRtcDisplay,
         isLoopbackHost,
         setStatus,
@@ -2932,7 +2936,7 @@ import {
     });
     installVirtualDisplay?.addEventListener("click", () => {
       // Device setup / driver install is a local PC console task only.
-      if (!deviceLocalRequest || displaySources.isPhoneClient()) return;
+      if (!deviceLocalRequest || displaySources.isRemoteMobileClient()) return;
       setMode("setup");
     });
     setupInstallVirtualDisplay?.addEventListener("click", displayInstall.install);
@@ -2994,7 +2998,7 @@ import {
           await loadStreamCapabilities();
           await loadDeviceTrustStatus();
           await customDeckController?.refresh({ silent: true });
-          await loadPhoneDisplay();
+          await loadDisplays();
           connectVideo();
         })();
         await Promise.allSettled([
@@ -3029,9 +3033,6 @@ import {
     }
     fullscreen.addEventListener("click", enterLandscapeViewer);
     exitViewer.addEventListener("click", exitLandscapeViewer);
-    window.VibeDeckExitViewer = exitLandscapeViewer;
-    // Legacy alias for any old injected callers.
-    window.VibeDeckExitViewer = exitLandscapeViewer;
     function onFullscreenChromeChange() {
       const inFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
       if (!inFs && !isIos()) {
@@ -3206,6 +3207,8 @@ import {
       applyRotation();
       applyOrientation();
       if (deckWindow) {
+        await appThemeController.loadFromHost().catch(() => {});
+        appThemeController.startPolling();
         document.title = "VibeDeck Deck";
         setMode(getInitialMode() === "quota" ? "quota" : "sideboard");
         connectDashboardEvents();
@@ -3227,12 +3230,16 @@ import {
       ensureActionToken().catch(() => {});
       await loadDeviceTrustStatus();
       applyClientChrome();
+      if (!isEinkClient() && (deviceLocalRequest || deviceTrusted)) {
+        await appThemeController.loadFromHost().catch(() => {});
+        appThemeController.startPolling();
+      }
       if (deviceLocalRequest || deviceTrusted) {
         await customDeckController?.refresh({ silent: true }).catch(() => {});
       }
       setMode(getInitialMode());
       customDeckController?.startPolling();
-      if (shouldStartInViewer() || (isIos() && deviceTrusted && getInitialMode() === "display" && isStandaloneApp())) {
+      if (shouldStartInViewer() || shouldAutoEnterInstalledViewer()) {
         setTimeout(() => enterLandscapeViewer(), 350);
       }
       connectDashboardEvents();
@@ -3267,7 +3274,7 @@ import {
       }
       if (!isEinkClient()) {
         loadStreamCapabilities();
-        loadPhoneDisplay().then(async () => {
+        loadDisplays().then(async () => {
           await applyAutoDisplayMode();
           await loadDisplayStatus();
         }).finally(() => {

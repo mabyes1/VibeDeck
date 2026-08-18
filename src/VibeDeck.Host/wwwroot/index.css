@@ -3,32 +3,32 @@
    baselines next; shared primitives; final component owners; then overlays. */
 
 /* App foundation. */
-@import url("/css/00-base-tokens.css?v=3");
-@import url("/css/10-core.css?v=7");
+@import url("/css/00-base-tokens.css?v=4");
+@import url("/css/10-core.css?v=10");
 
 /* Early feature baselines. Display precedes its later control owner; the
    legacy-numbered compact dashboard file is container-driven. */
-@import url("/css/components/access-gates.css?v=1");
-@import url("/css/components/display-surface.css?v=8");
-@import url("/css/30-phone-dashboard.css?v=130");
+@import url("/css/components/access-gates.css?v=2");
+@import url("/css/components/display-surface.css?v=9");
+@import url("/css/30-phone-dashboard.css?v=133");
 
 /* Shared cross-component contracts. */
-@import url("/css/components/shared-primitives.css?v=5");
+@import url("/css/components/shared-primitives.css?v=6");
 @import url("/css/components/eink-primitives.css?v=3");
 
 /* Final component owners. */
-@import url("/css/components/sideboard-shell.css?v=15");
-@import url("/css/components/dashboard-editor.css?v=5");
+@import url("/css/components/sideboard-shell.css?v=16");
+@import url("/css/components/dashboard-editor.css?v=6");
 @import url("/css/components/custom-cards.css?v=5");
 @import url("/css/components/dashboard-navigation.css?v=1");
-@import url("/css/components/pairing-setup.css?v=3");
-@import url("/css/components/setup-diagnostics.css?v=7");
-@import url("/css/components/device-management.css?v=4");
+@import url("/css/components/pairing-setup.css?v=4");
+@import url("/css/components/setup-diagnostics.css?v=8");
+@import url("/css/components/device-management.css?v=5");
 @import url("/css/components/app-controls.css?v=11");
-@import url("/css/components/metric-card.css?v=8");
-@import url("/css/components/quota-mini-card.css?v=8");
-@import url("/css/components/activity-feed.css?v=9");
-@import url("/css/components/quota-page.css?v=15");
+@import url("/css/components/metric-card.css?v=9");
+@import url("/css/components/quota-mini-card.css?v=10");
+@import url("/css/components/activity-feed.css?v=10");
+@import url("/css/components/quota-page.css?v=17");
 @import url("/css/components/custom-deck.css?v=3");
 
 /* Final E-Ink dashboard content. */

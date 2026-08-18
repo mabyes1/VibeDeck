@@ -35,7 +35,7 @@ export function createDisplayInstallController({
   applyFeedbackState,
   fetchJsonOrThrow,
   isLocalRequest,
-  isPhoneClient,
+  isRemoteMobileClient,
   syncEmptyActions,
   setAvailability,
   reloadDisplays,
@@ -70,13 +70,13 @@ export function createDisplayInstallController({
     }
 
     if (installVirtualDisplay) {
-      const phone = isPhoneClient();
-      installVirtualDisplay.hidden = phone
+      const mobile = isRemoteMobileClient();
+      installVirtualDisplay.hidden = mobile
         || !localRequest
         || view.state === "installed"
         || view.state === "finishing"
         || view.state === "console-required";
-      installVirtualDisplay.disabled = phone;
+      installVirtualDisplay.disabled = mobile;
       installVirtualDisplay.textContent = t("pairingUx.goToDeviceSetup");
     }
     syncEmptyActions();

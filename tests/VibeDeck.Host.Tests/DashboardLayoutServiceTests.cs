@@ -24,17 +24,17 @@ namespace VibeDeck.Host.Tests
         }
 
         [Theory]
-        [InlineData("tablet-landscape", 10)]
-        [InlineData("tablet-portrait", 10)]
-        public void TabletProfilesHaveIndependentDenseDefaults(string profile, int rows)
+        [InlineData("tablet-landscape")]
+        [InlineData("tablet-portrait")]
+        public void LegacyTabletProfilesNormalizeToDefault(string profile)
         {
             var service = CreateService();
             var layout = service.Get(profile);
 
-            Assert.Equal(profile, layout.Profile);
+            Assert.Equal("default", layout.Profile);
             Assert.Contains(layout.Items, item => item.Key == "activity-feed" && item.Visible);
             Assert.Contains(layout.Items, item => item.Key == "quota-mini" && item.Visible);
-            Assert.All(layout.Items.Where(item => item.Visible), item => Assert.True(item.Row + item.Height <= rows));
+            Assert.All(layout.Items.Where(item => item.Visible), item => Assert.True(item.Row + item.Height <= 6));
         }
 
         [Fact]
@@ -82,7 +82,7 @@ namespace VibeDeck.Host.Tests
             var service = CreateService();
             Assert.Throws<DashboardLayoutException>(() => service.Save(new DashboardLayoutUpdateRequest
             {
-                Profile = "tablet-portrait",
+                Profile = "default",
                 Items = new[]
                 {
                     new DashboardLayoutItem { Key = "cpu", Visible = false, Column = 0, Row = 0, Width = 4, Height = 1 },
@@ -92,7 +92,7 @@ namespace VibeDeck.Host.Tests
         }
 
         [Fact]
-        public void LegacyAllHiddenLayoutFallsBackToDefaultForHealing()
+        public void LegacyTabletProfileIsIgnoredInFavorOfDefault()
         {
             var path = Path.Combine(directory, "layouts.json");
             Directory.CreateDirectory(directory);
@@ -103,6 +103,7 @@ namespace VibeDeck.Host.Tests
 
             var layout = new DashboardLayoutService(path).Get("tablet-portrait");
 
+            Assert.Equal("default", layout.Profile);
             Assert.Equal(0, layout.Revision);
             Assert.Contains(layout.Items, item => item.Key == "activity-feed" && item.Visible);
             Assert.All(layout.Items, item => Assert.True(item.Visible));

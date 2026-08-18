@@ -2,6 +2,14 @@
 
 本檔記錄每個可發佈版本的使用者可見變更、修正與產品化調整；後續改版須在打包前補入對應版本。
 
+## 0.1.41 - 2026-08-18 - 琉璃統一
+
+- 將全站 Appearance 的真實來源從各瀏覽器 `localStorage` 搬到 Host：布景設定與背景圖片統一持久化於 `%ProgramData%\VibeDeck\appearance`，手機、平板、Deck Window 共用同一套背景、色盤與玻璃參數；舊瀏覽器設定會在首次升級時安全遷移，E-Ink 維持獨立紙面視覺。
+- 收斂 LCD 介面的材質規則：資訊板、AI 額度、Setup、配對、裝置管理、登入 Gate 與確認視窗改用同一組 neutral glass tokens；移除額度頁、手機 compact UI 與管理介面殘留的舊深綠／硬編碼 surface，語意色僅保留於狀態與操作提示。
+- 修正 Android PWA 全螢幕與 VibeDeck viewer 各自維護狀態造成的退出按鈕消失；`display-mode: fullscreen` 現在會被視為已安裝 PWA，啟動後進入一致的 viewer 狀態，右上角退出按鈕固定於最高 UI layer 並提高可辨識度。
+- 移除歷史裝置與瀏覽器分支：刪除 44–64rem 平板中間壓縮版、Chrome 101 `ResizeObserver` compatibility path、無效 `space-*`／viewport classes、舊 tablet Dashboard profiles 與過時行動 UA 判斷；手機以 compact container layout、平板使用正常 Dashboard、E-Ink 保持明確獨立模式。
+- 補強架構與視覺回歸：新增 Host Appearance 持久化、PWA fullscreen、裝置分類與全站 glass contract，並驗證 P024 Chrome 119 的 container query、backdrop-filter、fullscreen、Host 背景同步與額度卡片材質。
+
 ## 0.1.40 - 2026-08-17 - 自定義
 
 - 將資訊板原本各自維護的固定 Skin 收斂為全站共用布景系統；背景、強調色與玻璃介面改由共用 `--theme-*` tokens 驅動，資訊板、額度、顯示器控制列與設定頁不再各養一套顏色。

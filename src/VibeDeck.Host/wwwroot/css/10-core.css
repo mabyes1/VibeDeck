@@ -67,7 +67,6 @@ body.eink-client header .panel.panel {
 
     body > header,
     body > main,
-    body > .exit-viewer,
     body > .vibe-confirm-overlay {
       position: relative;
       z-index: 1;
@@ -218,22 +217,44 @@ body.eink-client header .panel.panel {
     .exit-viewer {
       position: fixed;
       right: calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right)));
-      bottom: calc(10px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
-      z-index: 10;
+      top: calc(10px + var(--safe-area-inset-top, env(safe-area-inset-top)));
+      bottom: auto;
+      z-index: 5000;
       display: none;
-      min-width: 42px;
-      min-height: 42px;
+      width: 48px;
+      min-width: 48px;
+      height: 48px;
+      min-height: 48px;
       padding: 0;
       border-radius: 999px;
-      background: rgba(10, 14, 18, 0.66);
-      border-color: rgba(255, 255, 255, 0.28);
-      backdrop-filter: blur(8px);
+      color: var(--text);
+      background: rgba(8, 10, 15, .72);
+      border: 1px solid rgba(255, 255, 255, .42);
+      box-shadow:
+        0 10px 30px rgba(0, 0, 0, .34),
+        inset 0 1px 0 rgba(255, 255, 255, .12);
+      backdrop-filter: blur(var(--theme-glass-blur)) saturate(120%);
+      -webkit-backdrop-filter: blur(var(--theme-glass-blur)) saturate(120%);
+      font-size: 24px;
+      font-weight: 600;
+      line-height: 1;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, .55);
     }
 
     body.viewer-fullscreen .exit-viewer,
-    body.dashboard-viewer .exit-viewer {
+    body.dashboard-viewer .exit-viewer,
+    body.viewer-immersive .exit-viewer {
       display: inline-grid;
       place-items: center;
+    }
+
+    body.eink-client .exit-viewer {
+      color: #000;
+      background: #fffef8;
+      border: 2px solid #000;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
 
     .brand {
@@ -347,14 +368,21 @@ html[data-device-preview] body::-webkit-scrollbar {
     select,
     button,
     input {
-      background: #223040;
+      background: var(--theme-control);
       color: var(--text);
-      border: 1px solid #3a4a5f;
-      border-radius: 6px;
+      border: 1px solid var(--theme-line);
+      border-radius: 8px;
       padding: 8px 10px;
       font: inherit;
       max-width: 100%;
       min-width: 0;
+    }
+
+    button:hover:not(:disabled),
+    select:hover:not(:disabled),
+    input:hover:not(:disabled) {
+      border-color: var(--theme-line-strong);
+      background: var(--theme-control-hover);
     }
 
     input {
@@ -404,17 +432,17 @@ html[data-device-preview] body::-webkit-scrollbar {
     }
 
     /*
-     * Force landscape presentation on phone clients held upright.
+     * Force landscape presentation on remote mobile clients held upright.
      * Physical portrait viewport is rotated so the app always lays out as landscape.
      */
-    html.phone-force-landscape {
+    html.mobile-force-landscape {
       width: 100%;
       height: 100%;
       overflow: hidden;
       background: #0d131a;
     }
 
-    html.phone-force-landscape body.force-landscape {
+    html.mobile-force-landscape body.force-landscape {
       position: fixed;
       top: 0;
       left: 100%;

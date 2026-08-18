@@ -18,7 +18,7 @@ export function isIphoneUA() {
 }
 
 export function isMobileUA() {
-  return isIosUA() || /Android|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || "");
+  return isIosUA() || /Android/i.test(navigator.userAgent || "");
 }
 
 // Prefer the low-latency path based on browser/runtime capability, not device

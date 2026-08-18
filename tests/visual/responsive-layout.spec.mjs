@@ -251,6 +251,47 @@ test.describe("App theme controls", () => {
 
   test("custom wallpaper is compressed, applied, and removable", async ({ page }) => {
     await openSideboard(page, { name: "theme-wallpaper", width: 1_280, height: 800 });
+    const hostTheme = {
+      colorA: "#4b1f66",
+      colorB: "#17344d",
+      angle: 132,
+      intensity: 72,
+      backgroundFit: "cover",
+      backgroundPosition: "center",
+      backgroundBlur: 0,
+      backgroundDim: 24,
+      glassOpacity: 7,
+      glassBlur: 20,
+      glassBorder: 12,
+    };
+    await page.route("**/api/appearance/background*", async route => {
+      const method = route.request().method();
+      if (method === "POST") {
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({
+            configured: true,
+            theme: { ...hostTheme, backgroundMode: "image" },
+            hasBackgroundImage: true,
+            backgroundUrl: "/api/appearance/background?v=test-wallpaper",
+          }),
+        });
+        return;
+      }
+      if (method === "DELETE") {
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({
+            configured: true,
+            theme: { ...hostTheme, backgroundMode: "gradient" },
+            hasBackgroundImage: false,
+            backgroundUrl: "",
+          }),
+        });
+        return;
+      }
+      await route.fulfill({ status: 404 });
+    });
     const png = Buffer.from(
       "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGMMqFjAwMDAxMDAwMDAAAAQugFsZnyF3gAAAABJRU5ErkJggg==",
       "base64",
@@ -261,9 +302,49 @@ test.describe("App theme controls", () => {
       buffer: png,
     });
     await expect(page.locator("html")).toHaveAttribute("data-theme-background", "image");
-    await expect(page.locator("html")).toHaveCSS("--theme-background-image", /data:image\/webp;base64/);
+    await expect(page.locator("html")).toHaveCSS("--theme-background-image", /\/api\/appearance\/background\?v=test-wallpaper/);
     await page.locator("#appThemeBackgroundClear").evaluate(button => button.click());
     await expect(page.locator("html")).toHaveAttribute("data-theme-background", "gradient");
     await expect(page.locator("html")).toHaveCSS("--theme-background-image", "none");
+  });
+
+  test("Quota uses the shared glass canvas instead of its legacy opaque skin", async ({ page }) => {
+    await openSideboard(page, { name: "quota-glass", width: 1_280, height: 800 });
+    await page.locator("#quotaMode").evaluate(button => button.click());
+    await page.locator("body.mode-quota").waitFor();
+    await expect(page.locator(".quota-shell")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(page.locator(".quota-shell")).toHaveCSS("background-image", "none");
+    await expect(page.locator(".quota-shell")).toHaveCSS("border-top-width", "0px");
+    const accountCard = page.locator(".quota-account-card").first();
+    await expect(accountCard).toHaveCSS("border-top-width", "1px");
+    await expect(accountCard).not.toHaveCSS("background-image", "none");
+  });
+
+  test("immersive viewer keeps a reachable glass exit pill above product chrome", async ({ page }) => {
+    await openSideboard(page, { name: "viewer-exit-pill", width: 911, height: 569, device: "asus-zenpad-p024" });
+    await page.locator("body").evaluate(body => {
+      body.classList.add("dashboard-viewer", "viewer-immersive");
+    });
+    const exit = page.locator("#exitViewer");
+    await expect(exit).toBeVisible();
+    const geometry = await exit.evaluate(element => {
+      const rect = element.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        zIndex: Number.parseInt(getComputedStyle(element).zIndex || "0", 10),
+        width: innerWidth,
+        height: innerHeight,
+      };
+    });
+    expect(geometry.zIndex).toBeGreaterThan(12);
+    expect(geometry.right - geometry.left).toBeGreaterThanOrEqual(48);
+    expect(geometry.bottom - geometry.top).toBeGreaterThanOrEqual(48);
+    expect(geometry.left).toBeGreaterThanOrEqual(0);
+    expect(geometry.top).toBeGreaterThanOrEqual(0);
+    expect(geometry.right).toBeLessThanOrEqual(geometry.width);
+    expect(geometry.bottom).toBeLessThanOrEqual(geometry.height);
   });
 });

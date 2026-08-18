@@ -42,9 +42,12 @@
   flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
-  border: 1px solid rgba(255, 255, 255, .08);
-  border-radius: 8px;
-  background: rgba(9, 14, 20, .36);
+  border: 1px solid var(--theme-line);
+  border-radius: var(--theme-surface-radius, 12px);
+  background: var(--theme-surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035);
+  backdrop-filter: blur(var(--theme-glass-blur)) saturate(112%);
+  -webkit-backdrop-filter: blur(var(--theme-glass-blur)) saturate(112%);
 }
 
 .setup-panels .panel:not([open]) {
@@ -78,7 +81,9 @@
 
 .setup-panels .panel[open] {
   flex-basis: 100%;
-  background: rgba(8, 13, 19, .5);
+  border-color: var(--theme-line-strong);
+  background: var(--theme-surface-strong);
+  box-shadow: var(--theme-surface-shadow);
 }
 
 .setup-panels .panel[open] summary {
@@ -358,9 +363,12 @@
   order: 4;
   grid-column: 1 / -1;
   overflow: visible;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(8, 13, 19, .28);
+  border: 1px solid var(--theme-line);
+  border-radius: var(--theme-surface-radius, 12px);
+  background: var(--theme-surface);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+  backdrop-filter: blur(var(--theme-glass-blur)) saturate(112%);
+  -webkit-backdrop-filter: blur(var(--theme-glass-blur)) saturate(112%);
 }
 
 .diagnostics-panel {
@@ -391,7 +399,7 @@
 
 .new-device-panel > summary span,
 .diagnostics-panel > .diagnostics-toggle span {
-  color: #e8f2ff;
+  color: var(--text);
   font-size: 14px;
   font-weight: 800;
 }
@@ -471,9 +479,9 @@
 }
 
 .diagnostics-actions a {
-  border: 1px solid var(--line);
+  border: 1px solid var(--theme-line);
   color: var(--text);
-  background: var(--panel);
+  background: var(--theme-control);
 }
 
 .diagnostics-list {
@@ -495,10 +503,10 @@
   display: grid;
   gap: 3px;
   padding: 8px 9px;
-  border: 1px solid rgba(255,255,255,.09);
-  border-radius: 6px;
-  background: rgba(10,16,24,.28);
-  color: #d7e1eb;
+  border: 1px solid var(--theme-line);
+  border-radius: 9px;
+  background: var(--theme-control);
+  color: var(--muted);
   font-size: 12px;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -532,17 +540,15 @@ body.pc-console.mode-setup .setup-panels {
 }
 
 body.pc-console.mode-setup .setup-panels .panel {
-  border-color: rgba(255, 255, 255, .085);
-  border-radius: 9px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, .025), rgba(255, 255, 255, .010));
+  border-color: var(--theme-line);
+  border-radius: var(--theme-surface-radius, 12px);
+  background: var(--theme-surface);
 }
 
 body.pc-console.mode-setup .setup-panels .panel[open] {
   border-color: var(--theme-line-strong);
-  background:
-    linear-gradient(110deg, var(--theme-palette-a-faint), transparent 48%, var(--theme-palette-b-faint)),
-    var(--theme-glass-strong);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025);
+  background: var(--theme-surface-strong);
+  box-shadow: var(--theme-surface-shadow);
 }
 
 body.pc-console.mode-setup .diagnostics-panel,

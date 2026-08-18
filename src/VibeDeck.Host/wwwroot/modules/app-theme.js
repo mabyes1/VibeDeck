@@ -162,6 +162,19 @@ function readInitialTheme(storage) {
   return normalizeAppTheme({ ...(LEGACY_SKIN_PALETTES[legacySkin] || DEFAULT_APP_THEME), backgroundImage });
 }
 
+function themeSettingsOnly(theme) {
+  const { backgroundImage, ...settings } = normalizeAppTheme(theme);
+  return settings;
+}
+
+function hasMeaningfulLegacyTheme(theme) {
+  const normalized = normalizeAppTheme(theme);
+  if (normalized.backgroundImage) return true;
+  const current = themeSettingsOnly(normalized);
+  const defaults = themeSettingsOnly(DEFAULT_APP_THEME);
+  return Object.keys(defaults).some(key => current[key] !== defaults[key]);
+}
+
 function writeStoredTheme(storage, theme) {
   try {
     const { backgroundImage, ...settings } = theme;
@@ -205,7 +218,12 @@ async function compressBackgroundFile(file) {
   throw new Error("圖片壓縮失敗。");
 }
 
-export function createAppThemeController({ target = document.documentElement, root = document, storage = localStorage } = {}) {
+export function createAppThemeController({
+  target = document.documentElement,
+  root = document,
+  storage = localStorage,
+  requestJson = null,
+} = {}) {
   const colorA = root?.getElementById?.("appThemeColorA");
   const colorB = root?.getElementById?.("appThemeColorB");
   const angle = root?.getElementById?.("appThemeAngle");
@@ -230,7 +248,12 @@ export function createAppThemeController({ target = document.documentElement, ro
   const backgroundStatus = root?.getElementById?.("appThemeBackgroundStatus");
   const reset = root?.getElementById?.("appThemeReset");
   const preview = root?.getElementById?.("appThemePreview");
-  let current = readInitialTheme(storage);
+  const legacyInitial = readInitialTheme(storage);
+  let current = legacyInitial;
+  let remoteReady = false;
+  let saveTimer = null;
+  let pollTimer = null;
+  let lastLocalEditAt = 0;
 
   function syncControls() {
     if (colorA) colorA.value = current.colorA;
@@ -265,11 +288,92 @@ export function createAppThemeController({ target = document.documentElement, ro
     }
   }
 
-  function setTheme(next, { persist = true } = {}) {
+  function setTheme(next, { persist = true, remote = true } = {}) {
     current = applyAppTheme(target, { ...current, ...next });
     syncControls();
     if (persist) writeStoredTheme(storage, current);
+    if (remote && remoteReady) scheduleRemoteSave();
     return current;
+  }
+
+  function responseTheme(response) {
+    const theme = response?.theme || response?.Theme || {};
+    const backgroundUrl = response?.backgroundUrl ?? response?.BackgroundUrl ?? "";
+    const hasBackground = Boolean(response?.hasBackgroundImage ?? response?.HasBackgroundImage);
+    return normalizeAppTheme({
+      ...theme,
+      backgroundImage: hasBackground ? backgroundUrl : "",
+    });
+  }
+
+  function applyRemoteResponse(response) {
+    current = applyAppTheme(target, responseTheme(response));
+    syncControls();
+    writeStoredTheme(storage, current);
+    if (current.backgroundImage?.startsWith?.("/api/appearance/background")) {
+      try { storage?.removeItem?.(BACKGROUND_IMAGE_KEY); } catch { }
+    }
+    return current;
+  }
+
+  async function saveThemeToHost() {
+    if (!requestJson || !remoteReady) return current;
+    const response = await requestJson("/api/appearance/theme", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(themeSettingsOnly(current)),
+    });
+    return applyRemoteResponse(response);
+  }
+
+  function scheduleRemoteSave() {
+    lastLocalEditAt = Date.now();
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      saveTimer = null;
+      saveThemeToHost().catch(error => {
+        if (backgroundStatus) backgroundStatus.textContent = error?.message || "布景設定儲存失敗。";
+      });
+    }, 220);
+  }
+
+  async function migrateLegacyTheme() {
+    if (!requestJson || !hasMeaningfulLegacyTheme(legacyInitial)) return null;
+    let response = null;
+    if (legacyInitial.backgroundImage) {
+      response = await requestJson("/api/appearance/background", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dataUrl: legacyInitial.backgroundImage }),
+      });
+    }
+    response = await requestJson("/api/appearance/theme", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(themeSettingsOnly(legacyInitial)),
+    });
+    return response;
+  }
+
+  async function loadFromHost({ migrate = true } = {}) {
+    if (!requestJson) return current;
+    const response = await requestJson("/api/appearance/theme");
+    const configured = Boolean(response?.configured ?? response?.Configured);
+    let resolved = response;
+    if (!configured && migrate && hasMeaningfulLegacyTheme(legacyInitial)) {
+      resolved = await migrateLegacyTheme() || response;
+    }
+    remoteReady = true;
+    return applyRemoteResponse(resolved);
+  }
+
+  function startPolling(intervalMs = 10000) {
+    if (!requestJson || pollTimer) return;
+    pollTimer = setInterval(() => {
+      if (Date.now() - lastLocalEditAt < 2500) return;
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      loadFromHost({ migrate: false }).catch(() => {});
+    }, intervalMs);
   }
 
   function readControls() {
@@ -302,9 +406,18 @@ export function createAppThemeController({ target = document.documentElement, ro
     }
     try {
       const dataUrl = await compressBackgroundFile(file);
-      storage?.setItem?.(BACKGROUND_IMAGE_KEY, dataUrl);
-      setTheme({ backgroundImage: dataUrl, backgroundMode: "image" });
-      if (backgroundStatus) backgroundStatus.textContent = "背景圖片已套用";
+      if (requestJson && remoteReady) {
+        const response = await requestJson("/api/appearance/background", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dataUrl }),
+        });
+        applyRemoteResponse(response);
+      } else {
+        storage?.setItem?.(BACKGROUND_IMAGE_KEY, dataUrl);
+        setTheme({ backgroundImage: dataUrl, backgroundMode: "image" }, { remote: false });
+      }
+      if (backgroundStatus) backgroundStatus.textContent = "背景圖片已儲存到 VibeDeck Host";
     } catch (error) {
       if (backgroundStatus) backgroundStatus.textContent = error?.message || "背景圖片處理失敗。";
     } finally {
@@ -313,9 +426,18 @@ export function createAppThemeController({ target = document.documentElement, ro
     }
   });
 
-  backgroundClear?.addEventListener?.("click", () => {
-    storage?.removeItem?.(BACKGROUND_IMAGE_KEY);
-    setTheme({ backgroundImage: "", backgroundMode: "gradient" });
+  backgroundClear?.addEventListener?.("click", async () => {
+    try {
+      if (requestJson && remoteReady) {
+        const response = await requestJson("/api/appearance/background", { method: "DELETE" });
+        applyRemoteResponse(response);
+      } else {
+        storage?.removeItem?.(BACKGROUND_IMAGE_KEY);
+        setTheme({ backgroundImage: "", backgroundMode: "gradient" }, { remote: false });
+      }
+    } catch (error) {
+      if (backgroundStatus) backgroundStatus.textContent = error?.message || "背景圖片刪除失敗。";
+    }
   });
 
   root?.querySelectorAll?.("[data-app-palette]").forEach(button => {
@@ -325,9 +447,23 @@ export function createAppThemeController({ target = document.documentElement, ro
     });
   });
 
-  reset?.addEventListener?.("click", () => {
-    storage?.removeItem?.(BACKGROUND_IMAGE_KEY);
-    setTheme(DEFAULT_APP_THEME);
+  reset?.addEventListener?.("click", async () => {
+    try {
+      if (requestJson && remoteReady) {
+        await requestJson("/api/appearance/background", { method: "DELETE" });
+        const response = await requestJson("/api/appearance/theme", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(themeSettingsOnly(DEFAULT_APP_THEME)),
+        });
+        applyRemoteResponse(response);
+      } else {
+        storage?.removeItem?.(BACKGROUND_IMAGE_KEY);
+        setTheme(DEFAULT_APP_THEME, { remote: false });
+      }
+    } catch (error) {
+      if (backgroundStatus) backgroundStatus.textContent = error?.message || "布景重設失敗。";
+    }
   });
 
   current = applyAppTheme(target, current);
@@ -337,5 +473,7 @@ export function createAppThemeController({ target = document.documentElement, ro
   return {
     getTheme: () => ({ ...current }),
     setTheme,
+    loadFromHost,
+    startPolling,
   };
 }

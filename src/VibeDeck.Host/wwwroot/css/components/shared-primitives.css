@@ -61,10 +61,14 @@ body.eink-client .feedback-status[data-feedback-state="working"]::before {
 
 body:is(.viewer-fullscreen, .dashboard-viewer, .deck-window):is(.mode-quota, .mode-sideboard) main {
   padding: 0;
-  background: #000;
+  background: transparent;
   width: 100%;
   min-height: var(--viewer-height);
   overflow: hidden auto;
+}
+
+body.eink-client:is(.viewer-fullscreen, .dashboard-viewer, .deck-window):is(.mode-quota, .mode-sideboard) main {
+  background: #f2f0e8;
 }
 
 body:is(.viewer-fullscreen, .dashboard-viewer, .deck-window).mode-quota .quota-shell,
@@ -123,11 +127,13 @@ html body.confirm-open {
   display: grid;
   gap: 14px;
   padding: 18px;
-  border: 1px solid rgba(143, 209, 255, .28);
-  border-radius: 12px;
-  background: #101820;
+  border: 1px solid var(--theme-line-strong);
+  border-radius: var(--theme-panel-radius, 14px);
+  background: var(--theme-surface-strong);
   color: var(--text);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, .52);
+  box-shadow: var(--theme-surface-shadow);
+  backdrop-filter: blur(var(--theme-glass-blur)) saturate(116%);
+  -webkit-backdrop-filter: blur(var(--theme-glass-blur)) saturate(116%);
 }
 
 .vibe-confirm-head {
@@ -175,8 +181,8 @@ html body.confirm-open {
 }
 
 .vibe-confirm-actions #vibeConfirmAccept {
-  border-color: rgba(143, 209, 255, .42);
-  background: #294057;
+  border-color: var(--theme-accent-2-line);
+  background: linear-gradient(180deg, var(--theme-accent-2-soft), var(--theme-control));
   color: #fff;
   font-weight: 800;
 }

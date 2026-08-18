@@ -155,7 +155,7 @@ function updateManifestLink() {
   const link = document.getElementById("manifestLink");
   if (!link) return;
   const target = currentLocale === "en" ? "/manifest.en.json" : currentLocale === "ja" ? "/manifest.ja.json" : "/manifest.json";
-  link.href = `${target}?v=1`;
+  link.href = `${target}?v=54`;
 }
 
 function patternTranslation(source) {

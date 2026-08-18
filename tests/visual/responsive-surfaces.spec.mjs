@@ -86,29 +86,6 @@ async function openSurface(page, mode, scenario, { trust = "paired", viewer = sc
     const immersiveClass = mode === "display" ? "viewer-fullscreen" : "dashboard-viewer";
     await page.locator(`body.${immersiveClass}`).waitFor();
   }
-  if (scenario.legacyContainerQueries) {
-    await page.evaluate(() => {
-      const removeContainerRules = owner => {
-        const rules = owner.cssRules;
-        for (let index = rules.length - 1; index >= 0; index -= 1) {
-          const rule = rules[index];
-          if (rule.constructor?.name === "CSSContainerRule") {
-            owner.deleteRule(index);
-            continue;
-          }
-          if (rule.styleSheet) {
-            try { removeContainerRules(rule.styleSheet); } catch {}
-          }
-          if (rule.cssRules && typeof rule.deleteRule === "function") {
-            try { removeContainerRules(rule); } catch {}
-          }
-        }
-      };
-      for (const sheet of document.styleSheets) {
-        try { removeContainerRules(sheet); } catch {}
-      }
-    });
-  }
 }
 
 async function prepareSurface(page, mode) {
@@ -188,8 +165,8 @@ const auditConfig = {
   },
   mobileDetail: {
     root: "#mobileDetailsPanel",
-    structural: ["main", "#sideboardView", "#sideboardShell", "#mobileOverview", "#mobileDetailsPanel"],
-    siblings: ["#mobileOverview", "#mobileDetailsPanel", ".mobile-detail-header", ".mobile-detail-metrics", ".mobile-detail-block"],
+    structural: ["#mobileDetailsPanel"],
+    siblings: [".mobile-detail-header", ".mobile-detail-metrics", ".mobile-detail-block"],
   },
   customManager: {
     root: "#customSideboardPage",
@@ -451,9 +428,7 @@ test.describe("Sideboard cards contain unbounded live content", () => {
     { name: "linux-wide-windowed", width: 1_804, height: 754, device: "linux-desktop", viewer: false },
     { name: "linux-wide-fullscreen", width: 1_804, height: 754, device: "linux-desktop", viewer: true },
     { name: "wide-shallow", width: 1_600, height: 400, viewer: true },
-    { name: "mid-landscape", width: 911, height: 569, device: "asus-zenpad-p024", viewer: true },
-    { name: "chrome101-mid-windowed", width: 911, height: 569, device: "asus-zenpad-p024", viewer: false, legacyContainerQueries: true },
-    { name: "chrome101-mid-fullscreen", width: 911, height: 569, device: "asus-zenpad-p024", viewer: true, legacyContainerQueries: true },
+    { name: "tablet-landscape", width: 911, height: 569, device: "asus-zenpad-p024", viewer: true },
   ]) {
     test(scenario.name, async ({ page }) => {
       await openSurface(page, "sideboard", scenario);
@@ -491,7 +466,6 @@ test.describe("Sideboard cards contain unbounded live content", () => {
           card: [card.clientHeight, card.scrollHeight, getComputedStyle(card).overflowY],
           list: [list.clientHeight, list.scrollHeight, getComputedStyle(list).overflowY],
           viewportHeight: window.innerHeight,
-          sideboardSpace: [...view.classList].filter(name => name.startsWith("space-sideboard-")),
           cardInsideGrid: cardRect.top >= gridRect.top - 1 && cardRect.bottom <= gridRect.bottom + 1,
           headingInsideCard: headingRect.top >= cardRect.top - 1 && headingRect.bottom <= cardRect.bottom + 1,
         };
@@ -502,12 +476,6 @@ test.describe("Sideboard cards contain unbounded live content", () => {
       expect(metrics.list[2], detail).toBe("auto");
       expect(metrics.list[0], detail).toBeGreaterThan(0);
       expect(metrics.list[1], detail).toBeGreaterThan(metrics.list[0] + 2);
-      const expectedSpace = metrics.viewWidth <= 44 * 16
-        ? "space-sideboard-compact"
-        : metrics.viewWidth <= 64 * 16
-          ? "space-sideboard-mid"
-          : "space-sideboard-wide";
-      expect(metrics.sideboardSpace, detail).toContain(expectedSpace);
       expect(metrics.main[1], detail).toBeLessThanOrEqual(metrics.main[0] + 2);
       expect(metrics.view[1], detail).toBeLessThanOrEqual(metrics.view[0] + 2);
       expect(metrics.shell[1], detail).toBeLessThanOrEqual(metrics.shell[0] + 6);
@@ -515,27 +483,6 @@ test.describe("Sideboard cards contain unbounded live content", () => {
       expect(metrics.headingInsideCard, detail).toBe(true);
     });
   }
-});
-
-test("Chrome 101 compact fallback uses the mobile overview without container queries", async ({ page }) => {
-  await openSurface(page, "sideboard", {
-    name: "chrome101-compact",
-    width: 569,
-    height: 911,
-    device: "asus-zenpad-p024",
-    legacyContainerQueries: true,
-  });
-  const state = await page.evaluate(() => ({
-    classes: [...document.querySelector("#sideboardView").classList],
-    overview: getComputedStyle(document.querySelector("#mobileOverview")).display,
-    grid: getComputedStyle(document.querySelector("#systemSideboardPage")).display,
-    body: [document.body.clientHeight, document.body.scrollHeight],
-  }));
-  const detail = JSON.stringify(state, null, 2);
-  expect(state.classes, detail).toContain("space-sideboard-compact");
-  expect(state.overview, detail).toBe("flex");
-  expect(state.grid, detail).toBe("none");
-  expect(state.body[1], detail).toBeLessThanOrEqual(state.body[0] + 2);
 });
 
 test("ZenPad fullscreen stream is centered exactly once", async ({ page }) => {

@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using VibeDeck.Host.Appearance;
 using VibeDeck.Host.Connect;
 using VibeDeck.Host.CustomDecks;
 using VibeDeck.Host.CustomSources;
@@ -75,6 +76,7 @@ namespace VibeDeck.Host
             services.AddSingleton<AiQuotaService>();
             services.AddSingleton<DashboardEventHub>();
             services.AddSingleton<DashboardLayoutService>();
+            services.AddSingleton<AppearanceThemeService>();
             services.AddSingleton<CustomDeckService>();
             services.AddSingleton<AuditTrailService>();
             services.AddSingleton<PublicEndpointService>();
@@ -269,6 +271,7 @@ namespace VibeDeck.Host
             {
                 MapCustomSourceEndpoints(endpoints);
                 MapCustomDeckEndpoints(endpoints);
+                MapAppearanceEndpoints(endpoints);
                 MapDashboardLayoutEndpoints(endpoints);
                 MapDiagnosticsEndpoints(endpoints);
                 MapStreamTransportEndpoints(endpoints);

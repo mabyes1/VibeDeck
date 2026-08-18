@@ -34,17 +34,21 @@ namespace VibeDeck.Host.Security
             var agent = userAgent ?? "";
             if (agent.IndexOf("Android", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                return "Android Phone";
+                return "Android device";
+            }
+
+            if (agent.IndexOf("iPad", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return "iPad";
             }
 
             if (agent.IndexOf("iPhone", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                agent.IndexOf("iPad", StringComparison.OrdinalIgnoreCase) >= 0 ||
                 agent.IndexOf("iPod", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 return "iPhone";
             }
 
-            return string.IsNullOrWhiteSpace(name) ? "Phone" : name;
+            return string.IsNullOrWhiteSpace(name) ? "Mobile device" : name;
         }
 
         internal static string NormalizeModel(string model)
@@ -175,7 +179,10 @@ namespace VibeDeck.Host.Security
                 string.Equals(name, "Win32", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(name, "Android Phone", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(name, "Android 裝置", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(name, "iPhone", StringComparison.OrdinalIgnoreCase);
+                string.Equals(name, "Android device", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(name, "iPhone", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(name, "iPad", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(name, "Mobile device", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

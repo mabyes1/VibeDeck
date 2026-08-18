@@ -44,7 +44,7 @@ export function createStreamController({
   getSelectedDisplayName,
   getStreamSettings,
   canUseProtectedConnection,
-  loadPhoneDisplay,
+  loadDisplays,
   prefersWebRtcDisplay,
   isLoopbackHost,
   setStatus,
@@ -217,7 +217,7 @@ export function createStreamController({
       setStatus(tLegacy("請先配對手機"), false);
       return;
     }
-    if (!getSelectedDisplayName()) await loadPhoneDisplay();
+    if (!getSelectedDisplayName()) await loadDisplays();
     if (generation !== connectGeneration || !getSelectedDisplayName()) return;
 
     const mode = transportMode();

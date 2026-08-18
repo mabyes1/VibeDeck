@@ -490,14 +490,14 @@ body.mode-display .screen-media {
   object-fit: contain;
 }
 
-html.phone-force-landscape body.force-landscape.viewer-fullscreen.mode-display {
+html.mobile-force-landscape body.force-landscape.viewer-fullscreen.mode-display {
   width: var(--viewer-width, 100vh);
   height: var(--viewer-height, 100vw);
   overflow: hidden;
   grid-template-rows: 1fr;
 }
 
-html.phone-force-landscape body.force-landscape.viewer-fullscreen.mode-display main {
+html.mobile-force-landscape body.force-landscape.viewer-fullscreen.mode-display main {
   width: 100%;
   height: 100%;
   padding: 0;
@@ -505,14 +505,14 @@ html.phone-force-landscape body.force-landscape.viewer-fullscreen.mode-display m
 }
 
 /* Logical landscape box after CSS rotate; matches the viewer variable geometry. */
-html.phone-force-landscape body.force-landscape.viewer-fullscreen.mode-display .screen-media {
+html.mobile-force-landscape body.force-landscape.viewer-fullscreen.mode-display .screen-media {
   position: fixed;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
 }
 
-html.phone-force-landscape body.force-landscape.viewer-fullscreen.mode-display .display-toolbar {
+html.mobile-force-landscape body.force-landscape.viewer-fullscreen.mode-display .display-toolbar {
   position: fixed;
   top: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
   left: 50%;

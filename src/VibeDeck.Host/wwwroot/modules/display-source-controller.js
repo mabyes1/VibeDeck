@@ -122,22 +122,22 @@ export function createDisplaySourceController({
     setToolbarExpanded(!isToolbarExpanded());
   }
 
-  function isPhoneClient() {
-    return document.body.classList.contains("phone-client")
+  function isRemoteMobileClient() {
+    return document.body.classList.contains("mobile-client")
       && !document.body.classList.contains("pc-console")
       && !isLocalRequest();
   }
 
   function syncEmptyActions() {
-    const phone = isPhoneClient();
+    const mobile = isRemoteMobileClient();
     if (openSideboardFromEmpty) {
       openSideboardFromEmpty.hidden = false;
       openSideboardFromEmpty.textContent = t("pairingUx.useSideboard");
-      openSideboardFromEmpty.classList.toggle("secondary", !phone);
+      openSideboardFromEmpty.classList.toggle("secondary", !mobile);
     }
     if (installVirtualDisplay) {
       installVirtualDisplay.textContent = t("pairingUx.goToDeviceSetup");
-      if (phone) {
+      if (mobile) {
         installVirtualDisplay.hidden = true;
         installVirtualDisplay.disabled = true;
       }
@@ -159,7 +159,7 @@ export function createDisplaySourceController({
     if (displayEmptyState) displayEmptyState.hidden = Boolean(available);
     if (displayEmptyTitle && title) displayEmptyTitle.textContent = title;
     if (displayEmptyMessage && (title || message)) {
-      if (isPhoneClient() && !available) {
+      if (isRemoteMobileClient() && !available) {
         const pairingGate = /配對|pair|ペアリング/i.test(`${title} ${message}`);
         displayEmptyMessage.textContent = pairingGate
           ? (message || t("pairingUx.displayBenefit"))
@@ -241,7 +241,7 @@ export function createDisplaySourceController({
     resetSelectionName,
     renderOptions,
     refreshLocalizedUi,
-    isPhoneClient,
+    isRemoteMobileClient,
     syncEmptyActions,
     setAvailability,
     isToolbarExpanded,

@@ -32,6 +32,19 @@
       --theme-line: rgba(255, 255, 255, .12);
       --theme-line-strong: rgba(255, 255, 255, .20);
       --theme-shadow: 0 16px 44px rgba(0, 0, 0, .20);
+      --theme-surface:
+        linear-gradient(145deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .008)),
+        var(--theme-glass);
+      --theme-surface-strong:
+        linear-gradient(145deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .010)),
+        var(--theme-glass-strong);
+      --theme-control: rgba(255, 255, 255, .045);
+      --theme-control-hover: rgba(255, 255, 255, .085);
+      --theme-surface-radius: 12px;
+      --theme-panel-radius: 14px;
+      --theme-surface-shadow:
+        var(--theme-shadow),
+        inset 0 1px 0 rgba(255, 255, 255, .05);
       --line: var(--theme-line);
       --text: #f5f7fb;
       --muted: #b9c4d0;

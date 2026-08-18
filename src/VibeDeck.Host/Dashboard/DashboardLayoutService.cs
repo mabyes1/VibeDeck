@@ -139,8 +139,6 @@ namespace VibeDeck.Host.Dashboard
             {
                 "eink-landscape" => normalized,
                 "eink-portrait" => normalized,
-                "tablet-landscape" => normalized,
-                "tablet-portrait" => normalized,
                 "default" => normalized,
                 _ => "default"
             };
@@ -335,9 +333,7 @@ namespace VibeDeck.Host.Dashboard
                 Item("processes", 6, 4, 6, 2)
             };
 
-            if (profile == "eink-portrait" ||
-                profile == "tablet-portrait" ||
-                profile == "tablet-landscape")
+            if (profile == "eink-portrait")
             {
                 items = new List<DashboardLayoutItem>
                 {

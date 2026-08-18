@@ -32,6 +32,8 @@ namespace VibeDeck.Host
 
         public static string DashboardDirectory => Path.Combine(DataRoot, "dashboard");
 
+        public static string AppearanceDirectory => Path.Combine(DataRoot, "appearance");
+
         public static string QuotasDirectory => Path.Combine(DataRoot, "quotas");
 
         public static string SecretsDirectory => Path.Combine(DataRoot, "secrets");
@@ -55,15 +57,50 @@ namespace VibeDeck.Host
             // Setup installs keep product state outside the replaceable app directory.
             if (IsInstalledLayout)
             {
-                return Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                    ProductName);
+                return Path.Combine(ResolveCommonApplicationData(), ProductName);
             }
 
             // Source / portable runs use the same canonical product name.
             return Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 ProductName);
+        }
+
+        internal static string ResolveCommonApplicationData()
+        {
+            return ResolveCommonApplicationData(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows));
+        }
+
+        internal static string ResolveCommonApplicationData(string commonApplicationData, string windowsDirectory)
+        {
+            var common = (commonApplicationData ?? string.Empty).Trim();
+            if (!string.IsNullOrWhiteSpace(common) &&
+                Path.IsPathFullyQualified(common) &&
+                common.IndexOf('%') < 0)
+            {
+                return Path.GetFullPath(common);
+            }
+
+            // Some automation hosts intentionally provide a minimal Windows
+            // environment and omit SystemDrive / ProgramData. .NET then returns
+            // the unexpanded literal "%SystemDrive%\\ProgramData" for
+            // CommonApplicationData. Never let that become a relative product
+            // data root under the current working directory.
+            var windows = (windowsDirectory ?? string.Empty).Trim();
+            var driveRoot = string.IsNullOrWhiteSpace(windows)
+                ? string.Empty
+                : Path.GetPathRoot(windows);
+            if (!string.IsNullOrWhiteSpace(driveRoot))
+            {
+                return Path.Combine(driveRoot, "ProgramData");
+            }
+
+            // Last-resort Windows fallback. Installed VibeDeck only targets
+            // Windows, and C: is preferable to silently writing portable state
+            // into a relative "%SystemDrive%" directory.
+            return @"C:\ProgramData";
         }
 
         private static bool DetectInstalledLayout()
