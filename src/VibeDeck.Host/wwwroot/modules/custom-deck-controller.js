@@ -22,6 +22,7 @@ export function normalizeDeckCatalog(payload = {}) {
       name: readField(item, "Name", "name", ""),
       entry: readField(item, "Entry", "entry", ""),
       icon: readField(item, "Icon", "icon", ""),
+      type: readField(item, "Type", "type", "static"),
       url: readField(item, "Url", "url", ""),
     })).filter(item => item.id && item.name && item.url) : [],
     issues: Array.isArray(rawIssues) ? rawIssues.map(item => ({
@@ -29,6 +30,15 @@ export function normalizeDeckCatalog(payload = {}) {
       message: readField(item, "Message", "message", ""),
     })).filter(item => item.folder || item.message) : [],
   };
+}
+
+export function deckSandbox(type, url, hostOrigin = "") {
+  if (type !== "embed") return type === "proxy" ? "allow-scripts allow-forms" : "allow-scripts";
+  try {
+    const targetOrigin = new URL(url, hostOrigin || "http://localhost").origin;
+    if (hostOrigin && targetOrigin === hostOrigin) return "allow-scripts allow-forms";
+  } catch {}
+  return "allow-scripts allow-forms allow-same-origin";
 }
 
 export function createCustomDeckController({
@@ -138,6 +148,7 @@ export function createCustomDeckController({
     if (frame) {
       frame.hidden = false;
       frame.title = activeDeck.name;
+      frame.setAttribute("sandbox", deckSandbox(activeDeck.type, activeDeck.url, window.location.origin));
       if (frame.dataset.deckUrl !== activeDeck.url) {
         frame.src = activeDeck.url;
         frame.dataset.deckId = activeDeck.id;

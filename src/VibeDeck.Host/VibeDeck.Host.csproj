@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
-    <Version>0.1.41</Version>
+    <Version>0.1.52</Version>
     <AssemblyName>VibeDeck.Host</AssemblyName>
     <RootNamespace>VibeDeck.Host</RootNamespace>
     <Product>VibeDeck</Product>

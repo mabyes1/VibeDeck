@@ -9,6 +9,11 @@ const WEBRTC_DISCONNECT_GRACE_MS = 12000;
 const WEBRTC_RESTART_SETTLE_MS = 8000;
 const JPEG_RECONNECT_MAX_MS = 15000;
 
+export function normalizePlayoutDelayMs(value) {
+  const delay = Number(value);
+  return delay === 20 || delay === 80 ? delay : 40;
+}
+
 export function estimateReceiverMaxBitrateKbps(settings = {}, environment = globalThis) {
   const navigatorValue = environment?.navigator || {};
   const userAgent = String(navigatorValue.userAgent || "");
@@ -361,6 +366,7 @@ export function createStreamController({
 
     const settings = getStreamSettings();
     const receiverMaxBitrateKbps = estimateReceiverMaxBitrateKbps(settings);
+    const playoutDelayMs = normalizePlayoutDelayMs(settings.playoutDelayMs);
     const answer = await fetchJsonOrThrow("/api/stream/webrtc/offer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -369,7 +375,8 @@ export function createStreamController({
         deviceName: getSelectedDisplayName(),
         fps: settings.fps,
         quality: settings.quality,
-        receiverMaxBitrateKbps
+        receiverMaxBitrateKbps,
+        playoutDelayMs
       })
     });
     if (generation !== connectGeneration || rtcPeer !== peer || peer.signalingState === "closed") return false;

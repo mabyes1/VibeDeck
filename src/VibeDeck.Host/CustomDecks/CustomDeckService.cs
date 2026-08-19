@@ -103,12 +103,49 @@ namespace VibeDeck.Host.CustomDecks
             }
 
             var name = (manifest.Name ?? string.Empty).Trim();
-            var entry = NormalizeEntry(manifest.Entry);
+            var type = string.IsNullOrWhiteSpace(manifest.Type)
+                ? "static"
+                : manifest.Type.Trim().ToLowerInvariant();
             if (name.Length == 0)
             {
                 throw new InvalidDataException("deck.json must contain a non-empty name.");
             }
 
+            if (type == "proxy")
+            {
+                var proxyTarget = CustomDeckProxyTarget.Parse(manifest.Url);
+                return new CustomDeckDescriptor
+                {
+                    Id = folder,
+                    Name = name,
+                    Entry = string.Empty,
+                    Icon = (manifest.Icon ?? string.Empty).Trim(),
+                    Type = "proxy",
+                    Url = $"/deck-proxy/{Uri.EscapeDataString(folder)}/",
+                    ProxyTargetUrl = proxyTarget.ToString()
+                };
+            }
+
+            if (type == "embed")
+            {
+                var embedTarget = ParseEmbedTarget(manifest.Url);
+                return new CustomDeckDescriptor
+                {
+                    Id = folder,
+                    Name = name,
+                    Entry = string.Empty,
+                    Icon = (manifest.Icon ?? string.Empty).Trim(),
+                    Type = "embed",
+                    Url = embedTarget.ToString()
+                };
+            }
+
+            if (type != "static")
+            {
+                throw new InvalidDataException("deck.json type must be 'static', 'embed', or 'proxy'.");
+            }
+
+            var entry = NormalizeEntry(manifest.Entry);
             if (entry.Length == 0)
             {
                 throw new InvalidDataException("deck.json must contain a non-empty entry.");
@@ -132,8 +169,16 @@ namespace VibeDeck.Host.CustomDecks
                 Name = name,
                 Entry = entry,
                 Icon = (manifest.Icon ?? string.Empty).Trim(),
+                Type = "static",
                 Url = BuildDeckUrl(folder, entry)
             };
+        }
+
+        public CustomDeckDescriptor Find(string deckId)
+        {
+            if (!IsSafeDeckId(deckId)) return null;
+            return Discover().Decks.FirstOrDefault(deck =>
+                string.Equals(deck.Id, deckId, StringComparison.OrdinalIgnoreCase));
         }
 
         private static string NormalizeEntry(string entry)
@@ -145,6 +190,20 @@ namespace VibeDeck.Host.CustomDecks
             }
 
             return normalized;
+        }
+
+        private static Uri ParseEmbedTarget(string value)
+        {
+            if (!Uri.TryCreate((value ?? string.Empty).Trim(), UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            {
+                throw new InvalidDataException("Embed Deck url must be an absolute HTTP or HTTPS URL.");
+            }
+            if (!string.IsNullOrEmpty(uri.UserInfo))
+            {
+                throw new InvalidDataException("Embed Deck url must not contain credentials.");
+            }
+            return uri;
         }
 
         private static string BuildDeckUrl(string folder, string entry)

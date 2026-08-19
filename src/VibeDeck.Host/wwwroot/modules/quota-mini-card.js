@@ -1,5 +1,5 @@
 import { getIntlLocale, t, tLegacy } from "./i18n.js?v=4";
-import { formatQuotaWindowLabel } from "./quota-formatters.js?v=51";
+import { formatQuotaWindowLabel } from "./quota-formatters.js?v=52";
 import { sortQuotaAccountsByRecentUse } from "./quota-account-navigation.js?v=1";
 
 const SOURCE_STORAGE_KEY = "vibeDeckDashboardQuotaSource.v1";
@@ -26,7 +26,7 @@ export function resolveQuotaMiniDefaultProvider(providers = []) {
     || null;
 }
 
-export function createQuotaMiniCardController({ elements, fetchJsonOrThrow }) {
+export function createQuotaMiniCardController({ elements, fetchJsonOrThrow, onSnapshot = () => {} }) {
   const { select, value, bar, reset, state, credits } = elements;
   let snapshot = null;
   let selectedKey = "";
@@ -126,12 +126,14 @@ export function createQuotaMiniCardController({ elements, fetchJsonOrThrow }) {
     renderSnapshot(nextSnapshot) {
       snapshot = nextSnapshot || {};
       render();
+      onSnapshot(snapshot);
     },
     async refresh() {
       try {
         const nextSnapshot = await fetchJsonOrThrow("/api/quotas");
         snapshot = nextSnapshot || {};
         render();
+        onSnapshot(snapshot);
         return nextSnapshot;
       } catch (error) {
         value.textContent = "--";

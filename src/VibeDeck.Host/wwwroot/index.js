@@ -22,16 +22,16 @@ import {
   groupAgyAccounts,
   groupSingleProviderAccounts,
   quotaDataFingerprint,
-} from "./modules/quota-model.js?v=1";
+} from "./modules/quota-model.js?v=2";
 import {
   buildQuotaHelpSpec,
   buildQuotaSummary,
   formatQuotaStateLabel,
 } from "./modules/quota-presentation.js?v=2";
 import { createQuotaSetupCardRenderer } from "./modules/quota-setup-cards.js?v=2";
-import { createCodexAccountManager } from "./modules/quota-codex-account-manager.js?v=1";
+import { createCodexAccountManager } from "./modules/quota-codex-account-manager.js?v=3";
 import { createQuotaActionController } from "./modules/quota-action-controller.js?v=3";
-import { createQuotaCardRenderer } from "./modules/quota-card-renderer.js?v=3";
+import { createQuotaCardRenderer } from "./modules/quota-card-renderer.js?v=7";
 import { createDiagnosticsController } from "./modules/diagnostics-controller.js?v=1";
 import { createDeviceManagementView } from "./modules/device-management-view.js?v=1";
 import { createDeviceActionsController } from "./modules/device-actions-controller.js?v=1";
@@ -47,13 +47,15 @@ import {
   readClientDisplayMetrics,
 } from "./modules/display-auto-mode.js?v=1";
 import { createHostAuthController } from "./modules/host-auth-controller.js?v=1";
-import { createCustomDeckController } from "./modules/custom-deck-controller.js?v=1";
-import { createQuotaMiniCardController } from "./modules/quota-mini-card.js?v=59";
+import { createCustomDeckController } from "./modules/custom-deck-controller.js?v=3";
+import { createQuotaMiniCardController } from "./modules/quota-mini-card.js?v=60";
+import { createQuotaSideboardCardController } from "./modules/quota-sideboard-card.js?v=2";
+import { hasActiveSecondaryCardInteraction } from "./modules/secondary-card-dialog.js?v=2";
 import { createSideboardController } from "./modules/sideboard.js?v=51";
 import { createAppThemeController } from "./modules/app-theme.js?v=3";
 import { createMobileOverviewController } from "./modules/mobile-overview.js?v=3";
 import { isFullscreenDisplayStreaming as isFullscreenDisplayStreamingPolicy } from "./modules/dashboard-background-policy.js?v=1";
-import { createStreamController } from "./modules/stream-controller.js?v=54";
+import { createStreamController } from "./modules/stream-controller.js?v=55";
 import { createStreamDebugOverlay } from "./modules/stream-debug-overlay.js?v=1";
 import { tuneVideoReceiver } from "./modules/stream-tuning.js?v=47";
 import { applyFeedbackState } from "./modules/feedback-state.js?v=1";
@@ -62,7 +64,7 @@ import {
   escapeHtml,
   formatQuotaWindowLabel,
   summarizeQuotaWindow,
-} from "./modules/quota-formatters.js?v=51";
+} from "./modules/quota-formatters.js?v=52";
 import { getIntlLocale, initLocale, onLocaleChange, t, tApi, tLegacy, translateText } from "./modules/i18n.js?v=5";
 import {
   DEVICE_TOKEN_KEY,
@@ -144,6 +146,7 @@ import {
     const streamFps = document.getElementById("streamFps");
     const streamQuality = document.getElementById("streamQuality");
     const streamTransport = document.getElementById("streamTransport");
+    const streamLatency = document.getElementById("streamLatency");
     const applyStream = document.getElementById("applyStream");
     const turnSettingsPanel = document.getElementById("turnSettingsPanel");
     const turnKeyId = document.getElementById("turnKeyId");
@@ -319,6 +322,7 @@ import {
     const quotaMiniReset = document.getElementById("quotaMiniReset");
     const quotaMiniState = document.getElementById("quotaMiniState");
     const quotaMiniCredits = document.getElementById("quotaMiniCredits");
+    const quotaSideboardCard = document.getElementById("quotaSideboardCard");
     const quotaSummary = document.getElementById("quotaSummary");
     const quotaUpdated = document.getElementById("quotaUpdated");
     const quotaTabs = document.getElementById("quotaTabs");
@@ -352,6 +356,7 @@ import {
     };
     let customCardsController = null;
     let quotaMiniController = null;
+    let quotaSideboardController = null;
     let actionToken = "";
     let actionHeaderName = "X-VibeDeck-Action-Token";
     let hostVersionLabel = "";
@@ -1685,6 +1690,10 @@ import {
         credits: quotaMiniCredits,
       },
       fetchJsonOrThrow,
+      onSnapshot: snapshot => {
+        quotaSnapshotData = snapshot || {};
+        quotaSideboardController?.renderSnapshot(snapshot);
+      },
     });
 
     const sideboardController = createSideboardController({
@@ -1892,6 +1901,20 @@ import {
       codexAccountManager,
       changeAccount: changeQuotaAccount,
     });
+    quotaSideboardController = createQuotaSideboardCardController({
+      document,
+      host: quotaSideboardCard,
+      tLegacy,
+      buildViewState: buildQuotaViewState,
+      cards: quotaCards,
+      getActiveTab: () => quotaActiveTab,
+      setActiveTab: tabId => {
+        quotaActiveTab = tabId;
+        localStorage.setItem(QUOTA_TAB_STORAGE_KEY, quotaActiveTab);
+        if (activeMode === "quota") renderQuotaContent();
+      },
+      getAccountIndex: getQuotaAccountIndex,
+    });
     const diagnosticsController = createDiagnosticsController({
       document,
       navigator,
@@ -2076,6 +2099,7 @@ import {
     function renderQuotas(snapshot) {
       quotaSnapshotData = snapshot || {};
       quotaMiniController?.renderSnapshot(snapshot);
+      if (hasActiveSecondaryCardInteraction(quotaGrid, document)) return;
       renderQuotaContent();
     }
 
@@ -2121,7 +2145,6 @@ import {
         if (quotaActiveTab === "codex" && isEinkQuotaClient()) {
           quotaGrid.append(quotaCards.renderEinkCodexOverview(provider, snapshot, pageInfo));
         } else {
-          if (quotaActiveTab === "codex") quotaGrid.append(codexAccountManager.render());
           quotaGrid.append(quotaCards.renderSingleQuotaPage(provider, snapshot, pageInfo));
         }
       } else if (quotaActiveTab === "codex") {
@@ -2205,6 +2228,7 @@ import {
       if (total < 2) return;
       quotaAccountNavigator.move(tabId, accounts, delta);
       renderQuotaContent();
+      quotaSideboardController?.render();
     }
 
     function setStatus(text, online, detail = "") {
@@ -2544,6 +2568,7 @@ import {
       localStorage.setItem("vibeDeckStreamFps", streamFps.value);
       localStorage.setItem("vibeDeckStreamQuality", streamQuality.value);
       localStorage.setItem("vibeDeckStreamTransport", streamTransport?.value || "auto");
+      localStorage.setItem("vibeDeckStreamLatency", streamLatency?.value || "40");
       connectVideo();
     }
 
@@ -2784,6 +2809,7 @@ import {
           fps: Number(streamFps.value),
           quality: Number(streamQuality.value),
           transportMode: streamTransport?.value || "auto",
+          playoutDelayMs: Number(streamLatency?.value) || 40,
           rotationIsAuto: rotation.value === "auto",
         }),
         canUseProtectedConnection,
@@ -2854,6 +2880,7 @@ import {
     });
     applyStream.addEventListener("click", applyStreamSettings);
     streamTransport?.addEventListener("change", applyStreamSettings);
+    streamLatency?.addEventListener("change", applyStreamSettings);
     saveTurnSettings?.addEventListener("click", turnSettingsController.save);
     testTurnSettings?.addEventListener("click", turnSettingsController.test);
     clearTurnSettings?.addEventListener("click", turnSettingsController.clear);
@@ -3203,6 +3230,7 @@ import {
       streamFps.value = localStorage.getItem("vibeDeckStreamFps") || streamFps.value;
       streamQuality.value = localStorage.getItem("vibeDeckStreamQuality") || streamQuality.value;
       if (streamTransport) streamTransport.value = localStorage.getItem("vibeDeckStreamTransport") || "auto";
+      if (streamLatency) streamLatency.value = localStorage.getItem("vibeDeckStreamLatency") || "40";
       updateViewportSize();
       applyRotation();
       applyOrientation();

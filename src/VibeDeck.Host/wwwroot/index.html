@@ -17,7 +17,7 @@
   <link id="manifestLink" rel="manifest" href="/manifest.json?v=54">
   <link rel="icon" type="image/svg+xml" href="/icons/vibedeck.svg?v=1" sizes="any">
   <title>VibeDeck</title>
-  <link rel="stylesheet" href="/index.css?v=149">
+  <link rel="stylesheet" href="/index.css?v=155">
   <style>
     /* Pairing is the recovery path: keep it usable even if an old iOS asset or
        a later boot request fails. JS only hides it after trust is confirmed. */
@@ -134,7 +134,7 @@
         <button id="displayMode" class="mode-button active" type="button">顯示器</button>
         <button id="setupMode" class="mode-button" type="button" hidden>裝置設定</button>
         <button id="sideboardMode" class="mode-button" type="button">資訊板</button>
-        <button id="quotaMode" class="mode-button" type="button">額度</button>
+        <button id="quotaMode" class="mode-button" type="button" hidden>額度</button>
         <button id="addDeckMode" class="mode-button add-deck-mode" type="button">＋ Add Deck</button>
       </div>
       <div class="utility-controls">
@@ -315,6 +315,13 @@
               <option value="auto">自動（WebRTC 優先）</option>
               <option value="webrtc">偏好 WebRTC</option>
               <option value="jpeg">穩定 JPEG</option>
+            </select>
+          </label>
+          <label class="field">延遲
+            <select id="streamLatency" aria-label="串流延遲模式">
+              <option value="20">極低延遲 · 20ms</option>
+              <option value="40" selected>普通 · 40ms</option>
+              <option value="80">穩定 · 80ms</option>
             </select>
           </label>
           <button id="applyStream" type="button">套用串流</button>
@@ -566,7 +573,7 @@
             <div class="dashboard-view-controls">
               <div class="dashboard-mode-switch" role="group" aria-label="切換資訊頁面">
                 <button type="button" data-dashboard-mode="sideboard" aria-pressed="true">資訊板</button>
-                <button type="button" data-dashboard-mode="quota" aria-pressed="false">額度</button>
+                <button type="button" data-dashboard-mode="quota" aria-pressed="false" hidden>額度</button>
               </div>
               <span class="eink-connection-state connecting" data-eink-connection-state role="status">正在連線</span>
               <button id="launchDeckWindow" type="button" hidden data-i18n="ui.launchDeck">在虛擬螢幕顯示資訊板</button>
@@ -782,18 +789,16 @@
           </div>
           <ul id="activityFeedList" class="activity-feed-list"></ul>
         </section>
-        <section class="side-panel quota-mini-card" data-dashboard-key="quota-mini" data-dashboard-title="AI 額度">
-          <div class="quota-mini-head">
-            <strong>AI 額度</strong>
+        <section class="quota-sideboard-slot" data-dashboard-key="quota-mini" data-dashboard-title="AI 額度">
+          <div id="quotaSideboardCard" class="quota-sideboard-card-host"></div>
+          <div class="quota-mini-card quota-mini-compat">
             <span id="quotaMiniState">等待來源</span>
-          </div>
-          <select id="quotaMiniSource" aria-label="切換額度來源" disabled></select>
-          <div class="quota-mini-value-row">
+            <select id="quotaMiniSource" aria-label="切換額度來源" disabled></select>
             <strong id="quotaMiniValue">--</strong>
             <span id="quotaMiniReset">尚無額度來源</span>
+            <div id="quotaMiniCredits" hidden></div>
+            <span id="quotaMiniBar"></span>
           </div>
-          <div id="quotaMiniCredits" class="quota-mini-credit" hidden></div>
-          <div class="quota-mini-bar" aria-hidden="true"><span id="quotaMiniBar"></span></div>
         </section>
         <div id="customCardsGrid" class="custom-cards-grid" aria-live="polite"></div>
         </section>
@@ -913,7 +918,7 @@
           <div class="dashboard-view-controls">
             <div class="dashboard-mode-switch" role="group" aria-label="切換資訊頁面">
               <button type="button" data-dashboard-mode="sideboard" aria-pressed="false">資訊板</button>
-              <button type="button" data-dashboard-mode="quota" aria-pressed="true">額度</button>
+              <button type="button" data-dashboard-mode="quota" aria-pressed="true" hidden>額度</button>
             </div>
             <span class="eink-connection-state connecting" data-eink-connection-state role="status">正在連線</span>
           </div>
@@ -978,6 +983,6 @@
 
   <button id="exitViewer" class="exit-viewer" type="button" aria-label="Exit viewer">×</button>
 
-  <script type="module" src="/index.js?v=154"></script>
+  <script type="module" src="/index.js?v=162"></script>
 </body>
 </html>

@@ -19,15 +19,30 @@ export function formatQuotaWindowLabel(windowData = {}, fallbackLabel = "") {
 
   const roundedMinutes = Math.round(minutes);
   if (roundedMinutes % MINUTES_PER_WEEK === 0) {
-    return t("ui.quotaWindowWeeks", { count: roundedMinutes / MINUTES_PER_WEEK });
+    const count = roundedMinutes / MINUTES_PER_WEEK;
+    const translated = t("ui.quotaWindowWeeks", { count });
+    if (translated !== "ui.quotaWindowWeeks") return translated;
+    const locale = getIntlLocale().toLowerCase();
+    return locale.startsWith("en") ? `${count} wk` : locale.startsWith("ja") ? `${count}週間` : `${count} 週`;
   }
   if (roundedMinutes % MINUTES_PER_DAY === 0) {
-    return t("ui.quotaWindowDays", { count: roundedMinutes / MINUTES_PER_DAY });
+    const count = roundedMinutes / MINUTES_PER_DAY;
+    const translated = t("ui.quotaWindowDays", { count });
+    if (translated !== "ui.quotaWindowDays") return translated;
+    const locale = getIntlLocale().toLowerCase();
+    return locale.startsWith("en") ? `${count} d` : locale.startsWith("ja") ? `${count}日` : `${count} 天`;
   }
   if (roundedMinutes % MINUTES_PER_HOUR === 0) {
-    return t("ui.quotaWindowHours", { count: roundedMinutes / MINUTES_PER_HOUR });
+    const count = roundedMinutes / MINUTES_PER_HOUR;
+    const translated = t("ui.quotaWindowHours", { count });
+    if (translated !== "ui.quotaWindowHours") return translated;
+    const locale = getIntlLocale().toLowerCase();
+    return locale.startsWith("en") ? `${count} h` : locale.startsWith("ja") ? `${count}時間` : `${count} 小時`;
   }
-  return t("ui.quotaWindowMinutes", { count: roundedMinutes });
+  const translated = t("ui.quotaWindowMinutes", { count: roundedMinutes });
+  if (translated !== "ui.quotaWindowMinutes") return translated;
+  const locale = getIntlLocale().toLowerCase();
+  return locale.startsWith("en") ? `${roundedMinutes} min` : locale.startsWith("ja") ? `${roundedMinutes}分` : `${roundedMinutes} 分鐘`;
 }
 
 export function renderQuotaWindow(label, windowData = {}) {
@@ -75,10 +90,11 @@ export function extractQuotaEmail(providers = []) {
 }
 
 export function extractQuotaTier(providers = []) {
+  const tierPattern = /^(?:free|pro|plus|ultra|max|team|business|enterprise)$/i;
   for (const provider of providers) {
     const detail = provider.Detail || provider.detail || "";
     const parts = detail.split("·").map(part => part.trim()).filter(Boolean);
-    const tier = parts.find(part => !part.includes("@"));
+    const tier = parts.find(part => tierPattern.test(part));
     if (tier) return tier;
   }
   return null;

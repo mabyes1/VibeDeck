@@ -19,6 +19,7 @@ export function buildCodexProfileOption(profile = {}, t) {
 export function buildCodexAccountActionState(target = {}) {
   const hasTarget = Boolean(target.accountId || target.email);
   return {
+    refreshDisabled: !hasTarget,
     switchDisabled: !hasTarget || Boolean(target.active),
     reauthDisabled: !hasTarget || Boolean(target.active),
     deleteDisabled: !hasTarget,
@@ -56,7 +57,9 @@ export function createCodexAccountManager({
     select.append(loadingOption);
 
     const toolbox = document.createElement("div");
-    toolbox.className = "quota-toolbox";
+    toolbox.className = embedded
+      ? "quota-toolbox quota-command-list"
+      : "quota-toolbox";
     toolbox.setAttribute("aria-label", t("ui.codexAccountActions"));
     const makeButton = (action, text, titleText) => {
       const button = document.createElement("button");
@@ -68,6 +71,7 @@ export function createCodexAccountManager({
       return button;
     };
     toolbox.append(
+      makeButton("codex-profile-refresh", `↻ ${tLegacy("更新")}`, tLegacy("更新額度")),
       makeButton("codex-switch", `▶ ${t("ui.codexSwitch")}`, t("ui.codexSwitchTitle")),
       makeButton("codex-reauth", `↻ ${t("ui.codexQuotaReauth")}`, t("ui.codexQuotaReauthTitle")),
       makeButton("codex-profile-delete", `⌫ ${t("ui.codexDelete")}`, t("ui.codexDeleteTitle"))
@@ -87,6 +91,7 @@ export function createCodexAccountManager({
     if (!embedded) {
       const status = document.createElement("div");
       status.className = "quota-action-status";
+      status.setAttribute("role", "status");
       status.setAttribute("aria-live", "polite");
       card.append(status);
       applyQuotaCardStatus(card);
@@ -97,6 +102,7 @@ export function createCodexAccountManager({
 
   function wire(card, statusCard = card) {
     const select = card.querySelector(".quota-codex-select");
+    const refreshButton = card.querySelector('[data-quota-action="codex-profile-refresh"]');
     const switchButton = card.querySelector('[data-quota-action="codex-switch"]');
     const reauthButton = card.querySelector('[data-quota-action="codex-reauth"]');
     const deleteButton = card.querySelector('[data-quota-action="codex-profile-delete"]');
@@ -114,6 +120,7 @@ export function createCodexAccountManager({
     function syncAccountActions() {
       const target = selectedAccount();
       const state = buildCodexAccountActionState(target);
+      if (refreshButton) refreshButton.disabled = state.refreshDisabled;
       if (switchButton) switchButton.disabled = state.switchDisabled;
       if (reauthButton) {
         reauthButton.disabled = state.reauthDisabled;
@@ -133,6 +140,7 @@ export function createCodexAccountManager({
           option.value = "";
           option.textContent = t("ui.codexNoProfiles");
           select.append(option);
+          if (refreshButton) refreshButton.disabled = true;
           if (switchButton) switchButton.disabled = true;
           if (reauthButton) reauthButton.disabled = true;
           if (deleteButton) deleteButton.disabled = true;
@@ -157,6 +165,7 @@ export function createCodexAccountManager({
         option.value = "";
         option.textContent = t("ui.codexProfilesUnavailable");
         select.append(option);
+        if (refreshButton) refreshButton.disabled = true;
         if (switchButton) switchButton.disabled = true;
         if (reauthButton) reauthButton.disabled = true;
         if (deleteButton) deleteButton.disabled = true;
@@ -165,6 +174,26 @@ export function createCodexAccountManager({
     }
 
     select?.addEventListener("change", syncAccountActions);
+
+    if (refreshButton) refreshButton.addEventListener("click", async () => {
+      const target = selectedAccount();
+      if (!target.accountId && !target.email) {
+        setQuotaCardStatus(statusCard, t("ui.codexProfileRequired"), "error");
+        return;
+      }
+      await runQuotaButton(refreshButton, async () => {
+        const result = await fetchJsonOrThrow("/api/quotas/codex/refresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accountId: target.accountId, email: target.email }),
+        });
+        await refreshQuotas({ throwOnError: true });
+        return result;
+      }, {
+        pending: tLegacy("正在更新額度..."),
+        success: tLegacy("額度已更新。"),
+      });
+    });
 
     if (switchButton) switchButton.addEventListener("click", async () => {
       const target = selectedAccount();

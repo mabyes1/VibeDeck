@@ -160,7 +160,7 @@ const auditConfig = {
   },
   editor: {
     root: "#sideboardView",
-    structural: ["main", "#sideboardView", "#sideboardShell", "#dashboardEditBar", "#systemSideboardPage"],
+    structural: ["main", "#sideboardView", "#sideboardShell", "#dashboardEditBar", "#systemSideboardPage", ".activity-feed-list"],
     siblings: ["#sideboardShell", "#dashboardEditBar", ".dashboard-edit-actions", "#systemSideboardPage"],
   },
   mobileDetail: {
@@ -192,6 +192,12 @@ async function scrollReachableSurfaces(page, config) {
       const scope = selfContained ? rootElement : document;
       scope?.querySelectorAll(selector).forEach(element => elements.add(element));
     }
+    rootElement?.querySelectorAll("*").forEach(element => {
+      const style = getComputedStyle(element);
+      if (["auto", "scroll"].includes(style.overflowY) && element.scrollHeight > element.clientHeight + 2) {
+        elements.add(element);
+      }
+    });
     for (const element of elements) {
       if (!rendered(element)) continue;
       const style = getComputedStyle(element);
@@ -328,6 +334,52 @@ test.describe("Quota across continuous and unusual viewports", () => {
   }
 });
 
+test.describe("Quota account actions use one secondary manager", () => {
+  for (const scenario of [
+    { name: "pc", width: 1_000, height: 700 },
+    { name: "tablet", width: 911, height: 569, device: "asus-zenpad-p024", viewer: true },
+    { name: "phone", width: 375, height: 812, device: "iphone-xs" },
+  ]) {
+    test(scenario.name, async ({ page }) => {
+      await openSurface(page, "quota", scenario);
+      const trigger = page.locator(".quota-account-manager-trigger:visible").first();
+      await trigger.click();
+      const dialog = page.locator(".quota-account-manager-dialog[open]");
+      const panel = dialog.locator(".quota-account-manager-panel");
+      await panel.waitFor();
+      const geometry = await page.evaluate(() => {
+        const dialog = document.querySelector("#quotaGrid .quota-account-manager-dialog[open]");
+        const card = dialog?.closest(".quota-account-card");
+        const panel = dialog?.querySelector(".quota-account-manager-panel");
+        const rect = panel?.getBoundingClientRect();
+        const dialogRect = dialog?.getBoundingClientRect();
+        return {
+          standaloneManagers: document.querySelectorAll("#quotaGrid > .quota-codex-switcher").length,
+          exposedToolboxes: card?.querySelectorAll(":scope > .quota-footer .quota-toolbox").length || 0,
+          managerButtons: panel?.querySelectorAll("button").length || 0,
+          maxManagerButtonHeight: Math.max(0, ...Array.from(panel?.querySelectorAll("button") || [],
+            button => button.getBoundingClientRect().height)),
+          panelLeft: rect?.left ?? -1,
+          panelRight: rect?.right ?? -1,
+          dialogCenterDelta: dialogRect ? Math.abs((dialogRect.left + dialogRect.width / 2) - innerWidth / 2) : 999,
+          viewportWidth: innerWidth,
+          documentOverflowX: document.documentElement.scrollWidth > innerWidth + 1,
+        };
+      });
+      expect(geometry.standaloneManagers).toBe(0);
+      expect(geometry.exposedToolboxes).toBe(0);
+      expect(geometry.managerButtons).toBeGreaterThanOrEqual(3);
+      expect(geometry.maxManagerButtonHeight).toBeLessThanOrEqual(56);
+      expect(geometry.panelLeft).toBeGreaterThanOrEqual(0);
+      expect(geometry.panelRight).toBeLessThanOrEqual(geometry.viewportWidth + 1);
+      expect(geometry.dialogCenterDelta).toBeLessThanOrEqual(2);
+      expect(geometry.documentOverflowX).toBe(false);
+      await page.keyboard.press("Escape");
+      await expect(dialog).not.toBeVisible();
+    });
+  }
+});
+
 test.describe("Display controls follow available space", () => {
   for (const scenario of [...pcCases(), ...remoteDesktopCases(), ...browserDeviceCases()]) {
     test(scenario.name, async ({ page }) => {
@@ -365,6 +417,7 @@ test.describe("Custom Deck help uses its own viewport", () => {
 
 test.describe("Sideboard editing and management stay scrollable", () => {
   const cases = [
+    { name: "pc-wide-reference", width: 1_855, height: 761 },
     { name: "pc-mid", width: 760, height: 420 },
     { name: "pc-short", width: 1_600, height: 280 },
     { name: "asus-landscape", width: 911, height: 569, device: "asus-zenpad-p024", viewer: true },
@@ -377,6 +430,19 @@ test.describe("Sideboard editing and management stay scrollable", () => {
       await page.locator("#dashboardEditToggle").click();
       await page.locator("body.dashboard-edit-mode").waitFor();
       await expectHealthySurface(page, auditConfig.editor);
+
+      const geometry = await page.evaluate(() => {
+        const grid = document.querySelector("#systemSideboardPage.dashboard-grid");
+        const body = document.body;
+        return {
+          bodyHeight: body.scrollHeight,
+          gridHeight: grid.getBoundingClientRect().height,
+          viewportHeight: window.innerHeight,
+        };
+      });
+      const detail = JSON.stringify(geometry, null, 2);
+      expect(geometry.gridHeight, detail).toBeLessThanOrEqual(geometry.viewportHeight + 2);
+      expect(geometry.bodyHeight, detail).toBeLessThanOrEqual(geometry.viewportHeight * 2.5);
     });
 
   }
@@ -482,6 +548,45 @@ test.describe("Sideboard cards contain unbounded live content", () => {
       expect(metrics.cardInsideGrid, detail).toBe(true);
       expect(metrics.headingInsideCard, detail).toBe(true);
     });
+  }
+});
+
+test("Expanded Sideboard quota slot renders the shared account card", async ({ page }) => {
+  await openSurface(page, "sideboard", { name: "expanded-quota", width: 911, height: 569, device: "asus-zenpad-p024", viewer: true });
+  const slot = page.locator('[data-dashboard-key="quota-mini"]');
+  await slot.locator(".quota-sideboard-account-card").waitFor();
+  await page.evaluate(() => {
+    const slot = document.querySelector('[data-dashboard-key="quota-mini"]');
+    slot.style.gridColumn = "1 / span 12";
+    slot.style.gridRow = "5 / span 2";
+    document.querySelector('[data-dashboard-key="weather-io"]')?.setAttribute("hidden", "");
+    document.querySelector('[data-dashboard-key="processes"]')?.setAttribute("hidden", "");
+  });
+  const geometry = await slot.evaluate(element => {
+    const host = element.querySelector(".quota-sideboard-card-host");
+    const card = element.querySelector(".quota-sideboard-account-card");
+    return {
+      sharedCard: Boolean(card),
+      familySwitcher: Boolean(card?.querySelector(".quota-sideboard-family-select")),
+      hostOverflowX: host.scrollWidth > host.clientWidth + 1,
+      cardOverflowY: card.scrollHeight > element.clientHeight + 2,
+      slotHeight: element.clientHeight,
+      cardHeight: card.scrollHeight,
+    };
+  });
+  expect(geometry.sharedCard).toBe(true);
+  expect(geometry.familySwitcher).toBe(true);
+  expect(geometry.hostOverflowX).toBe(false);
+  expect(geometry.cardOverflowY, JSON.stringify(geometry)).toBe(false);
+  await slot.locator(".quota-account-manager-trigger").click();
+  const managerDialog = page.locator(".quota-account-manager-dialog[open]");
+  await expect(managerDialog).toBeVisible();
+  // The connection-health pulse refreshes Sideboard every 15 seconds. An open
+  // secondary card must survive that data refresh instead of being replaced.
+  await page.waitForTimeout(16_000);
+  await expect(managerDialog).toBeVisible();
+  if (process.env.VIBEDECK_CAPTURE_SIDEBAR_QUOTA === "1") {
+    await page.screenshot({ path: test.info().outputPath("expanded-sidebar-quota.png") });
   }
 });
 

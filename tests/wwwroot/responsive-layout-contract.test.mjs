@@ -27,12 +27,14 @@ test("compact Sideboard is selected by container space instead of a device selec
   assert.doesNotMatch(phone, /(?:phone|mobile|tablet)-client|viewport-(?:portrait|landscape)/);
 });
 
-test("dashboard editor is one content-sized scrolling workspace", async () => {
+test("dashboard editor is one bounded scrolling workspace", async () => {
   const editor = await css("components/dashboard-editor.css");
 
   assert.match(editor, /body\.dashboard-edit-mode\s*\{[\s\S]*overflow-y:\s*auto/);
-  assert.match(editor, /min-height:\s*calc\(var\(--viewer-height,\s*100vh\)\s*-\s*var\(--dashboard-editor-chrome/);
-  assert.doesNotMatch(editor, /min-height:\s*(?:820|720|520)px/);
+  assert.match(editor, /height:\s*max\(12rem,\s*calc\(var\(--viewer-height,\s*100vh\)\s*-\s*var\(--dashboard-editor-chrome/);
+  assert.match(editor, /grid-template-rows:\s*repeat\(var\(--dashboard-row-count,\s*6\),\s*minmax\(0,\s*1fr\)\)/);
+  assert.doesNotMatch(editor, /minmax\(min-content,\s*1fr\)/);
+  assert.doesNotMatch(editor, /(?:min-)?height:\s*(?:820|720|520)px/);
   assert.doesNotMatch(editor, /dashboard-edit-mode[^,{]*(?:tablet-client|eink-client|viewport-(?:portrait|landscape))/);
   assert.doesNotMatch(editor, /!important/);
 });
@@ -199,12 +201,20 @@ test("component owners do not fork layout for a tablet identity", async () => {
   for (const owner of owners) assert.doesNotMatch(owner, /tablet-client/);
 });
 
-test("quota account management uses one DOM contract instead of device variants", async () => {
-  const [quota, manager] = await Promise.all([
+test("quota account management uses one shared secondary-dialog contract instead of device variants", async () => {
+  const [quota, manager, renderer, secondaryDialog, primitives] = await Promise.all([
     css("components/quota-page.css"),
     readFile(new URL("../../src/VibeDeck.Host/wwwroot/modules/quota-codex-account-manager.js", import.meta.url), "utf8"),
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/modules/quota-card-renderer.js", import.meta.url), "utf8"),
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/modules/secondary-card-dialog.js", import.meta.url), "utf8"),
+    css("components/shared-primitives.css"),
   ]);
   assert.match(manager, /manager\.className\s*=\s*"quota-account-manager"/);
+  assert.match(renderer, /secondary-card-dialog/);
+  assert.match(renderer, /wireSecondaryCardDialog/);
+  assert.match(secondaryDialog, /showModal/);
+  assert.match(secondaryDialog, /hasActiveSecondaryCardInteraction/);
+  assert.match(primitives, /\.secondary-card-dialog::backdrop/);
   assert.doesNotMatch(manager, /compactMobile|compactDesktop|isMobileClient/);
   assert.doesNotMatch(quota, /quota-(?:mobile|desktop)-account-manager|is-compact-(?:mobile|desktop)/);
   assert.doesNotMatch(quota, /body\.(?:phone|mobile)-client|viewport-(?:portrait|landscape)/);

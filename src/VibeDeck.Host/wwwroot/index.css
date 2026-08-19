@@ -13,12 +13,12 @@
 @import url("/css/30-phone-dashboard.css?v=133");
 
 /* Shared cross-component contracts. */
-@import url("/css/components/shared-primitives.css?v=6");
+@import url("/css/components/shared-primitives.css?v=7");
 @import url("/css/components/eink-primitives.css?v=3");
 
 /* Final component owners. */
 @import url("/css/components/sideboard-shell.css?v=16");
-@import url("/css/components/dashboard-editor.css?v=6");
+@import url("/css/components/dashboard-editor.css?v=7");
 @import url("/css/components/custom-cards.css?v=5");
 @import url("/css/components/dashboard-navigation.css?v=1");
 @import url("/css/components/pairing-setup.css?v=4");
@@ -28,7 +28,7 @@
 @import url("/css/components/metric-card.css?v=9");
 @import url("/css/components/quota-mini-card.css?v=10");
 @import url("/css/components/activity-feed.css?v=10");
-@import url("/css/components/quota-page.css?v=17");
+@import url("/css/components/quota-page.css?v=21");
 @import url("/css/components/custom-deck.css?v=3");
 
 /* Final E-Ink dashboard content. */

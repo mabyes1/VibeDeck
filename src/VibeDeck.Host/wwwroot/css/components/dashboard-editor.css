@@ -203,9 +203,10 @@
   -webkit-backdrop-filter: blur(var(--theme-glass-blur, 20px));
 }
 
-/* Editing is one content-sized workspace on every capable surface. Read mode
- * may use a one-screen canvas; the editor must grow with its toolbar/cards and
- * expose one safe document scroller instead of device-specific fixed heights. */
+/* Editing is one reachable workspace on every capable surface. The toolbar may
+ * make the document taller than the viewport, but live card content must not
+ * participate in grid track sizing: a notification feed with many entries
+ * otherwise expands every persisted row and turns one screen into a huge page. */
 body.dashboard-edit-mode {
   position: static;
   width: 100%;
@@ -225,9 +226,9 @@ body.dashboard-edit-mode .sideboard-shell.dashboard-editing {
 }
 
 body.dashboard-edit-mode .sideboard-shell.dashboard-editing #systemSideboardPage.dashboard-grid {
-  height: auto;
-  min-height: calc(var(--viewer-height, 100vh) - var(--dashboard-editor-chrome, 8rem));
-  grid-template-rows: repeat(var(--dashboard-row-count, 6), minmax(min-content, 1fr));
+  height: max(12rem, calc(var(--viewer-height, 100vh) - var(--dashboard-editor-chrome, 8rem)));
+  min-height: 0;
+  grid-template-rows: repeat(var(--dashboard-row-count, 6), minmax(0, 1fr));
   overflow: visible;
 }
 

@@ -78,6 +78,7 @@ namespace VibeDeck.Host
             services.AddSingleton<DashboardLayoutService>();
             services.AddSingleton<AppearanceThemeService>();
             services.AddSingleton<CustomDeckService>();
+            services.AddSingleton<CustomDeckProxyService>();
             services.AddSingleton<AuditTrailService>();
             services.AddSingleton<PublicEndpointService>();
             services.AddHttpClient<CloudflareProvisioningClient>(client => client.Timeout = TimeSpan.FromSeconds(25));
@@ -1289,6 +1290,7 @@ namespace VibeDeck.Host
         public int Fps { get; set; } = 45;
         public int Quality { get; set; } = 56;
         public int ReceiverMaxBitrateKbps { get; set; }
+        public int PlayoutDelayMs { get; set; } = 40;
     }
 
     public sealed class AgyAccountRequest

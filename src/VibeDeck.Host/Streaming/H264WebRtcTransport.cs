@@ -21,6 +21,7 @@ namespace VibeDeck.Host.Streaming
     {
         internal const int MaximumRtpPayloadBytes = 1200;
         private static readonly TimeSpan PacketLifetime = TimeSpan.FromSeconds(2.5);
+        private static readonly TimeSpan RetransmissionCooldown = TimeSpan.FromMilliseconds(100);
         private const int MaximumCachedPackets = 3072;
         private const int MaximumCachedBytes = 4 * 1024 * 1024;
 
@@ -260,22 +261,20 @@ namespace VibeDeck.Host.Streaming
             }
 
             var feedback = report.Feedback;
-            if (feedback != null && feedback.Header.PacketType == RTCPReportTypesEnum.RTPFB &&
+            // Once the raw SRTCP observer is active it is the sole owner of NACK/PLI
+            // feedback. SIPSorcery also raises OnReceiveReport for the same packet,
+            // but its object model keeps only the first Generic NACK FCI entry.
+            // Processing both callbacks double-counted every first entry and could
+            // schedule the same repair twice, amplifying loss into an RTX storm.
+            var processStructuredFeedback = ShouldProcessStructuredFeedback(rawFeedbackChannel != null);
+            if (processStructuredFeedback && feedback != null &&
+                feedback.Header.PacketType == RTCPReportTypesEnum.RTPFB &&
                 feedback.Header.FeedbackMessageType == RTCPFeedbackTypesEnum.NACK)
             {
-                var requested = H264TransportFeedbackPolicy.ExpandNack(feedback.PID, feedback.BLP);
-                var recovered = 0;
-                foreach (var sequenceNumber in requested)
-                {
-                    if (TryRetransmit(sequenceNumber))
-                    {
-                        recovered++;
-                    }
-                }
-                Interlocked.Add(ref nackRequests, requested.Count);
-                feedbackPolicy.ObserveNack(requested.Count, recovered);
+                ProcessNack(feedback.PID, feedback.BLP);
             }
-            else if (feedback != null && feedback.Header.PacketType == RTCPReportTypesEnum.PSFB &&
+            else if (processStructuredFeedback && feedback != null &&
+                feedback.Header.PacketType == RTCPReportTypesEnum.PSFB &&
                 (feedback.Header.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI ||
                  feedback.Header.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.FIR))
             {
@@ -338,17 +337,7 @@ namespace VibeDeck.Host.Streaming
             var feedback = ParseRawFeedback(packet);
             foreach (var entry in feedback.Nacks)
             {
-                var requested = H264TransportFeedbackPolicy.ExpandNack(entry.PacketId, entry.Bitmask);
-                var recovered = 0;
-                foreach (var sequenceNumber in requested)
-                {
-                    if (TryRetransmit(sequenceNumber))
-                    {
-                        recovered++;
-                    }
-                }
-                Interlocked.Add(ref nackRequests, requested.Count);
-                feedbackPolicy.ObserveNack(requested.Count, recovered);
+                ProcessNack(entry.PacketId, entry.Bitmask);
             }
 
             if (feedback.RequestsKeyFrame)
@@ -356,6 +345,26 @@ namespace VibeDeck.Host.Streaming
                 Interlocked.Increment(ref pliRequests);
                 feedbackPolicy.RequestKeyFrame();
             }
+        }
+
+        private void ProcessNack(ushort packetId, ushort bitmask)
+        {
+            var requested = H264TransportFeedbackPolicy.ExpandNack(packetId, bitmask);
+            var recovered = 0;
+            foreach (var sequenceNumber in requested)
+            {
+                if (TryRetransmit(sequenceNumber))
+                {
+                    recovered++;
+                }
+            }
+            Interlocked.Add(ref nackRequests, requested.Count);
+            feedbackPolicy.ObserveNack(requested.Count, recovered);
+        }
+
+        internal static bool ShouldProcessStructuredFeedback(bool rawFeedbackActive)
+        {
+            return !rawFeedbackActive;
         }
 
         private bool TryRetransmit(ushort sequenceNumber)
@@ -370,7 +379,7 @@ namespace VibeDeck.Host.Streaming
                     return false;
                 }
                 if (recentRetransmissions.TryGetValue(sequenceNumber, out var lastSentAt) &&
-                    now - lastSentAt < TimeSpan.FromMilliseconds(15))
+                    now - lastSentAt < RetransmissionCooldown)
                 {
                     return true;
                 }

@@ -36,16 +36,19 @@ test("Codex profile option falls back through camelCase identity fields", () => 
 
 test("Codex account actions disable switch and reauth for active account only", () => {
   assert.deepEqual(buildCodexAccountActionState({ accountId: "acct", active: true }), {
+    refreshDisabled: false,
     switchDisabled: true,
     reauthDisabled: true,
     deleteDisabled: false,
   });
   assert.deepEqual(buildCodexAccountActionState({ email: "saved@example.com", active: false }), {
+    refreshDisabled: false,
     switchDisabled: false,
     reauthDisabled: false,
     deleteDisabled: false,
   });
   assert.deepEqual(buildCodexAccountActionState({}), {
+    refreshDisabled: true,
     switchDisabled: true,
     reauthDisabled: true,
     deleteDisabled: true,

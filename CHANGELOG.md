@@ -2,6 +2,59 @@
 
 本檔記錄每個可發佈版本的使用者可見變更、修正與產品化調整；後續改版須在打包前補入對應版本。
 
+## 0.1.52 - 2026-08-19 - 串流延遲模式
+
+- 畫質與流暢度設定新增「極低延遲 20ms」、「普通 40ms」與「穩定 80ms」三段模式；切換後會重新協商 WebRTC 並套用對應接收緩衝上限。
+- 預設改為普通 40ms；極低延遲優先即時操作並允許偶發掉幀，穩定模式則保留原本的網路抖動容錯。
+
+## 0.1.51 - 2026-08-19 - WebRTC 低延遲修正
+
+- 修正 WebRTC H.264 的同一份 RTCP NACK 同時被結構化回呼與原始 SRTCP 回呼重複處理，避免重複計數、重傳風暴與接收端 jitter buffer 膨脹。
+- 延長相同 RTP 封包的重傳冷卻時間，避免修復封包尚未抵達前又被連續重送。
+- 協商 Chrome 的 WebRTC playout-delay RTP extension，將互動串流接收緩衝上限設為 80ms，避免網路抖動時累積數百毫秒延遲。
+
+## 0.1.50 - 2026-08-19 - 螢幕來源精確配對
+
+- 修正將 Win32 螢幕列舉順序誤當成 FFmpeg DXGI `output_idx`，導致選擇延伸螢幕、主螢幕或 VibeDeck 虛擬螢幕時實際串流另一張畫面；現在以 `DISPLAYx` 精確匹配 DXGI adapter/output。
+- 找不到 DXGI identity 或螢幕位於非預設 GPU adapter 時改走 bitmap fallback，不再猜測 output 0 而洩漏或串錯其他螢幕。
+
+## 0.1.49 - 2026-08-19 - Direct Embed Deck
+
+- Custom Deck 新增 `embed` 類型，直接以 iframe 載入已允許 VibeDeck `frame-ancestors` 的 HTTP／HTTPS 網站，不再由 Host 改寫頁面、登入 Cookie 或站內請求。
+- Embed Deck 使用 `allow-scripts allow-forms allow-same-origin`；若目標與 VibeDeck 本身同源，會自動移除 `allow-same-origin`，避免嵌入內容取得主介面權限。
+
+## 0.1.48 - 2026-08-19 - Proxy Deck 登入修正
+
+- 修正 sandbox iframe 不穩定攜帶 proxy session Cookie，導致內網站台登入成功後跳轉時遺失上游 Cookie、又回到登入頁；proxy session 改綁定已配對裝置身分，本機則使用穩定連線身分。
+
+## 0.1.47 - 2026-08-19 - 內網 Proxy Deck
+
+- Custom Deck 新增 `proxy` 類型，可把內網 HTTP／HTTPS 網頁完整保留在 Deck iframe 中；Host 代送表單、Cookie、資源請求及 WebSocket，並改寫站內路徑，繞過上游 `X-Frame-Options` 對直接嵌入的限制。
+- Proxy Deck 僅接受 localhost、loopback 與私有網段 IP，避免 VibeDeck Host 成為任意外網代理；iframe 仍維持隔離沙箱，不開放讀取 VibeDeck 主頁與已驗證 API。
+
+## 0.1.46 - 2026-08-19 - 額度入口整併
+
+- 暫時隱藏獨立 AI 額度頁的頂層與資訊頁切換入口；日常額度檢視與帳號管理統一從資訊板完整額度卡進入，原頁面實作保留以便後續除錯或恢復。
+
+## 0.1.45 - 2026-08-19 - 次級卡片互動穩定性
+
+- 修正資訊板每 15 秒連線健康刷新會重建額度 DOM，導致來源下拉選單與管理帳號次級卡片自行收合；系統 CPU、RAM、GPU、天氣等即時更新維持不變，額度區僅在資料變更且沒有操作進行時重繪。
+- 將次級卡片的互動鎖納入共用 Dialog 行為，額度頁與 Sidebar 共用同一判斷；修正原生下拉選項在深色介面出現白底白字。
+
+## 0.1.44 - 2026-08-19 - 資訊板額度與次級卡片
+
+- 重整額度帳號操作：額度卡只保留「管理帳號」入口，Codex、AGY 與 Claude 的更新、切換、重新授權與刪除集中到共用次級卡片；各尺寸都在畫面中央開啟並以全頁模糊背景隔離內容，後續功能可沿用同一套 Dialog 行為。
+- 資訊板的額度槽改用完整共用額度卡，保留帳號與來源切換；平板 8×2 卡槽採緊湊排版，管理操作由中央次級卡片承接，不受 Dashboard Grid 裁切。
+
+## 0.1.43 - 2026-08-19 - 額度帳號管理
+
+- 額度卡只保留「管理帳號」入口，Codex、AGY 與 Claude 的更新、切換、重新授權與刪除集中到同一個次級操作區。
+
+## 0.1.42 - 2026-08-18 - 編輯畫布
+
+- 修正資訊板進入編輯模式後，活動通知等長內容參與 Grid 列高計算，導致整張編輯畫布被撐成數千像素長頁；編輯畫布現在維持受視窗限制的工作區，長內容留在各卡片內捲動。
+- 更新前端樣式快取版本，並加入 1855×761、短視窗、平板與 E-Ink 編輯模式回歸，防止長通知再次拉長整個版面。
+
 ## 0.1.41 - 2026-08-18 - 琉璃統一
 
 - 將全站 Appearance 的真實來源從各瀏覽器 `localStorage` 搬到 Host：布景設定與背景圖片統一持久化於 `%ProgramData%\VibeDeck\appearance`，手機、平板、Deck Window 共用同一套背景、色盤與玻璃參數；舊瀏覽器設定會在首次升級時安全遷移，E-Ink 維持獨立紙面視覺。

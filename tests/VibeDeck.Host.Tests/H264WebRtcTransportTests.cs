@@ -76,5 +76,49 @@ namespace VibeDeck.Host.Tests
             Assert.Equal((ushort)0xfffe, entries[1].PacketId);
             Assert.Equal((ushort)0x8000, entries[1].Bitmask);
         }
+
+        [Fact]
+        public void StructuredFeedbackIsFallbackOnlyWhenRawObserverIsUnavailable()
+        {
+            Assert.True(H264WebRtcTransport.ShouldProcessStructuredFeedback(rawFeedbackActive: false));
+            Assert.False(H264WebRtcTransport.ShouldProcessStructuredFeedback(rawFeedbackActive: true));
+        }
+
+        [Fact]
+        public void PlayoutDelayExtensionCapsChromeBufferAtEightyMilliseconds()
+        {
+            var extension = new H264PlayoutDelayExtension(id: 5, maximumDelayMs: 80);
+
+            var bytes = extension.Marshal();
+
+            Assert.Equal(new byte[] { 0x52, 0x00, 0x00, 0x08 }, bytes);
+        }
+
+        [Theory]
+        [InlineData(20, 20)]
+        [InlineData(40, 40)]
+        [InlineData(80, 80)]
+        [InlineData(0, 40)]
+        [InlineData(999, 40)]
+        public void PlayoutDelayOnlyAcceptsProductModes(int source, int expected)
+        {
+            Assert.Equal(expected, H264PlayoutDelayExtension.NormalizeMaximumDelayMs(source));
+        }
+
+        [Fact]
+        public void PlayoutDelayNegotiationUsesVideoOfferIdAndAddsAnswerExtmap()
+        {
+            var offer = "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n" +
+                "a=extmap:5 urn:audio:test\r\n" +
+                "m=video 9 UDP/TLS/RTP/SAVPF 102\r\n" +
+                $"a=extmap:7 {H264PlayoutDelayExtension.HeaderExtensionUri}\r\n";
+            var answer = "v=0\r\nm=video 9 UDP/TLS/RTP/SAVPF 102\r\na=sendonly\r\n";
+
+            Assert.True(H264PlayoutDelayExtension.TryGetOfferedId(offer, out var id));
+            Assert.Equal(7, id);
+            Assert.Contains(
+                $"m=video 9 UDP/TLS/RTP/SAVPF 102\r\na=extmap:7 {H264PlayoutDelayExtension.HeaderExtensionUri}\r\n",
+                H264PlayoutDelayExtension.AddToAnswer(answer, id));
+        }
     }
 }

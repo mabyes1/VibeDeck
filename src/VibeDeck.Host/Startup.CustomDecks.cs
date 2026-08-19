@@ -1,5 +1,8 @@
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Net.Http;
+using System.Net.WebSockets;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -45,6 +48,37 @@ namespace VibeDeck.Host
 
         private static void MapCustomDeckEndpoints(IEndpointRouteBuilder endpoints)
         {
+            endpoints.MapMethods("/deck-proxy/{deckId}/{**path}", new[] { "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS" }, async context =>
+            {
+                if (!await RequireTrustedDeviceAsync(context)) return;
+                var service = context.RequestServices.GetRequiredService<CustomDeckService>();
+                var deckId = context.Request.RouteValues["deckId"]?.ToString() ?? string.Empty;
+                var deck = service.Find(deckId);
+                if (deck == null || !string.Equals(deck.Type, "proxy", StringComparison.OrdinalIgnoreCase))
+                {
+                    context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    return;
+                }
+
+                try
+                {
+                    var proxy = context.RequestServices.GetRequiredService<CustomDeckProxyService>();
+                    await proxy.ProxyAsync(context, deck, context.Request.RouteValues["path"]?.ToString() ?? string.Empty);
+                }
+                catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+                {
+                }
+                catch (Exception ex) when (ex is HttpRequestException || ex is IOException || ex is InvalidDataException || ex is WebSocketException)
+                {
+                    if (!context.Response.HasStarted)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status502BadGateway;
+                        context.Response.ContentType = "text/plain; charset=utf-8";
+                        await context.Response.WriteAsync($"Proxy Deck upstream failed: {ex.Message}");
+                    }
+                }
+            });
+
             endpoints.MapGet("/api/decks", async context =>
             {
                 if (!await RequireTrustedDeviceAsync(context)) return;
