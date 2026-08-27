@@ -2,9 +2,14 @@
 // top-layer presentation; data renderers use this guard before replacing DOM.
 export function hasActiveSecondaryCardInteraction(root, ownerDocument = root?.ownerDocument) {
   if (!root) return false;
-  if (root.querySelector(".secondary-card-dialog[open]")) return true;
-  const active = ownerDocument?.activeElement;
-  return Boolean(active && root.contains(active) && active.matches("select"));
+  return Boolean(root.querySelector(".secondary-card-dialog[open]"));
+}
+
+export function onSecondaryCardInteractionEnd(root, callback) {
+  const dialog = root?.querySelector(".secondary-card-dialog[open]");
+  if (!dialog || typeof callback !== "function") return false;
+  dialog.addEventListener("close", callback, { once: true });
+  return true;
 }
 
 export function wireSecondaryCardDialog(root) {

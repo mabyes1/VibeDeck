@@ -1,5 +1,8 @@
 import { quotaDataFingerprint } from "./quota-model.js?v=2";
-import { hasActiveSecondaryCardInteraction } from "./secondary-card-dialog.js?v=2";
+import {
+  hasActiveSecondaryCardInteraction,
+  onSecondaryCardInteractionEnd,
+} from "./secondary-card-dialog.js?v=3";
 
 export function createQuotaSideboardCardController({
   document,
@@ -13,6 +16,19 @@ export function createQuotaSideboardCardController({
 }) {
   let snapshot = {};
   let renderedFingerprint = "";
+  let renderDeferred = false;
+
+  function deferRenderUntilInteractionEnds() {
+    if (renderDeferred) return;
+    renderDeferred = onSecondaryCardInteractionEnd(host, () => {
+      renderDeferred = false;
+      if (hasActiveSecondaryCardInteraction(host, document)) {
+        deferRenderUntilInteractionEnds();
+        return;
+      }
+      render();
+    });
+  }
 
   function emptyCard(message) {
     const card = document.createElement("article");
@@ -78,7 +94,11 @@ export function createQuotaSideboardCardController({
     renderSnapshot(nextSnapshot) {
       snapshot = nextSnapshot || {};
       const nextFingerprint = quotaDataFingerprint(snapshot);
-      if (nextFingerprint === renderedFingerprint || hasActiveSecondaryCardInteraction(host, document)) return;
+      if (nextFingerprint === renderedFingerprint) return;
+      if (hasActiveSecondaryCardInteraction(host, document)) {
+        deferRenderUntilInteractionEnds();
+        return;
+      }
       render();
     },
     render,

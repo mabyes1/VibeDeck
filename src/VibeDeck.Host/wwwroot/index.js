@@ -12,7 +12,7 @@ import {
 import { createDisplayInputController } from "./modules/display-input.js?v=50";
 import { createCustomCardsController } from "./modules/custom-cards.js?v=55";
 import { createActivityFeedController } from "./modules/activity-feed.js?v=55";
-import { createDashboardLayoutController } from "./modules/dashboard-layout.js?v=64";
+import { createDashboardLayoutController } from "./modules/dashboard-layout.js?v=65";
 import { createQuotaController } from "./modules/quota-controller.js?v=52";
 import {
   createQuotaAccountNavigator,
@@ -49,13 +49,16 @@ import {
 import { createHostAuthController } from "./modules/host-auth-controller.js?v=1";
 import { createCustomDeckController } from "./modules/custom-deck-controller.js?v=3";
 import { createQuotaMiniCardController } from "./modules/quota-mini-card.js?v=60";
-import { createQuotaSideboardCardController } from "./modules/quota-sideboard-card.js?v=2";
-import { hasActiveSecondaryCardInteraction } from "./modules/secondary-card-dialog.js?v=2";
+import { createQuotaSideboardCardController } from "./modules/quota-sideboard-card.js?v=3";
+import {
+  hasActiveSecondaryCardInteraction,
+  onSecondaryCardInteractionEnd,
+} from "./modules/secondary-card-dialog.js?v=3";
 import { createSideboardController } from "./modules/sideboard.js?v=51";
 import { createAppThemeController } from "./modules/app-theme.js?v=3";
 import { createMobileOverviewController } from "./modules/mobile-overview.js?v=3";
 import { isFullscreenDisplayStreaming as isFullscreenDisplayStreamingPolicy } from "./modules/dashboard-background-policy.js?v=1";
-import { createStreamController } from "./modules/stream-controller.js?v=55";
+import { createStreamController } from "./modules/stream-controller.js?v=56";
 import { createStreamDebugOverlay } from "./modules/stream-debug-overlay.js?v=1";
 import { tuneVideoReceiver } from "./modules/stream-tuning.js?v=47";
 import { applyFeedbackState } from "./modules/feedback-state.js?v=1";
@@ -214,6 +217,7 @@ import {
     const copyDiagnostics = document.getElementById("copyDiagnostics");
     const wakeState = document.getElementById("wakeState");
     const appState = document.getElementById("appState");
+    const installVibeDeck = document.getElementById("installVibeDeck");
     const deviceState = document.getElementById("deviceState");
     const displayView = document.getElementById("displayView");
     const sideboardView = document.getElementById("sideboardView");
@@ -357,6 +361,7 @@ import {
     let customCardsController = null;
     let quotaMiniController = null;
     let quotaSideboardController = null;
+    let quotaRenderDeferred = false;
     let actionToken = "";
     let actionHeaderName = "X-VibeDeck-Action-Token";
     let hostVersionLabel = "";
@@ -421,6 +426,7 @@ import {
     const quotaAccountNavigator = createQuotaAccountNavigator();
     let quotaSwipeStartX = null;
     let installPromptEvent = null;
+    let appInstalledThisSession = false;
     let pendingApprovalTimer = null;
     let connectInfoTimer = null;
     let shouldDefaultToFirstDeviceSetup = false;
@@ -1463,7 +1469,11 @@ import {
         }
 
         applyClientChrome();
+        updateInstallState();
         syncDeviceStatusPolling();
+        if (deviceLocalRequest || deviceTrusted || hostAuthController.isAuthenticated()) {
+          await dashboardLayoutController?.loadIfNeeded?.();
+        }
         return result;
       } catch (error) {
         // A transient /api/devices/status failure must not drop a phone that is
@@ -1476,6 +1486,7 @@ import {
         setTrustState(error.message || t("pairingUx.trustStatusUnavailable"), deviceTrusted);
         if (!deviceTrusted) setPairingProgress(null, t("pairingUx.reconnecting"));
         applyClientChrome();
+        updateInstallState();
         syncDeviceStatusPolling();
         return null;
       }
@@ -2099,7 +2110,15 @@ import {
     function renderQuotas(snapshot) {
       quotaSnapshotData = snapshot || {};
       quotaMiniController?.renderSnapshot(snapshot);
-      if (hasActiveSecondaryCardInteraction(quotaGrid, document)) return;
+      if (hasActiveSecondaryCardInteraction(quotaGrid, document)) {
+        if (!quotaRenderDeferred) {
+          quotaRenderDeferred = onSecondaryCardInteractionEnd(quotaGrid, () => {
+            quotaRenderDeferred = false;
+            renderQuotaContent();
+          });
+        }
+        return;
+      }
       renderQuotaContent();
     }
 
@@ -2294,34 +2313,67 @@ import {
     }
 
     function updateInstallState() {
-      // No fake install button: iOS must use Safari Share → Add to Home Screen.
-      // Android Chrome may still fire beforeinstallprompt; we only surface status text.
-      if (isStandaloneApp()) {
-        setAppState("App：已在主畫面。", true);
+      const canPromptInstall = Boolean(
+        installPromptEvent &&
+        deviceTrusted &&
+        !deviceLocalRequest &&
+        !isStandaloneApp() &&
+        !isIos()
+      );
+      if (installVibeDeck) installVibeDeck.hidden = !canPromptInstall;
+
+      if (isStandaloneApp() || appInstalledThisSession) {
+        setAppState(t("secureEndpoint.installInstalled"), true);
         return;
       }
 
       if (isIos()) {
         setAppState(
           location.protocol === "https:"
-            ? "App：Safari 分享 → 加入主畫面（不要用網頁假按鈕）。"
-            : "App：先改 HTTPS，再分享 → 加入主畫面。",
+            ? t("secureEndpoint.installIosHint")
+            : t("secureEndpoint.installHttpsRequired"),
           location.protocol === "https:"
         );
         return;
       }
 
-      if (installPromptEvent) {
-        setAppState("App：瀏覽器可安裝（用瀏覽器選單）。", true);
+      if (canPromptInstall) {
+        setAppState(t("secureEndpoint.installReady"), true);
         return;
       }
 
       if (!window.isSecureContext && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
-        setAppState("App：安裝提示需要 HTTPS。", false);
+        setAppState(t("secureEndpoint.installHttpsRequired"), false);
         return;
       }
 
-      setAppState("App：可用瀏覽器選單加入主畫面。", false);
+      setAppState(t("secureEndpoint.installMenuHint"), false);
+    }
+
+    async function requestVibeDeckInstall() {
+      const promptEvent = installPromptEvent;
+      if (!promptEvent || !installVibeDeck) {
+        updateInstallState();
+        return;
+      }
+
+      installPromptEvent = null;
+      installVibeDeck.disabled = true;
+      installVibeDeck.hidden = true;
+      try {
+        await promptEvent.prompt();
+        const choice = await promptEvent.userChoice;
+        setAppState(
+          choice?.outcome === "accepted"
+            ? t("secureEndpoint.installAccepted")
+            : t("secureEndpoint.installDismissed"),
+          choice?.outcome === "accepted"
+        );
+      } catch {
+        setAppState(t("secureEndpoint.installMenuHint"), false);
+      } finally {
+        installVibeDeck.disabled = false;
+      }
     }
 
     function resetStreamStats() {
@@ -3118,8 +3170,12 @@ import {
       installPromptEvent = event;
       updateInstallState();
     });
+    installVibeDeck?.addEventListener("click", () => {
+      requestVibeDeckInstall();
+    });
     window.addEventListener("appinstalled", () => {
       installPromptEvent = null;
+      appInstalledThisSession = true;
       updateInstallState();
     });
     document.addEventListener("keydown", event => {
@@ -3235,6 +3291,7 @@ import {
       applyRotation();
       applyOrientation();
       if (deckWindow) {
+        await dashboardLayoutController?.loadIfNeeded?.();
         await appThemeController.loadFromHost().catch(() => {});
         appThemeController.startPolling();
         document.title = "VibeDeck Deck";

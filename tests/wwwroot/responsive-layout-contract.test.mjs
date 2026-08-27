@@ -59,6 +59,19 @@ test("dashboard row geometry comes from the persisted layout model", async () =>
   assert.doesNotMatch(controller, /isTabletClient|tablet-(?:portrait|landscape)/);
 });
 
+test("remote dashboard waits for trusted layout data and never retries an invalid empty board", async () => {
+  const [controller, index] = await Promise.all([
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/modules/dashboard-layout.js", import.meta.url), "utf8"),
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(controller, /if \(!layoutLoaded\) return false/);
+  assert.match(controller, /if \(!layoutLoaded \|\| !items\.some\(item => item\.visible\)\)/);
+  assert.match(controller, /if \(saveSucceeded && \(autoSaveQueued \|\| layoutSignature\(\) !== lastSavedSignature\)\)/);
+  assert.doesNotMatch(controller, /\n\s*load\(\);\s*\n\s*return \{/);
+  assert.match(index, /await dashboardLayoutController\?\.loadIfNeeded\?\.\(\)/);
+});
+
 test("ordinary PC content scrolls instead of being clipped", async () => {
   const [core, shell, tokens] = await Promise.all([
     css("10-core.css"),

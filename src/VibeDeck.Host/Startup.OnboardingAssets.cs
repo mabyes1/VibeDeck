@@ -21,7 +21,7 @@ namespace VibeDeck.Host
             {
                 var provider = context.RequestServices.GetRequiredService<ConnectInfoProvider>();
                 var connectInfo = provider.Get(context);
-                var phonePageUrl = new Uri(new Uri(connectInfo.PreferredUrl), "index.html").ToString();
+                var phonePageUrl = BuildOnboardingQrUrl(connectInfo);
                 await WriteQrSvgAsync(context, phonePageUrl);
             });
 
@@ -52,6 +52,25 @@ namespace VibeDeck.Host
                     "application/x-x509-ca-cert");
             });
 
+        }
+
+        internal static string BuildOnboardingQrUrl(ConnectInfo connectInfo)
+        {
+            if (connectInfo == null)
+            {
+                throw new ArgumentNullException(nameof(connectInfo));
+            }
+
+            if (connectInfo.UsesTrustedPublicUrl &&
+                !string.IsNullOrWhiteSpace(connectInfo.PublicBaseDomain) &&
+                !string.IsNullOrWhiteSpace(connectInfo.InstallationId))
+            {
+                var baseDomain = connectInfo.PublicBaseDomain.Trim().Trim('.');
+                var installationId = connectInfo.InstallationId.Trim();
+                return $"https://{baseDomain}/to/{Uri.EscapeDataString(installationId)}";
+            }
+
+            return new Uri(new Uri(connectInfo.PreferredUrl), "index.html").ToString();
         }
     }
 }

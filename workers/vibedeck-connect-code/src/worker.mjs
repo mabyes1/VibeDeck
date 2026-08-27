@@ -12,43 +12,45 @@ const VERIFY_TARGET_TIMEOUT_MS = 5_000;
 const DAY_MS = 86_400_000;
 const REAP_INTERVAL_MS = 6 * 3_600_000;
 const REAP_UNCLAIMED_AFTER_MS = 48 * 3_600_000;
+const REMEMBERED_HOST_COOKIE = "vibedeck-default-host";
+const REMEMBERED_HOST_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
 const LANDING_SUBMIT_GUARD = 'document.addEventListener("submit",e=>{const f=e.target;if(!f.matches("form[data-once]"))return;if(f.dataset.submitting==="1"){e.preventDefault();return}f.dataset.submitting="1";f.querySelector("button[type=submit]")?.setAttribute("disabled","")});';
 const LANDING_SUBMIT_GUARD_CSP_HASH = "'sha256-bfXKPBvv3fl+jHsvWGd3kmxKB0McbscPTDLop6BifXY='";
 
 const translations = {
   "zh-Hant": {
     title: "連接 VibeDeck",
-    eyebrow: "VIBEDECK · 裝置連線",
-    intro: "在 Windows 電腦上產生一次性裝置連線碼，並在這裡輸入。",
+    eyebrow: "VIBEDECK · 私人入口",
+    intro: "第一次連線可掃描 Windows 電腦上的 QR Code，或在這裡輸入一次性連線碼。完成後，這個瀏覽器只要開 vibedeck.pp.ua 就會回到自己的 VibeDeck。",
     label: "8 位連線碼",
     placeholder: "例如 ABCD-EFGH",
     submit: "開啟這台電腦",
-    note: "連線碼只會導向已設定的安全網址；手機仍必須由電腦端允許配對。",
-    redirecting: "正在安全開啟這台電腦…",
+    note: "這裡只記住這台電腦的地址，不會取得配對權限；新裝置仍必須由電腦端允許。",
+    redirecting: "正在開啟你的 VibeDeck…",
     continue: "若未自動開啟，請點這裡繼續。",
     invalid: "連線碼無效、已使用或已過期。請回 Windows 電腦產生新的代碼。"
   },
   en: {
     title: "Connect VibeDeck",
-    eyebrow: "VIBEDECK · DEVICE CONNECTION",
-    intro: "Create a one-time connection code on the Windows PC and enter it here.",
+    eyebrow: "VIBEDECK · PRIVATE ENTRY",
+    intro: "For the first connection, scan the QR code on the Windows PC or enter its one-time code here. After that, this browser can return to its VibeDeck by opening vibedeck.pp.ua.",
     label: "8-character connection code",
     placeholder: "For example ABCD-EFGH",
     submit: "Open this PC",
-    note: "The code only opens the configured secure URL. Pairing still requires approval on the PC.",
-    redirecting: "Opening this PC securely…",
+    note: "This page remembers only the PC address. It grants no pairing permission; new devices still require approval on the PC.",
+    redirecting: "Opening your VibeDeck…",
     continue: "If it does not open automatically, continue here.",
     invalid: "This connection code is invalid, used, or expired. Create a new code on the Windows PC."
   },
   ja: {
     title: "VibeDeck に接続",
-    eyebrow: "VIBEDECK · デバイス接続",
-    intro: "Windows PC で一時接続コードを作成し、ここに入力します。",
+    eyebrow: "VIBEDECK · プライベート入口",
+    intro: "初回は Windows PC の QR コードを読み取るか、一時接続コードをここに入力します。次回からは、このブラウザーで vibedeck.pp.ua を開くだけで自分の VibeDeck に戻れます。",
     label: "8 文字の接続コード",
     placeholder: "例: ABCD-EFGH",
     submit: "この PC を開く",
-    note: "コードは設定済みの安全な URL を開くだけです。ペアリングは引き続き PC 側の許可が必要です。",
-    redirecting: "この PC を安全に開いています…",
+    note: "ここで記憶するのは PC のアドレスだけです。ペアリング権限は付与されず、新しいデバイスは引き続き PC 側の許可が必要です。",
+    redirecting: "あなたの VibeDeck を開いています…",
     continue: "自動的に開かない場合は、ここを選択してください。",
     invalid: "接続コードが無効、使用済み、または期限切れです。Windows PC で新しいコードを作成してください。"
   }
@@ -357,7 +359,22 @@ export async function handleRequest(request, env) {
   if (url.pathname === "/connect" && request.method === "POST") {
     return resolveConnectionCode(request, env);
   }
+  const rememberedRoute = url.pathname.match(/^\/to\/(vd-[0-9a-f]{16})\/?$/i);
+  if (rememberedRoute && request.method === "GET") {
+    return rememberHostAndRedirect(request, env, rememberedRoute[1], "qr");
+  }
   if (url.pathname === "/" && (request.method === "GET" || request.method === "HEAD")) {
+    if (request.method === "GET" && url.searchParams.get("forget") === "1") {
+      const response = landingPage(request, env);
+      response.headers.set("set-cookie", clearRememberedHostCookie());
+      return response;
+    }
+    if (request.method === "GET" && url.searchParams.get("connect") !== "1") {
+      const rememberedInstallationId = readRememberedHost(request);
+      if (rememberedInstallationId) {
+        return rememberHostAndRedirect(request, env, rememberedInstallationId, "remembered-host", false);
+      }
+    }
     return landingPage(request, env);
   }
   return new Response("Not found", { status: 404, headers: securityHeaders("text/plain; charset=utf-8") });
@@ -383,32 +400,10 @@ async function registerConnectionCode(request, env) {
     return json({ error: "invalid_request" }, 400);
   }
 
-  // Trust is decided by installation ownership, never by anything the target
-  // endpoint says about itself.
-  const targetInstallationId = normalizeInstallationId(new URL(targetUrl).hostname.split(".")[0]);
-  const providedId = normalizeInstallationId(payload.installationId);
-  const providedSecret = String(payload.provisioningSecret || "");
-  const hasCredentials = Boolean(providedId) && PROVISIONING_SECRET_PATTERN.test(providedSecret);
-  if (hasCredentials) {
-    if (providedId !== targetInstallationId) {
-      return json({ error: "installation_mismatch" }, 403);
-    }
-    const ownership = await verifyInstallationOwnership(env, targetInstallationId, await sha256Hex(providedSecret));
-    if (!ownership.exists || !ownership.secretMatches) {
-      return json({ error: "installation_unauthorized" }, 403);
-    }
-  } else if (String(env.CONNECT_REGISTER_REQUIRE_AUTH || "0") === "1") {
-    return json({ error: "installation_auth_required" }, 401);
-  } else if (env.INSTALLATIONS) {
-    // Legacy hosts (shipped before installation auth) cannot present the
-    // provisioning secret yet; require at least that the hostname belongs to
-    // a provisioned installation instead of trusting the target's self-report.
-    const ownership = await verifyInstallationOwnership(env, targetInstallationId, "");
-    if (!ownership.exists) {
-      return json({ error: "unknown_installation" }, 403);
-    }
-  }
-
+  // A connection code is only an address-routing hint. It never grants Host
+  // trust or pairing permission, so installation ownership is intentionally
+  // not part of this flow. The target is still constrained to this VibeDeck
+  // zone and must answer as a live VibeDeck Host before the code is issued.
   if (!(await verifyTargetEndpoint(targetUrl))) {
     return json({ error: "unverified_endpoint" }, 422);
   }
@@ -433,12 +428,31 @@ async function resolveConnectionCode(request, env) {
   const response = await callBroker(env, "/resolve", { code });
   if (!response.ok) return landingPage(request, env, translations[locale].invalid, 404);
   const payload = await response.json();
-  const target = new URL(payload.targetUrl);
+  const baseDomain = publicBaseDomain(env, new URL(request.url));
+  const normalizedTarget = normalizeTargetUrl(payload.targetUrl, baseDomain);
+  if (!normalizedTarget) return landingPage(request, env, translations[locale].invalid, 404);
+  const target = new URL(normalizedTarget);
   target.pathname = "/index.html";
   target.searchParams.set("source", "connection-code");
   target.searchParams.set("autopair", "1");
   target.searchParams.set("lang", locale);
-  return connectionRedirectPage(locale, target.toString());
+  const installationId = normalizeInstallationId(target.hostname.split(".")[0]);
+  return connectionRedirectPage(locale, target.toString(), installationId);
+}
+
+async function rememberHostAndRedirect(request, env, installationIdValue, source, remember = true) {
+  const installationId = normalizeInstallationId(installationIdValue);
+  const requestUrl = new URL(request.url);
+  const baseDomain = publicBaseDomain(env, requestUrl);
+  const locale = localeFor(request, requestUrl);
+  if (!installationId || !baseDomain) {
+    return landingPage(request, env, translations[locale].invalid, 404);
+  }
+
+  const target = new URL(`https://${installationId}.${baseDomain}/index.html`);
+  target.searchParams.set("source", source);
+  target.searchParams.set("lang", locale);
+  return connectionRedirectPage(locale, target.toString(), remember ? installationId : "");
 }
 
 async function provisionInstallation(request, env) {
@@ -656,9 +670,8 @@ function provisioningError(code) {
 }
 
 // Liveness/shape check only: the target must answer JSON on the exact host,
-// without redirecting elsewhere. Nothing the target reports about itself
-// (UsesTrustedPublicUrl, PublicUrl, ...) is treated as a trust signal —
-// ownership is proven via the installation record instead.
+// without redirecting elsewhere. This proves only that the remembered address
+// is currently a VibeDeck endpoint; pairing/auth remains exclusively Host-side.
 export async function verifyTargetEndpoint(targetUrl, timeoutMilliseconds = VERIFY_TARGET_TIMEOUT_MS) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMilliseconds);
@@ -788,6 +801,37 @@ function normalizeInstallationId(value) {
   return INSTALLATION_PATTERN.test(installationId) ? installationId : "";
 }
 
+function publicBaseDomain(env, requestUrl) {
+  return normalizeBaseDomain(env?.PUBLIC_BASE_DOMAIN) || normalizeBaseDomain(requestUrl?.hostname);
+}
+
+function readRememberedHost(request) {
+  const cookieHeader = request.headers.get("cookie") || "";
+  for (const part of cookieHeader.split(";")) {
+    const separator = part.indexOf("=");
+    if (separator < 0) continue;
+    const name = part.slice(0, separator).trim();
+    if (name !== REMEMBERED_HOST_COOKIE) continue;
+    const rawValue = part.slice(separator + 1).trim();
+    try {
+      return normalizeInstallationId(decodeURIComponent(rawValue));
+    } catch {
+      return "";
+    }
+  }
+  return "";
+}
+
+function rememberedHostCookie(installationId) {
+  const normalized = normalizeInstallationId(installationId);
+  if (!normalized) return "";
+  return `${REMEMBERED_HOST_COOKIE}=${encodeURIComponent(normalized)}; Path=/; Max-Age=${REMEMBERED_HOST_MAX_AGE_SECONDS}; Secure; HttpOnly; SameSite=Lax`;
+}
+
+function clearRememberedHostCookie() {
+  return `${REMEMBERED_HOST_COOKIE}=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax`;
+}
+
 function normalizeBaseDomain(value) {
   const domain = String(value || "").trim().toLowerCase().replace(/^\.+|\.+$/g, "");
   return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain) ? domain : "";
@@ -844,11 +888,14 @@ function landingPage(request, env, error = "", status = 200) {
   return new Response(request.method === "HEAD" ? null : page, { status, headers: securityHeaders("text/html; charset=utf-8") });
 }
 
-function connectionRedirectPage(locale, targetUrl) {
+function connectionRedirectPage(locale, targetUrl, installationId = "") {
   const copy = translations[locale];
   const safeTargetUrl = escapeHtml(targetUrl);
   const page = `<!doctype html><html lang="${locale}" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="refresh" content="0;url=${safeTargetUrl}"><meta name="theme-color" content="#101820"><title>${escapeHtml(copy.title)}</title><style>body{margin:0;background:#101820;color:#edf4fb;font:18px/1.5 system-ui,sans-serif}.shell{max-width:560px;margin:0 auto;padding:48px 24px}.card{padding:28px;border:1px solid #324559;border-radius:18px;background:#17232e}.eyebrow{margin:0 0 12px;color:#8fd1ff;font-size:13px;font-weight:700;letter-spacing:.08em}a{color:#10202d;display:inline-block;margin-top:14px;padding:12px 16px;border-radius:10px;background:#dbeeff;font-weight:800;text-decoration:none}</style></head><body><main class="shell"><section class="card"><p class="eyebrow">${escapeHtml(copy.eyebrow)}</p><h1>${escapeHtml(copy.redirecting)}</h1><a href="${safeTargetUrl}">${escapeHtml(copy.continue)}</a></section></main></body></html>`;
-  return new Response(page, { status: 200, headers: securityHeaders("text/html; charset=utf-8") });
+  const headers = securityHeaders("text/html; charset=utf-8");
+  const cookie = rememberedHostCookie(installationId);
+  if (cookie) headers["set-cookie"] = cookie;
+  return new Response(page, { status: 200, headers });
 }
 
 function json(value, status = 200) {

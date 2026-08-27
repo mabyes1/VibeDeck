@@ -285,6 +285,29 @@ namespace VibeDeck.Host.Streaming
             catch (Exception error)
             {
                 Console.Error.WriteLine($"[WebRTC] {session.Id} stream error: {error}");
+                var root = error;
+                while (root.InnerException != null)
+                {
+                    root = root.InnerException;
+                }
+                audit.RecordException(
+                    "stream",
+                    "h264-session",
+                    error,
+                    subject: session.DeviceName,
+                    details: new Dictionary<string, string>
+                    {
+                        ["stage"] = "stream-to-webrtc",
+                        ["session"] = session.Id.ToString("N"),
+                        ["encoder"] = h264.EncoderDescription,
+                        ["connection"] = session.LastConnectionState ?? "",
+                        ["ice"] = session.LastIceState ?? "",
+                        ["fps"] = session.Fps.ToString(),
+                        ["quality"] = session.Quality.ToString(),
+                        ["rootErrorType"] = root.GetType().Name,
+                        ["rootErrorMessage"] = root.Message,
+                        ["exception"] = error.ToString()
+                    });
                 CloseSession(session, "H.264 stream failed");
             }
         }

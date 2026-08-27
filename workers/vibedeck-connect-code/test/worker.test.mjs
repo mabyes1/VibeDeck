@@ -40,6 +40,50 @@ test("landing page accepts HEAD preflight requests", async () => {
   assert.equal(response.headers.get("cache-control"), "no-store");
 });
 
+test("QR host route remembers this browser's VibeDeck and the root route reopens it", async () => {
+  const environment = { PUBLIC_BASE_DOMAIN: "vibedeck.pp.ua" };
+  const first = await handleRequest(new Request("https://vibedeck.pp.ua/to/vd-1234567890abcdef", {
+    headers: { "accept-language": "en" }
+  }), environment);
+  const firstPage = await first.text();
+  const cookie = first.headers.get("set-cookie");
+
+  assert.equal(first.status, 200);
+  assert.match(cookie, /^vibedeck-default-host=vd-1234567890abcdef;/);
+  assert.match(cookie, /Secure/);
+  assert.match(cookie, /HttpOnly/);
+  assert.match(cookie, /SameSite=Lax/);
+  assert.match(firstPage, /https:\/\/vd-1234567890abcdef\.vibedeck\.pp\.ua\/index\.html\?source=qr&amp;lang=en/);
+
+  const cookiePair = cookie.split(";", 1)[0];
+  const reopened = await handleRequest(new Request("https://vibedeck.pp.ua/", {
+    headers: { cookie: cookiePair, "accept-language": "en" }
+  }), environment);
+  const reopenedPage = await reopened.text();
+
+  assert.equal(reopened.status, 200);
+  assert.equal(reopened.headers.get("set-cookie"), null);
+  assert.match(reopenedPage, /https:\/\/vd-1234567890abcdef\.vibedeck\.pp\.ua\/index\.html\?source=remembered-host&amp;lang=en/);
+});
+
+test("root connect override bypasses a remembered host and forget clears it", async () => {
+  const cookie = "vibedeck-default-host=vd-1234567890abcdef";
+  const connect = await handleRequest(new Request("https://vibedeck.pp.ua/?connect=1&lang=en", {
+    headers: { cookie }
+  }), { PUBLIC_BASE_DOMAIN: "vibedeck.pp.ua" });
+  const connectPage = await connect.text();
+
+  assert.equal(connect.status, 200);
+  assert.match(connectPage, /form method="post" action="\/connect\?lang=en"/);
+
+  const forget = await handleRequest(new Request("https://vibedeck.pp.ua/?forget=1&lang=en", {
+    headers: { cookie }
+  }), { PUBLIC_BASE_DOMAIN: "vibedeck.pp.ua" });
+
+  assert.equal(forget.status, 200);
+  assert.match(forget.headers.get("set-cookie"), /^vibedeck-default-host=; Path=\/; Max-Age=0;/);
+});
+
 test("registration rejects an endpoint outside the VibeDeck installation hostname", async () => {
   const response = await handleRequest(new Request("https://vibedeck.pp.ua/api/connect-codes", {
     method: "POST",
@@ -82,9 +126,10 @@ test("a connection code resolves once and is then deleted", async () => {
   }), environment);
   const redirectPage = await firstUse.text();
   assert.equal(firstUse.status, 200);
+  assert.match(firstUse.headers.get("set-cookie"), /^vibedeck-default-host=vd-1234567890abcdef;/);
   assert.match(redirectPage, /http-equiv="refresh" content="0;url=https:\/\/vd-1234567890abcdef\.vibedeck\.pp\.ua\/index\.html\?source=connection-code&amp;autopair=1&amp;lang=en"/);
   assert.doesNotMatch(redirectPage, /[?&]eink=/);
-  assert.match(redirectPage, /Opening this PC securely/);
+  assert.match(redirectPage, /Opening your VibeDeck/);
 
   const replay = await handleRequest(new Request("https://vibedeck.pp.ua/connect?lang=en", {
     method: "POST",
@@ -394,34 +439,19 @@ test("saturating the legacy budget cannot starve proof-verified provisioning", a
   }
 });
 
-test("connect-code registration is bound to the installation that owns the target", async () => {
+test("connect-code registration only routes to a live VibeDeck host and does not grant ownership", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async input => ({ ok: true, url: String(input), json: async () => ({}) });
 
   try {
     const codeValues = new Map();
     const codeBroker = new ConnectionCodeBroker({ storage: makeStorage(codeValues) });
-    const installationValues = new Map();
-    const provisioningSecret = "B".repeat(43);
-    installationValues.set("installation:vd-1234567890abcdef", {
-      secretHash: sha256HexSync(provisioningSecret),
-      tunnelId: "11111111-2222-4333-8444-555555555555",
-      publicUrl: "https://vd-1234567890abcdef.vibedeck.pp.ua/",
-      updatedAt: new Date().toISOString()
-    });
-    const installationBroker = new InstallationBroker({ storage: makeStorage(installationValues) }, {});
     const environment = {
       PUBLIC_BASE_DOMAIN: "vibedeck.pp.ua",
       CONNECTION_CODES: {
         idFromName: name => name,
         get: () => ({
           fetch: (input, init) => codeBroker.fetch(input instanceof Request ? input : new Request(input, init))
-        })
-      },
-      INSTALLATIONS: {
-        idFromName: name => name,
-        get: () => ({
-          fetch: (input, init) => installationBroker.fetch(input instanceof Request ? input : new Request(input, init))
         })
       }
     };
@@ -431,36 +461,12 @@ test("connect-code registration is bound to the installation that owns the targe
       body: JSON.stringify(body)
     }), environment);
 
-    const unknown = await register({ code: "ABCD2345", publicUrl: "https://vd-aaaaaaaaaaaaaaaa.vibedeck.pp.ua/" });
-    assert.equal(unknown.status, 403);
-    assert.equal((await unknown.json()).error, "unknown_installation");
-
-    const wrongSecret = await register({
+    const routed = await register({
       code: "ABCD2345",
-      publicUrl: "https://vd-1234567890abcdef.vibedeck.pp.ua/",
-      installationId: "vd-1234567890abcdef",
-      provisioningSecret: "C".repeat(43)
+      publicUrl: "https://vd-1234567890abcdef.vibedeck.pp.ua/"
     });
-    assert.equal(wrongSecret.status, 403);
-    assert.equal((await wrongSecret.json()).error, "installation_unauthorized");
-
-    const authorized = await register({
-      code: "ABCD2345",
-      publicUrl: "https://vd-1234567890abcdef.vibedeck.pp.ua/",
-      installationId: "vd-1234567890abcdef",
-      provisioningSecret
-    });
-    assert.equal(authorized.status, 201);
-    assert.equal((await authorized.json()).code, "ABCD2345");
-    assert.ok(installationValues.get("installation:vd-1234567890abcdef").confirmedAt);
-
-    const legacyKnown = await register({ code: "EFGH2345", publicUrl: "https://vd-1234567890abcdef.vibedeck.pp.ua/" });
-    assert.equal(legacyKnown.status, 201);
-
-    environment.CONNECT_REGISTER_REQUIRE_AUTH = "1";
-    const legacyRejected = await register({ code: "JKLM2345", publicUrl: "https://vd-1234567890abcdef.vibedeck.pp.ua/" });
-    assert.equal(legacyRejected.status, 401);
-    assert.equal((await legacyRejected.json()).error, "installation_auth_required");
+    assert.equal(routed.status, 201);
+    assert.equal((await routed.json()).code, "ABCD2345");
   } finally {
     globalThis.fetch = originalFetch;
   }

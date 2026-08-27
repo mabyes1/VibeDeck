@@ -6,11 +6,19 @@ The zero-install phone path still starts from the Host web page. HTTPS is requir
 
 ## Preferred product path: VibeDeck secure URL
 
-From `0.1.22`, the normal product connection can use one browser-trusted URL per Windows Host:
+From `0.1.22`, each Windows Host receives one browser-trusted URL:
 
 ```text
 https://<installation-id>.vibedeck.pp.ua/
 ```
+
+From `0.1.53`, that installation URL is a routing detail rather than a human-facing address. Users can always start from:
+
+```text
+https://vibedeck.pp.ua/
+```
+
+The shared entry domain remembers the last Host selected by that browser in a secure host-only cookie containing only the non-secret installation ID. It stores no device token and grants no VibeDeck permission. A later visit to `vibedeck.pp.ua` reopens the remembered Host; pairing and authorization are still enforced by the Host itself.
 
 The Host creates and persists its `installation-id` under the product data root. The VibeDeck Worker automatically creates a remotely managed Cloudflare Tunnel, publishes that exact first-level hostname, and forwards it to `http://127.0.0.1:5000`.
 
@@ -25,13 +33,13 @@ Credential boundaries:
 
 When the connector becomes healthy:
 
-1. The PC QR code switches to the trusted public HTTPS URL.
+1. The PC QR code switches to `https://vibedeck.pp.ua/to/<installation-id>`. The shared entry page remembers the Host address and then opens its trusted public HTTPS URL.
 2. Safari, Chrome, Android, iPhone, and BOOX open without a certificate warning.
 3. Phone pairing still requires the existing six-digit code and an explicit **Allow** action on the PC.
 
 ### E-paper readers without a camera
 
-When a trusted public URL is configured, the PC can create an eight-character, one-time **e-paper connection code**. On the reader, open the short shared address `https://vibedeck.pp.ua/`, enter the code, and the browser is redirected once to that PC's installation-specific secure URL. The reader then completes the normal PC-approved pairing flow and can be added to its home screen.
+When a trusted public URL is configured, the PC can create an eight-character, one-time **device connection code**. On a reader or any device that cannot scan the QR code, open `https://vibedeck.pp.ua/`, enter the code, and the shared entry page remembers the same Host before redirecting to its installation-specific secure URL. The device then completes the normal PC-approved pairing flow and can be added to its home screen.
 
 The connection code lasts ten minutes and is deleted as soon as it resolves. It only reveals the already-configured VibeDeck URL; it cannot pair a device or bypass the PC's approval boundary.
 

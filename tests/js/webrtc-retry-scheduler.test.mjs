@@ -95,10 +95,12 @@ function installGlobal(name, value) {
   };
 }
 
-function createControllerHarness(initialMode = "auto") {
+function createControllerHarness(initialMode = "auto", { offerFails = true } = {}) {
   const clock = createFakeClock();
   let mode = initialMode;
   let offerAttempts = 0;
+  const peers = [];
+  const sockets = [];
 
   class FakePeerConnection {
     constructor() {
@@ -107,6 +109,7 @@ function createControllerHarness(initialMode = "auto") {
       this.iceGatheringState = "complete";
       this.signalingState = "stable";
       this.localDescription = null;
+      peers.push(this);
     }
 
     addTransceiver() {}
@@ -126,12 +129,18 @@ function createControllerHarness(initialMode = "auto") {
     close() {
       this.connectionState = "closed";
     }
+
+    setConnectionState(state) {
+      this.connectionState = state;
+      this.onconnectionstatechange?.();
+    }
   }
 
   class FakeWebSocket {
     constructor(url) {
       this.url = url;
       this.binaryType = "";
+      sockets.push(this);
     }
 
     close() {
@@ -185,7 +194,8 @@ function createControllerHarness(initialMode = "auto") {
       }
       if (path === "/api/stream/webrtc/offer") {
         offerAttempts += 1;
-        throw new Error("Host offline HTML response");
+        if (offerFails) throw new Error("Host offline HTML response");
+        return { type: "answer", sdp: "fake-answer" };
       }
       throw new Error(`Unexpected request: ${path}`);
     },
@@ -197,12 +207,16 @@ function createControllerHarness(initialMode = "auto") {
       clearTimer: clock.clearTimer,
     }),
     getNow: clock.now,
+    setRecoveryTimer: clock.setTimer,
+    clearRecoveryTimer: clock.clearTimer,
   });
 
   return {
     clock,
     controller,
     offerAttempts: () => offerAttempts,
+    peers,
+    sockets,
     setMode: value => { mode = value; },
     restore: () => {
       console.warn = originalWarn;
@@ -385,6 +399,37 @@ test("controller prefer-webrtc mode retries after 30 seconds", async () => {
     harness.clock.advance(1);
     await flushMicrotasks();
     assert.equal(harness.offerAttempts(), 2);
+  } finally {
+    harness.controller.closeJpegStream();
+    harness.controller.closeRtcStream();
+    harness.restore();
+  }
+});
+
+test("a dead connected H.264 session is rebuilt twice, then falls back to JPEG", async () => {
+  const harness = createControllerHarness("auto", { offerFails: false });
+  try {
+    await harness.controller.connect();
+    assert.equal(harness.offerAttempts(), 1);
+
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      const peer = harness.peers.at(-1);
+      peer.setConnectionState("connected");
+      peer.setConnectionState("disconnected");
+      harness.clock.advance(12000);
+      await flushMicrotasks();
+      assert.equal(harness.offerAttempts(), attempt + 1);
+      assert.equal(harness.peers.length, attempt + 1);
+    }
+
+    const finalPeer = harness.peers.at(-1);
+    finalPeer.setConnectionState("connected");
+    finalPeer.setConnectionState("disconnected");
+    harness.clock.advance(12000);
+    await flushMicrotasks();
+
+    assert.equal(harness.offerAttempts(), 3);
+    assert.equal(harness.sockets.length, 1);
   } finally {
     harness.controller.closeJpegStream();
     harness.controller.closeRtcStream();

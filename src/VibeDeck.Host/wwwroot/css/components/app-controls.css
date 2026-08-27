@@ -244,7 +244,9 @@ body.display-unavailable .utility-controls .status {
 body.device-trusted:not(.pc-console):not(.mode-display) .utility-controls {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  /* When translated labels make this row wider than the viewport, flex-end
+     creates unreachable negative overflow and clips the first control. */
+  justify-content: flex-start;
   gap: 8px;
 }
 

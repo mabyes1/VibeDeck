@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VibeDeck Product Hunt gallery</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: #02070d; font-family: Inter, "Segoe UI", Arial, sans-serif; color: #f4f8f7; }
+    body { width: 1270px; }
+    .page {
+      position: relative;
+      width: 1270px;
+      height: 760px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 82% 22%, rgba(33, 228, 184, .14), transparent 28%),
+        radial-gradient(circle at 8% 90%, rgba(21, 119, 255, .13), transparent 34%),
+        linear-gradient(135deg, #040a11 0%, #07131b 58%, #061016 100%);
+    }
+    .page::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: .17;
+      background-image:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(to bottom, black, transparent 90%);
+      pointer-events: none;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -.02em;
+    }
+    .brand img { width: 38px; height: 38px; border-radius: 10px; box-shadow: 0 0 24px rgba(112,217,139,.16); }
+    .eyebrow { font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: #71e1b3; font-weight: 800; }
+    h1 { margin: 14px 0 18px; font-size: 63px; line-height: .98; letter-spacing: -.055em; max-width: 500px; }
+    h2 { margin: 10px 0 12px; font-size: 46px; line-height: 1.03; letter-spacing: -.045em; }
+    p { margin: 0; color: #aab8bb; font-size: 21px; line-height: 1.45; }
+    .gradient-text { background: linear-gradient(90deg, #72e6b0, #64c8f2 50%, #bc85ff); -webkit-background-clip: text; color: transparent; }
+    .glass {
+      border: 1px solid rgba(164, 218, 226, .20);
+      background: linear-gradient(180deg, rgba(20,34,43,.76), rgba(7,15,21,.90));
+      box-shadow: 0 32px 80px rgba(0,0,0,.38), inset 0 1px rgba(255,255,255,.045);
+      backdrop-filter: blur(14px);
+    }
+    .tablet { border-radius: 28px; padding: 11px; }
+    .tablet .screen { position: relative; overflow: hidden; border-radius: 19px; background: #000; border: 1px solid rgba(255,255,255,.06); }
+    .tablet .screen > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pills { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+    .pill { border: 1px solid rgba(145,198,208,.18); border-radius: 999px; padding: 9px 13px; color: #ced8db; background: rgba(255,255,255,.035); font-size: 14px; font-weight: 700; }
+    .accent-line { width: 56px; height: 4px; border-radius: 99px; background: linear-gradient(90deg,#70d98b,#66c5e8); margin: 18px 0 20px; }
+
+    /* 01 Hero */
+    #hero .copy { position:absolute; left:56px; top:56px; width:455px; z-index:2; }
+    #hero .device { position:absolute; left:510px; top:142px; width:720px; height:458px; transform: rotate(.6deg); }
+    #hero .device .screen { width:100%; height:100%; }
+    #hero .device .screen img { object-position: 50% 50%; }
+    #hero .tag { position:absolute; right:52px; bottom:42px; color:#70878e; font-size:13px; letter-spacing:.08em; }
+
+    /* 02 Custom Deck */
+    #custom-deck .copy { position:absolute; left:54px; top:58px; width:310px; }
+    #custom-deck .device { position:absolute; left:378px; top:103px; width:846px; height:540px; }
+    #custom-deck .device .screen { width:100%; height:100%; }
+    #custom-deck .device .screen img { object-fit: cover; object-position: 50% 50%; }
+    #custom-deck .code { margin-top:27px; padding:16px 18px; border-radius:16px; font: 15px/1.5 Consolas, monospace; color:#9fd7c5; }
+
+    /* 03 Movable Sideboard */
+    #sideboard .copy { position:absolute; left:54px; top:58px; width:305px; }
+    #sideboard .device { position:absolute; left:378px; top:103px; width:846px; height:540px; }
+    #sideboard .device .screen { width:100%; height:100%; }
+    #sideboard .device .screen img { object-fit: cover; object-position: 50% 50%; }
+    .blur { position:absolute; border-radius:9px; backdrop-filter: blur(14px); background: rgba(6,13,18,.58); box-shadow: inset 0 0 0 1px rgba(255,255,255,.035); }
+    #sideboard .blur-name { left:24px; top:242px; width:136px; height:28px; }
+    #sideboard .blur-ip { left:14px; top:338px; width:190px; height:24px; }
+    #sideboard .blur-weather { left:13px; top:424px; width:150px; height:42px; }
+    #sideboard .blur-feed1 { left:299px; top:320px; width:512px; height:35px; }
+    #sideboard .blur-feed2 { left:299px; top:357px; width:512px; height:126px; }
+    #sideboard .note { position:absolute; left:56px; bottom:55px; width:270px; color:#7f9398; font-size:14px; line-height:1.4; }
+
+    /* 04 E-paper */
+    #eink .copy { position:absolute; left:54px; top:58px; width:305px; }
+    #eink .device { position:absolute; left:378px; top:103px; width:846px; height:540px; }
+    #eink .device .screen { width:100%; height:100%; }
+    #eink .device .screen img { object-fit: cover; object-position: 50% 50%; }
+    #eink .blur-name { left:10px; top:134px; width:150px; height:30px; background:rgba(232,228,215,.78); }
+    #eink .blur-time { left:10px; top:168px; width:120px; height:21px; background:rgba(232,228,215,.78); }
+    #eink .blur-ip { left:11px; top:280px; width:160px; height:24px; background:rgba(232,228,215,.78); }
+    #eink .blur-feed1 { left:292px; top:258px; width:500px; height:112px; background:rgba(232,228,215,.82); }
+    #eink .blur-feed2 { left:292px; top:382px; width:500px; height:91px; background:rgba(232,228,215,.82); }
+    #eink .blur-feed3 { left:292px; top:485px; width:500px; height:48px; background:rgba(232,228,215,.82); }
+    #eink .note { position:absolute; left:56px; bottom:55px; width:270px; color:#7f9398; font-size:14px; line-height:1.4; }
+
+    /* 05 Display photo */
+    #display .copy { position:absolute; left:58px; top:58px; width:390px; }
+    #display .photo { position:absolute; right:42px; top:43px; width:735px; height:674px; border-radius:32px; padding:11px; overflow:hidden; }
+    #display .photo img { width:100%; height:100%; display:block; object-fit:cover; object-position:50% 54%; border-radius:22px; }
+    #display .proof { margin-top:32px; padding:16px 18px; border-radius:18px; font-size:15px; line-height:1.45; color:#bdc9cc; }
+    #display .proof b { display:block; color:#f3f7f6; margin-bottom:4px; }
+
+  </style>
+</head>
+<body>
+  <section class="page" id="hero">
+    <div class="copy">
+      <div class="brand"><img src="../../../../src/VibeDeck.Host/wwwroot/icons/vibedeck.svg" /> VibeDeck</div>
+      <div class="eyebrow" style="margin-top:52px">Your screen. Your interface.</div>
+      <h1>Build the spare screen you <span class="gradient-text">actually want.</span></h1>
+      <p>Make your own HTML Deck, rearrange the built-in Sideboard, switch to E-paper mode, or use the device as a real Windows display.</p>
+      <div class="pills">
+        <span class="pill">Custom HTML Decks</span>
+        <span class="pill">Movable info cards</span>
+        <span class="pill">E-paper mode</span>
+        <span class="pill">Real Windows display</span>
+      </div>
+    </div>
+    <div class="device tablet glass">
+      <div class="screen"><img src="../../realshots/ph-add-deck-en-final.png" /></div>
+    </div>
+    <div class="tag">ACTUAL VIBEDECK CAPTURE · P024 TABLET</div>
+  </section>
+
+  <section class="page" id="custom-deck">
+    <div class="copy">
+      <div class="eyebrow">Hackable by default</div>
+      <h2>Your Deck is just normal web files.</h2>
+      <div class="accent-line"></div>
+      <p>Drop in a folder with a manifest and ordinary HTML, CSS and JavaScript. VibeDeck discovers it and gives it a place in the top bar.</p>
+      <div class="code glass">deck.json<br>index.html<br>style.css<br>app.js</div>
+    </div>
+    <div class="device tablet glass">
+      <div class="screen">
+        <img src="../../realshots/ph-add-deck-en-final.png" />
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="sideboard">
+    <div class="copy">
+      <div class="eyebrow">Not a fixed dashboard</div>
+      <h2>Move it. Resize it. Make it yours.</h2>
+      <div class="accent-line"></div>
+      <p>The built-in Sideboard is editable too. Move cards, change width and height, add cards, compact gaps, or restore the default layout.</p>
+    </div>
+    <div class="device tablet glass">
+      <div class="screen">
+        <img src="../../realshots/ph-sideboard-edit-en-final.png" />
+        <span class="blur blur-name"></span>
+        <span class="blur blur-ip"></span>
+        <span class="blur blur-weather"></span>
+        <span class="blur blur-feed1"></span>
+        <span class="blur blur-feed2"></span>
+      </div>
+    </div>
+    <div class="note">Private notification details are intentionally blurred in this real capture.</div>
+  </section>
+
+  <section class="page" id="eink">
+    <div class="copy">
+      <div class="eyebrow">For e-paper too</div>
+      <h2>One tap. A different visual language.</h2>
+      <div class="accent-line"></div>
+      <p>Switch the Sideboard to a high-contrast, e-reader-friendly layout with bold borders and a sideboard-first presentation.</p>
+    </div>
+    <div class="device tablet glass">
+      <div class="screen">
+        <img src="../../realshots/ph-eink-en.png" />
+        <span class="blur blur-name"></span>
+        <span class="blur blur-time"></span>
+        <span class="blur blur-ip"></span>
+        <span class="blur blur-feed1"></span>
+        <span class="blur blur-feed2"></span>
+        <span class="blur blur-feed3"></span>
+      </div>
+    </div>
+    <div class="note">Actual E-paper mode on the same P024 tablet. Private notification content is blurred.</div>
+  </section>
+
+  <section class="page" id="display">
+    <div class="copy">
+      <div class="brand"><img src="../../../../src/VibeDeck.Host/wwwroot/icons/vibedeck.svg" /> VibeDeck</div>
+      <div class="eyebrow" style="margin-top:64px">Not screen-shaped theater</div>
+      <h2>A real Windows display. In a browser.</h2>
+      <div class="accent-line"></div>
+      <p>Move an ordinary Windows app onto the VibeDeck display and use the spare device like another monitor.</p>
+      <div class="proof glass">
+        <b>This is a real hardware photo.</b>
+        The tablet is showing Visual Studio Code running on the Windows virtual display, streamed over the local network.
+      </div>
+    </div>
+    <div class="photo glass"><img src="../../realshots/real-display.png" /></div>
+  </section>
+
+</body>
+</html>

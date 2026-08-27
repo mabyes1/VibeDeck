@@ -485,6 +485,17 @@ body.remote-client .device-connection-code {
   display: none;
 }
 
+.install-vibedeck {
+  min-height: 38px;
+  align-self: center;
+  justify-self: stretch;
+  font-weight: 800;
+}
+
+.install-vibedeck[hidden] {
+  display: none;
+}
+
 .connect-links {
   border-top: 1px solid rgba(255,255,255,.08);
   padding-top: 10px;

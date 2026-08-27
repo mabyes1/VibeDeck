@@ -6,7 +6,8 @@ import {
 } from "./webrtc-retry-scheduler.js?v=1";
 
 const WEBRTC_DISCONNECT_GRACE_MS = 12000;
-const WEBRTC_RESTART_SETTLE_MS = 8000;
+const WEBRTC_SESSION_REBUILD_LIMIT = 2;
+const WEBRTC_REBUILD_STABLE_MS = 30000;
 const JPEG_RECONNECT_MAX_MS = 15000;
 
 export function normalizePlayoutDelayMs(value) {
@@ -62,6 +63,8 @@ export function createStreamController({
   onStreamStats = () => {},
   createRetryScheduler = createWebRtcRetryScheduler,
   getNow = () => Date.now(),
+  setRecoveryTimer = setTimeout,
+  clearRecoveryTimer = clearTimeout,
 }) {
   let videoSocket = null;
   let rtcPeer = null;
@@ -69,7 +72,7 @@ export function createStreamController({
   let connectGeneration = 0;
   let fallbackReason = "";
   let disconnectTimer = null;
-  let restartSettleTimer = null;
+  let rtcStableTimer = null;
   let jpegReconnectTimer = null;
   let statsTimer = null;
   let pendingJpegFrame = null;
@@ -77,7 +80,8 @@ export function createStreamController({
   let jpegFrameDecoding = false;
   let jpegReconnectAttempts = 0;
   let webrtcCooldownUntil = 0;
-  let restartingIce = false;
+  let rtcSessionRebuildAttempts = 0;
+  let rebuildingRtcSession = false;
   let selectedPath = "";
   let lastDiagnosticKey = "";
   const webrtcRetryScheduler = createRetryScheduler({
@@ -99,14 +103,13 @@ export function createStreamController({
 
   function clearRtcRecoveryTimers() {
     if (disconnectTimer) {
-      clearTimeout(disconnectTimer);
+      clearRecoveryTimer(disconnectTimer);
       disconnectTimer = null;
     }
-    if (restartSettleTimer) {
-      clearTimeout(restartSettleTimer);
-      restartSettleTimer = null;
+    if (rtcStableTimer) {
+      clearRecoveryTimer(rtcStableTimer);
+      rtcStableTimer = null;
     }
-    restartingIce = false;
   }
 
   function clearJpegReconnectTimer() {
@@ -207,7 +210,10 @@ export function createStreamController({
     requestAnimationFrame(presentPendingJpegFrame);
   }
 
-  async function connect() {
+  async function connect(options = {}) {
+    if (options.preserveRecoveryBudget !== true) {
+      rtcSessionRebuildAttempts = 0;
+    }
     const generation = ++connectGeneration;
     webrtcRetryScheduler.cancel();
     fallbackReason = "";
@@ -334,6 +340,12 @@ export function createStreamController({
         clearRtcRecoveryTimers();
         webrtcRetryScheduler.cancel();
         webrtcCooldownUntil = 0;
+        rtcStableTimer = setRecoveryTimer(() => {
+          rtcStableTimer = null;
+          if (generation === connectGeneration && rtcPeer === peer && peer.connectionState === "connected") {
+            rtcSessionRebuildAttempts = 0;
+          }
+        }, WEBRTC_REBUILD_STABLE_MS);
         return;
       }
       if (peer.connectionState === "disconnected" || peer.connectionState === "failed") {
@@ -341,7 +353,7 @@ export function createStreamController({
         return;
       }
       if (peer.connectionState === "closed") {
-        fallbackToJpeg(generation, `WebRTC ${tLegacy("中斷（")}${peer.connectionState}${tLegacy("），切回 JPEG")}`);
+        void rebuildRtcSession(peer, generation, "connection-closed");
       }
     };
     peer.oniceconnectionstatechange = () => {
@@ -388,33 +400,38 @@ export function createStreamController({
   }
 
   function scheduleRtcRecovery(peer, generation, reason) {
-    if (disconnectTimer || restartingIce || generation !== connectGeneration || rtcPeer !== peer) return;
+    if (disconnectTimer || rebuildingRtcSession || generation !== connectGeneration || rtcPeer !== peer) return;
     const waitSeconds = Math.round(WEBRTC_DISCONNECT_GRACE_MS / 1000);
-    setStatus(`${tLegacy("WebRTC 路徑中斷，保留連線並於")}${waitSeconds}s ${tLegacy("後嘗試恢復")}`, false);
+    setStatus(`${tLegacy("WebRTC 路徑中斷，保留連線並於")}${waitSeconds}s ${tLegacy("後重建串流")}`, false);
     report("webrtc", "recovering", { path: selectedPath, reason });
-    disconnectTimer = setTimeout(async () => {
+    disconnectTimer = setRecoveryTimer(() => {
       disconnectTimer = null;
       if (generation !== connectGeneration || rtcPeer !== peer || peer.connectionState === "connected") return;
-      restartingIce = true;
-      try {
-        if (typeof peer.restartIce === "function") peer.restartIce();
-        report("ice", "restart", { path: selectedPath, reason });
-        await negotiateRtc(peer, generation, true);
-        if (generation !== connectGeneration || rtcPeer !== peer) return;
-        setStatus(tLegacy("WebRTC 正在重新建立網路路徑…"), false);
-        restartSettleTimer = setTimeout(() => {
-          restartSettleTimer = null;
-          if (generation !== connectGeneration || rtcPeer !== peer || peer.connectionState === "connected") return;
-          fallbackToJpeg(generation, tLegacy("WebRTC ICE restart 未恢復，保持 JPEG 穩定串流"));
-        }, WEBRTC_RESTART_SETTLE_MS);
-      } catch (error) {
-        if (generation === connectGeneration && rtcPeer === peer) {
-          fallbackToJpeg(generation, `${tLegacy("WebRTC ICE restart 失敗")}：${error.message || tLegacy("未知錯誤")}`);
-        }
-      } finally {
-        restartingIce = false;
-      }
+      void rebuildRtcSession(peer, generation, reason);
     }, WEBRTC_DISCONNECT_GRACE_MS);
+  }
+
+  async function rebuildRtcSession(peer, generation, reason) {
+    if (rebuildingRtcSession || generation !== connectGeneration || rtcPeer !== peer) return;
+    if (rtcSessionRebuildAttempts >= WEBRTC_SESSION_REBUILD_LIMIT) {
+      fallbackToJpeg(generation, tLegacy("WebRTC 串流重建仍失敗，保持 JPEG 穩定串流"));
+      return;
+    }
+
+    rebuildingRtcSession = true;
+    rtcSessionRebuildAttempts += 1;
+    const attempt = rtcSessionRebuildAttempts;
+    report("webrtc", "session-rebuild", {
+      path: selectedPath,
+      reason: `${reason || "connection-lost"};attempt=${attempt}`,
+    }, true);
+    setStatus(`${tLegacy("WebRTC 串流已中斷，正在建立全新連線")} (${attempt}/${WEBRTC_SESSION_REBUILD_LIMIT})`, false);
+    closeRtcStream(false);
+    try {
+      await connect({ preserveRecoveryBudget: true });
+    } finally {
+      rebuildingRtcSession = false;
+    }
   }
 
   function fallbackToJpeg(generation, reason) {

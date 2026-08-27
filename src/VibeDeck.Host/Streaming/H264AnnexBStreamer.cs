@@ -74,7 +74,7 @@ namespace VibeDeck.Host.Streaming
             var streamToken = streamCts.Token;
             string stopError = null;
             Process process = null;
-            Task errorTask = null;
+            Task<string> errorTask = null;
             H264StreamMetricsLease metricsLease = null;
 
             try
@@ -93,7 +93,7 @@ namespace VibeDeck.Host.Streaming
                 metricsLease = metrics.Start(width, height, fps, quality, bitrateKbps, deviceName: deviceName);
 
                 var outputTask = RelayEncodedOutputAsync(process.StandardOutput.BaseStream, socket, metricsLease, streamToken);
-                errorTask = DrainErrorAsync(process.StandardError);
+                errorTask = ReadErrorTailAsync(process.StandardError);
 
                 await WriteBitmapFrameAsync(firstFrame.Bitmap, process.StandardInput.BaseStream, rawFrame, streamToken);
                 metricsLease.RecordQueuedFrame();
@@ -196,7 +196,7 @@ namespace VibeDeck.Host.Streaming
                 cancellationToken.ThrowIfCancellationRequested();
                 using var holder = new ReusableBitmapHolder();
                 Process process = null;
-                Task errorTask = null;
+                Task<string> errorTask = null;
                 H264StreamMetricsLease metricsLease = null;
                 try
                 {
@@ -245,7 +245,7 @@ namespace VibeDeck.Host.Streaming
                         shouldDownshift: null,
                         canDownshift: attempt == 0,
                         cancellationToken);
-                    errorTask = DrainErrorAsync(process.StandardError);
+                    errorTask = ReadErrorTailAsync(process.StandardError);
 
                     await WriteBitmapFrameAsync(firstFrame.Bitmap, process.StandardInput.BaseStream, rawFrame, cancellationToken);
                     metricsLease.RecordQueuedFrame();
@@ -275,9 +275,17 @@ namespace VibeDeck.Host.Streaming
                         metricsLease,
                         cancellationToken);
                     await outputTask;
-                    if (errorTask != null)
+                    var ffmpegError = errorTask != null
+                        ? await errorTask
+                        : string.Empty;
+                    if (!cancellationToken.IsCancellationRequested &&
+                        peer.connectionState == RTCPeerConnectionState.connected)
                     {
-                        await errorTask;
+                        var exitCode = process.HasExited ? process.ExitCode.ToString() : "unknown";
+                        throw new InvalidOperationException(
+                            string.IsNullOrWhiteSpace(ffmpegError)
+                                ? $"ffmpeg encoder '{encoderName}' ended unexpectedly (code {exitCode})."
+                                : $"ffmpeg encoder '{encoderName}' ended unexpectedly (code {exitCode}): {ffmpegError}");
                     }
                     return;
                 }
@@ -653,12 +661,20 @@ namespace VibeDeck.Host.Streaming
             }
         }
 
-        private static async Task DrainErrorAsync(StreamReader error)
+        private static async Task<string> ReadErrorTailAsync(StreamReader error)
         {
             var buffer = new char[2048];
-            while (await error.ReadAsync(buffer, 0, buffer.Length) > 0)
+            var tail = string.Empty;
+            int read;
+            while ((read = await error.ReadAsync(buffer, 0, buffer.Length)) > 0)
             {
+                tail += new string(buffer, 0, read);
+                if (tail.Length > 4096)
+                {
+                    tail = tail.Substring(tail.Length - 4096);
+                }
             }
+            return tail.Trim();
         }
 
         private static async Task WriteBitmapFrameAsync(Bitmap bitmap, Stream input, byte[] rawFrame, CancellationToken cancellationToken)

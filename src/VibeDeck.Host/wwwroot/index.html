@@ -17,7 +17,7 @@
   <link id="manifestLink" rel="manifest" href="/manifest.json?v=54">
   <link rel="icon" type="image/svg+xml" href="/icons/vibedeck.svg?v=1" sizes="any">
   <title>VibeDeck</title>
-  <link rel="stylesheet" href="/index.css?v=155">
+  <link rel="stylesheet" href="/index.css?v=156">
   <style>
     /* Pairing is the recovery path: keep it usable even if an old iOS asset or
        a later boot request fails. JS only hides it after trust is confirmed. */
@@ -171,102 +171,102 @@
         <span data-i18n="ui.advancedDisplaySettingsHint">只有需要調整串流、方向或虛擬螢幕時才需要。</span>
       </div>
       <details class="panel appearance-theme-panel">
-        <summary>布景設定</summary>
+        <summary data-i18n="ui.themeSettings">布景設定</summary>
         <div class="appearance-theme-controls">
           <div class="appearance-theme-intro">
             <div>
-              <strong>背景與玻璃</strong>
-              <span>背景可以是純色、漸層或自己的圖片；介面卡片維持中性透明玻璃，不再被主題色染髒。</span>
+              <strong data-i18n="ui.themeBackgroundAndGlass">背景與玻璃</strong>
+              <span data-i18n="ui.themeBackgroundAndGlassHint">背景可以是純色、漸層或自己的圖片；介面卡片維持中性透明玻璃，不再被主題色染髒。</span>
             </div>
             <span id="appThemePreview" class="app-theme-preview" aria-hidden="true"></span>
           </div>
 
           <section class="appearance-theme-group appearance-background-group">
-            <strong>背景</strong>
+            <strong data-i18n="ui.themeBackground">背景</strong>
             <div class="appearance-theme-fields">
-              <label class="appearance-theme-select">模式
+              <label class="appearance-theme-select"><span data-i18n="ui.themeMode">模式</span>
                 <select id="appThemeBackgroundMode">
-                  <option value="gradient">漸層</option>
-                  <option value="solid">純色</option>
-                  <option value="image">圖片</option>
+                  <option value="gradient" data-i18n="ui.themeGradient">漸層</option>
+                  <option value="solid" data-i18n="ui.themeSolid">純色</option>
+                  <option value="image" data-i18n="ui.themeImage">圖片</option>
                 </select>
               </label>
-              <label class="appearance-theme-select">填滿
+              <label class="appearance-theme-select"><span data-i18n="ui.themeFit">填滿</span>
                 <select id="appThemeBackgroundFit">
-                  <option value="cover">填滿畫面</option>
-                  <option value="contain">完整顯示</option>
+                  <option value="cover" data-i18n="ui.themeCover">填滿畫面</option>
+                  <option value="contain" data-i18n="ui.themeContain">完整顯示</option>
                 </select>
               </label>
-              <label class="appearance-theme-select">位置
+              <label class="appearance-theme-select"><span data-i18n="ui.themePosition">位置</span>
                 <select id="appThemeBackgroundPosition">
-                  <option value="center">置中</option>
-                  <option value="top">靠上</option>
-                  <option value="bottom">靠下</option>
+                  <option value="center" data-i18n="ui.themeCenter">置中</option>
+                  <option value="top" data-i18n="ui.themeTop">靠上</option>
+                  <option value="bottom" data-i18n="ui.themeBottom">靠下</option>
                 </select>
               </label>
             </div>
             <div class="app-theme-background-file">
-              <label class="app-theme-upload-button" for="appThemeBackgroundUpload">選擇背景圖片</label>
+              <label class="app-theme-upload-button" for="appThemeBackgroundUpload" data-i18n="ui.themeChooseBackgroundImage">選擇背景圖片</label>
               <input id="appThemeBackgroundUpload" type="file" accept="image/*" hidden>
-              <button id="appThemeBackgroundClear" class="secondary" type="button">清除圖片</button>
-              <span id="appThemeBackgroundStatus">尚未選擇自訂背景</span>
+              <button id="appThemeBackgroundClear" class="secondary" type="button" data-i18n="ui.themeClearImage">清除圖片</button>
+              <span id="appThemeBackgroundStatus" data-i18n="ui.themeNoCustomBackground">尚未選擇自訂背景</span>
             </div>
             <label class="app-theme-range">
-              <span>背景暗化 <b id="appThemeBackgroundDimValue">24%</b></span>
+              <span><span data-i18n="ui.themeBackgroundDim">背景暗化</span> <b id="appThemeBackgroundDimValue">24%</b></span>
               <input id="appThemeBackgroundDim" type="range" min="0" max="70" step="1" value="24">
             </label>
             <label class="app-theme-range">
-              <span>背景模糊 <b id="appThemeBackgroundBlurValue">0px</b></span>
+              <span><span data-i18n="ui.themeBackgroundBlur">背景模糊</span> <b id="appThemeBackgroundBlurValue">0px</b></span>
               <input id="appThemeBackgroundBlur" type="range" min="0" max="30" step="1" value="0">
             </label>
           </section>
 
           <section class="appearance-theme-group appearance-color-group">
-            <strong>色彩</strong>
-            <div class="app-theme-colors" aria-label="全站背景調色板">
+            <strong data-i18n="ui.themeColors">色彩</strong>
+            <div class="app-theme-colors" aria-label="全站背景調色板" data-i18n-attr="aria-label:ui.themeHostBackgroundPalette">
             <label>
-              <span>色 A</span>
-              <input id="appThemeColorA" type="color" value="#4b1f66" aria-label="布景顏色 A">
+              <span data-i18n="ui.themeColorA">色 A</span>
+              <input id="appThemeColorA" type="color" value="#4b1f66" aria-label="布景顏色 A" data-i18n-attr="aria-label:ui.themeColorALabel">
             </label>
             <label>
-              <span>色 B</span>
-              <input id="appThemeColorB" type="color" value="#17344d" aria-label="布景顏色 B">
+              <span data-i18n="ui.themeColorB">色 B</span>
+              <input id="appThemeColorB" type="color" value="#17344d" aria-label="布景顏色 B" data-i18n-attr="aria-label:ui.themeColorBLabel">
             </label>
             </div>
             <label class="app-theme-range">
-              <span>方向 <b id="appThemeAngleValue">132°</b></span>
+              <span><span data-i18n="ui.themeAngle">方向</span> <b id="appThemeAngleValue">132°</b></span>
               <input id="appThemeAngle" type="range" min="0" max="360" step="1" value="132">
             </label>
             <label class="app-theme-range">
-              <span>濃度 <b id="appThemeIntensityValue">72%</b></span>
+              <span><span data-i18n="ui.themeIntensity">濃度</span> <b id="appThemeIntensityValue">72%</b></span>
               <input id="appThemeIntensity" type="range" min="30" max="100" step="1" value="72">
             </label>
-            <div class="app-theme-presets" aria-label="快速配色">
-              <button type="button" data-app-palette="nebula" title="紫藍"><span style="--swatch-a:#4b1f66;--swatch-b:#17344d"></span></button>
-              <button type="button" data-app-palette="aurora" title="墨綠藍"><span style="--swatch-a:#155d4a;--swatch-b:#173d57"></span></button>
-              <button type="button" data-app-palette="ember" title="暖橘紫"><span style="--swatch-a:#6b3327;--swatch-b:#3d244f"></span></button>
-              <button type="button" data-app-palette="midnight" title="午夜藍"><span style="--swatch-a:#25265c;--swatch-b:#102f45"></span></button>
+            <div class="app-theme-presets" aria-label="快速配色" data-i18n-attr="aria-label:ui.themeQuickPalette">
+              <button type="button" data-app-palette="nebula" title="紫藍" data-i18n-attr="title:ui.themePaletteNebula"><span style="--swatch-a:#4b1f66;--swatch-b:#17344d"></span></button>
+              <button type="button" data-app-palette="aurora" title="墨綠藍" data-i18n-attr="title:ui.themePaletteAurora"><span style="--swatch-a:#155d4a;--swatch-b:#173d57"></span></button>
+              <button type="button" data-app-palette="ember" title="暖橘紫" data-i18n-attr="title:ui.themePaletteEmber"><span style="--swatch-a:#6b3327;--swatch-b:#3d244f"></span></button>
+              <button type="button" data-app-palette="midnight" title="午夜藍" data-i18n-attr="title:ui.themePaletteMidnight"><span style="--swatch-a:#25265c;--swatch-b:#102f45"></span></button>
             </div>
           </section>
 
           <section class="appearance-theme-group appearance-glass-group">
-            <strong>卡片玻璃</strong>
+            <strong data-i18n="ui.themeCardGlass">卡片玻璃</strong>
             <label class="app-theme-range">
-              <span>透明白霧 <b id="appThemeGlassOpacityValue">7%</b></span>
+              <span><span data-i18n="ui.themeGlassOpacity">透明白霧</span> <b id="appThemeGlassOpacityValue">7%</b></span>
               <input id="appThemeGlassOpacity" type="range" min="2" max="20" step="1" value="7">
             </label>
             <label class="app-theme-range">
-              <span>玻璃模糊 <b id="appThemeGlassBlurValue">20px</b></span>
+              <span><span data-i18n="ui.themeGlassBlur">玻璃模糊</span> <b id="appThemeGlassBlurValue">20px</b></span>
               <input id="appThemeGlassBlur" type="range" min="0" max="40" step="1" value="20">
             </label>
             <label class="app-theme-range">
-              <span>玻璃邊線 <b id="appThemeGlassBorderValue">12%</b></span>
+              <span><span data-i18n="ui.themeGlassBorder">玻璃邊線</span> <b id="appThemeGlassBorderValue">12%</b></span>
               <input id="appThemeGlassBorder" type="range" min="4" max="30" step="1" value="12">
             </label>
           </section>
 
           <div class="appearance-theme-actions">
-            <button id="appThemeReset" class="app-theme-reset secondary" type="button">重設布景</button>
+            <button id="appThemeReset" class="app-theme-reset secondary" type="button" data-i18n="ui.themeReset">重設布景</button>
           </div>
         </div>
       </details>
@@ -328,7 +328,7 @@
         </div>
       </details>
       <details id="turnSettingsPanel" class="panel" hidden>
-        <summary>遠端 WebRTC 與 Cloudflare TURN</summary>
+        <summary data-i18n="ui.turnSettings">遠端 WebRTC 與 Cloudflare TURN</summary>
         <div class="controls turn-settings-controls">
           <label class="field">TURN Key ID
             <input id="turnKeyId" type="text" autocomplete="off" spellcheck="false" placeholder="Cloudflare TURN Key ID">
@@ -428,6 +428,7 @@
           <span id="streamCapabilityState" class="stream-capability-state"></span>
           <span id="wakeState" class="wake-state"></span>
           <span id="appState" class="app-state"></span>
+          <button id="installVibeDeck" class="install-vibedeck" type="button" hidden data-i18n="secureEndpoint.installApp">安裝 VibeDeck</button>
           <span id="deviceState" class="device-state"></span>
         </div>
         <details class="connect-links">
@@ -983,6 +984,6 @@
 
   <button id="exitViewer" class="exit-viewer" type="button" aria-label="Exit viewer">×</button>
 
-  <script type="module" src="/index.js?v=162"></script>
+  <script type="module" src="/index.js?v=163"></script>
 </body>
 </html>

@@ -48,3 +48,18 @@ test("fullscreen PWAs enter the VibeDeck viewer so exit chrome remains meaningfu
   assert.match(index, /initialMode !== "setup" && initialMode !== "deck" && !initialMode\.startsWith\("deck:"\)/);
   assert.match(index, /shouldStartInViewer\(\) \|\| shouldAutoEnterInstalledViewer\(\)/);
 });
+
+test("trusted Android clients can invoke the deferred native PWA install prompt", async () => {
+  const [html, index] = await Promise.all([
+    readFile(new URL("index.html", root), "utf8"),
+    readFile(new URL("index.js", root), "utf8"),
+  ]);
+
+  assert.match(html, /id="installVibeDeck"[^>]+hidden[^>]+secureEndpoint\.installApp/);
+  assert.match(index, /window\.addEventListener\("beforeinstallprompt"/);
+  assert.match(index, /installPromptEvent\s*=\s*event/);
+  assert.match(index, /deviceTrusted\s*&&\s*!deviceLocalRequest/);
+  assert.match(index, /await promptEvent\.prompt\(\)/);
+  assert.match(index, /await promptEvent\.userChoice/);
+  assert.match(index, /installVibeDeck\?\.addEventListener\("click"/);
+});
