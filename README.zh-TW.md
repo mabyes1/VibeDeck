@@ -6,86 +6,23 @@
 
 > **讓你的閒置螢幕有一份新工作。**
 >
-> VibeDeck 是 Windows Host，能把另一塊可開瀏覽器的螢幕變成**真正的 Windows 顯示器**，或**瀏覽器原生、可自由改造的 Deck**。
+> VibeDeck 可以把舊手機、平板、筆電、電子紙裝置，或其他能開瀏覽器的螢幕，變成**真正的 Windows 顯示器**，或**瀏覽器原生的自訂 Deck**。
 >
 > **Host：Windows 10/11 · Client：現代瀏覽器 · 副裝置不用安裝 App。**
 
 **[下載最新版 Windows 安裝程式](https://github.com/mabyes1/VibeDeck/releases/latest)** · [從原始碼建置](#從原始碼建置)
 
-VibeDeck 是一個 Windows Host，讓閒置的手機、平板、電子紙裝置、筆電，以及其他能跑瀏覽器的螢幕重新派上用場。同一台裝置可以在兩條完全不同的路徑之間切換：
+## VibeDeck 可以做什麼
 
-- **Display**：透過網路顯示真正的 Windows 顯示器畫面。
-- **Deck**：直接在裝置瀏覽器裡渲染專門設計的 HTML/CSS/JS 介面。
+同一塊閒置螢幕，可以有兩種完全不同的工作方式：
 
-這兩條渲染路徑可以拿來做完全不同的工作。VibeDeck 內建就能把閒置螢幕變成真正的 Windows 顯示器、自訂 HTML Deck、AI 額度監看器，或整合 Windows 通知的系統資訊板。
+| | |
+|---|---|
+| **真正的 Windows 顯示器** | 把一般 Windows App 移到閒置裝置上。VibeDeck 會擷取 Windows 顯示器、透過 WebRTC 串流，再把輸入操作送回 PC。 |
+| **自訂 HTML Deck** | 直接在裝置瀏覽器裡執行專門設計的 HTML、CSS 和 JavaScript，使用裝置原生解析度顯示。 |
+| **一眼就能看的內建介面** | 把 AI 額度、系統狀態、任務、活動與 Windows 通知放在旁邊，不必佔著桌面主螢幕。 |
 
-## 我為什麼做 VibeDeck
-
-最近我在網路上看到一些裝在電腦機殼裡的小螢幕，會顯示 CPU、GPU、溫度和使用率。
-
-很酷，我馬上就被燒到了。
-
-然後看到價格，幾百到幾千塊。
-
-冷靜想想，我真正想要的其實不是那塊硬體。
-
-我只是想要一個地方，放那些沒有重要到值得佔據主螢幕，但又沒有不重要到可以完全不看的資訊。
-
-所以最後我就沒有買。
-
-因為我本身大量使用 Claude Code 和 Codex 工作。
-
-主螢幕寫 code，副螢幕原本拿來放即時通訊和參考資料，現在又多了一個 Agent。
-
-但我其實根本不想一直盯著 Agent。我不在乎它每一秒在做什麼。
-
-我有時候只是需要知道：
-
-**它做完了嗎？卡住了嗎？正在等我按 Allow 嗎？**
-
-有用過 coding agent 的人應該都遇過，把它放著跑半小時，回來發現它其實二十九分鐘前就在等你核准一個操作。
-
-然後我看到了桌上那支只剩鬧鐘功能的舊手機。
-
-腦中又突然閃過那個放在購物車裡的副螢幕。
-
-**如果 Agent 可以待在那裡，不就好了？**
-
-於是我弄了一個東西，把舊手機或平板變成 Windows 的另一塊螢幕。
-
-這就是 VibeDeck 最早的樣子。
-
-用了一陣子之後，我又開始因為開發瘋狂消耗 AI 額度，順便產生了額度焦慮。
-
-然後我突然發現：**額度不也是同一種資訊嗎？**
-
-我不需要一直盯著它，但我很想隨時知道還剩多少。
-
-所以又加上了額度面板。
-
-另外，不開發的時候我也會打打遊戲。GPU 溫度、CPU 負載，是我打遊戲時偶爾想瞄一眼的東西。
-
-Windows 通知，是我不想讓它跳到眼前，但又不能完全不看的東西。天氣也是。
-
-它們其實全都是同一類資訊。
-
-**不值得搶走我的螢幕，但值得在旁邊有一個地方待著。**
-
-做到這裡之後，我又想到一件事。
-
-如果你覺得這個架構不錯，但覺得我做的介面很醜，那也很合理。
-
-所以我又留了一條路。
-
-HTML Deck 就是普通的 HTML、CSS 和 JavaScript。你可以自己做額度板、資訊面板、控制介面，或加入任何你自己想看的東西。
-
-你甚至可以完全不用我做的那些畫面。
-
-**只要瀏覽器能顯示的東西，基本上都可以變成你的 Deck。**
-
-所以 VibeDeck 最後變成的東西，其實跟我一開始想的已經不太一樣了。
-
-它不是要你再買一塊新的小螢幕，而是讓那些本來還好好的，只是已經不知道拿來幹嘛的舊手機、平板和其他螢幕，**重新有一份工作。**
+同一台裝置可以在 Display 與 Deck 之間切換。需要真正桌面 App 時就用 Windows 畫面；小螢幕有更適合自己的介面時，就直接用瀏覽器原生渲染。
 
 ## 真實產品畫面
 
@@ -110,70 +47,37 @@ HTML Deck 就是普通的 HTML、CSS 和 JavaScript。你可以自己做額度�
   </tr>
 </table>
 
-## 一塊閒置螢幕，四種實際用途
+## 把真正的 Windows App 放到閒置螢幕
 
-| | 可以做什麼 |
-|---|---|
-| **真正的 Windows 顯示器** | 把真正的 Windows 應用程式放到閒置螢幕上。VibeDeck 使用真實 Windows 顯示器、透過 WebRTC 串流，並把輸入操作送回 Windows。 |
-| **可自由改造的 HTML Deck** | 放入 `index.html`、CSS 與 JavaScript，就能做出針對這塊螢幕量身打造的介面，直接由裝置瀏覽器原生渲染。 |
-| **AI 額度一眼看完** | 不用另外開 App，就能常駐查看 Codex、Claude、AGY 的百分比、重置時間與剩餘 Credits。 |
-| **資訊板 + Windows 通知** | CPU、RAM、GPU、VRAM、活動、任務與 Windows 桌面通知放在同一塊一眼就能讀完的螢幕上。 |
-
-所以 VibeDeck 不只是螢幕鏡像，也不只是一個 Dashboard。它比較像是一個小螢幕 Runtime，讓 Windows 畫素串流和瀏覽器原生介面可以共存在同一台裝置上。
-
-## 真正跑 Windows App，不是假螢幕
-
-把閒置裝置當成真正的 Windows 顯示器。VibeDeck 會建立或找到 Windows 顯示器、擷取畫面、串流到瀏覽器，也能把輸入操作送回 Windows。一般 Windows 應用程式可以像移到普通第二螢幕一樣，直接移到 VibeDeck 顯示器上。
+Display 模式讓瀏覽器裝置顯示真正的 Windows 顯示器。一般 Windows 應用程式可以像移到第二螢幕一樣，直接移到 VibeDeck 顯示器上。
 
 ![VibeDeck 真正的 Windows 顯示器](docs/assets/social-preview2.png)
 
 適合：
 
-- 把一般 Windows App 固定放在一個專用小螢幕上
-- 已經有桌面版軟體的 Dashboard
+- 把一般桌面 App 固定放在專用小螢幕
+- 已經有 Windows 版介面的 Dashboard
 - 臨時需要第二螢幕的工作情境
 - 不方便或根本不能安裝原生 Client App 的裝置
 
-## 額度、系統狀態、Windows 通知，一眼看完
-
-內建資訊板就是為了那些「一直看得到才有價值」的資訊：AI 額度、系統遙測、活動、任務，以及由選用通知 Companion 整合進來的 Windows 通知。
-
-![VibeDeck 資訊板、AI 額度、系統狀態與 Windows 通知](docs/assets/social-preview3.png)
-
-它不是把桌面 Dashboard 硬縮到小螢幕。Browser-native 版面可以依手機、平板與電子紙尺寸重新排列，讓真正重要的數字保持可讀。
-
 ## 做一塊真正屬於自己的螢幕
 
-直接在閒置螢幕上執行瀏覽器原生體驗。一個 Deck 本質上就是一個包含 manifest 和一般網頁檔案的資料夾。
+Deck 就是一般的 HTML、CSS 和 JavaScript，直接由裝置瀏覽器渲染。
 
 **只要它能做成網頁，就能做成 Deck。**
 
-Deck 完全不需要影片編碼，可以直接以裝置原生解析度顯示，也很容易檢查、修改和替換。放入 `index.html`，加上想要的 CSS 與 JavaScript，VibeDeck 就會自動探索這個 Deck。
-
-這個 repository 內附了一個很小的 **Coding Pet** 範例 Deck。
+Deck 不需要影片編碼，可以直接以裝置原生解析度顯示，也能依手機、平板或電子紙尺寸重新排版。VibeDeck 會自動探索有效的 Deck 資料夾。
 
 ![VibeDeck 自訂 HTML Deck](docs/assets/social-preview1.png)
 
-## 為什麼是 VibeDeck
+VibeDeck 內附幾個可以直接使用的例子：
 
-- **Windows Host、瀏覽器 Client。** Host 跑在 Windows 10/11；手機、平板、BOOX、macOS/Linux 電腦和其他能跑瀏覽器的螢幕都共用同一套 Web Client。
-- **真正的 Windows 顯示器。** Display 模式使用 Windows 顯示器列舉，不是拿一塊假 Canvas 冒充螢幕。
-- **天生可改。** Deck 就是普通的 HTML、CSS 和 JavaScript。
-- **一台裝置，多種工作。** 同一台裝置可以切換 Display、Sideboard、Quota、Custom Deck，以及其他專門用途的介面。
-- **本機掌握信任權限。** 即使啟用遠端連線，配對與裝置信任仍由 Windows Host 控制。
-- **副裝置不用安裝程式。** 瀏覽器就是 Client。
-
-## 內建 Deck 與介面
-
-VibeDeck 目前包含幾種針對小螢幕設計的體驗：
-
-- **Display**：Windows 畫面串流與遠端輸入
-- **Sideboard**：系統狀態、活動、任務、AI 額度與 Windows 通知歷史
-- **Quota**：專門查看 AI 使用量與帳號額度資訊
-- **Custom Decks**：使用者自行製作的瀏覽器原生介面
+- **Sideboard**：CPU、GPU、記憶體、活動、任務、AI 額度與 Windows 通知歷史
+- **Quota**：專門查看 AI 使用量與帳號額度
+- **Coding Pet**：一個很小的 Custom Deck 範例
 - **Remote access**：在區域網路之外連回已信任的 Host
 
-這些都是建立在 VibeDeck 上的應用，而不是 VibeDeck 本身的定義。真正的平台是 Windows Host、Display path、Browser Runtime、Trust Model 與 Deck Model 的組合。
+你可以直接用這些介面、自己做新的 Deck，或完全忽略內建畫面。
 
 ## 建立自己的 Deck
 
@@ -203,27 +107,27 @@ my-deck/
 }
 ```
 
-VibeDeck 會自動探索有效的 Deck 資料夾。目前的擴充模型可參考 `docs/custom-data-sources-spec.md`，以及內附的 `src/VibeDeck.Host/DeckExamples/coding-pet/` 範例。
+放進你要的網頁檔案後，VibeDeck 會自動探索這個 Deck。想看目前的延伸方式，可以參考 `docs/custom-data-sources-spec.md`，以及內附的 `src/VibeDeck.Host/DeckExamples/coding-pet/` 範例。
 
 ## 快速開始
 
 ### Windows 安裝
 
-請從 **[GitHub Releases](https://github.com/mabyes1/VibeDeck/releases/latest)** 下載最新版 Windows Setup。正式產品路線只有一個安裝程式：
+從 **[GitHub Releases](https://github.com/mabyes1/VibeDeck/releases/latest)** 下載最新版 Windows 安裝程式：
 
 ```text
 VibeDeck-Setup-<version>.exe
 ```
 
-請從已登入的 Windows 桌面執行安裝程式，這樣 Host 才會註冊並啟動在目前互動使用者的 Session。VibeDeck 的持久化資料會放在：
+請在已登入的 Windows 桌面環境執行安裝。持久化資料會存放在：
 
 ```text
 C:\ProgramData\VibeDeck
 ```
 
-安裝完成後，在 Windows PC 上開啟 VibeDeck，依照連線流程讓閒置裝置加入。本機探索會先從 HTTP 開始，正常使用時再把裝置導向 HTTPS。
+安裝完成後，在 PC 上開啟 VibeDeck，再依畫面流程連接閒置裝置。區域網路探索一開始使用 HTTP，正常使用時會升級到 HTTPS。
 
-> **Windows 簽章提醒：**目前公開版本尚未加入 Authenticode 程式碼簽章，因此 Windows 可能顯示未知發行者／SmartScreen 警告。Release 會同時提供 SHA-256 checksum 供完整性驗證。
+> **Windows 簽章提醒：**目前公開版本尚未使用 Authenticode 簽章，所以 Windows 可能會顯示未知發行者或 SmartScreen 警告。Release 內會附 SHA-256 checksum 供完整性驗證。
 
 ### 從原始碼建置
 
@@ -231,10 +135,10 @@ C:\ProgramData\VibeDeck
 
 - Windows 10/11
 - .NET 8 SDK
-- Node.js，用於 Browser / Worker 測試
-- Inno Setup 6，用於建立 Windows Installer
+- Node.js，用於 browser / Worker tests
+- Inno Setup 6，用於建立 Windows 安裝程式
 
-Restore 並驗證：
+還原與驗證：
 
 ```powershell
 dotnet restore VibeDeck.sln
@@ -250,7 +154,7 @@ pwsh scripts/package-windows-setup.ps1
 
 ## 運作方式
 
-VibeDeck 有兩條渲染路徑。
+VibeDeck 有兩條渲染路徑：
 
 ```text
 Display / Pixel Path
@@ -269,9 +173,9 @@ Deck HTML/CSS/JS
 browser-native rendering
 ```
 
-Windows Host 負責顯示器探索、串流、配對、裝置信任、Deck 探索、本機資料服務，以及可選的遠端連線。副裝置只負責瀏覽器 UI。
+Windows Host 負責顯示器探索、串流、配對、裝置信任、Deck 探索、本機資料服務，以及選用的遠端連線。副裝置只需要瀏覽器 UI。
 
-更深入的架構文件：
+更深入的架構說明：
 
 - `docs/product-architecture.md`
 - `docs/host-endpoint-architecture.md`
@@ -281,19 +185,29 @@ Windows Host 負責顯示器探索、串流、配對、裝置信任、Deck 探�
 
 ## 安全性與隱私
 
-VibeDeck 把 Windows Host 視為本機權限的最終來源。
+Windows Host 仍然是本機權限中心。
 
-- 裝置必須完成配對後才能使用受信任 API。
-- Device credentials 僅限 VibeDeck 使用，且可以撤銷。
-- 敏感的本機狀態儲存在 `%ProgramData%\VibeDeck`，並使用 Windows ACL 保護。
-- 遠端路由不會把配對核准權交給雲端路徑。
-- 一般手機 / PWA 使用情境會透過 HTTPS 連線。
+- 裝置必須先配對，才能使用受信任 API。
+- 裝置憑證只用於 VibeDeck，而且可以撤銷。
+- 敏感本機狀態存放在 `%ProgramData%\VibeDeck`，並使用 Windows ACL 保護。
+- 遠端路由本身不具備配對授權能力。
+- 正常的手機 / PWA 使用流程會透過 HTTPS。
 
-安全行為與 trust boundary 由 `tests/VibeDeck.Host.Tests/` 中的自動化 product-flow 與 security tests 覆蓋。
+安全行為與信任邊界都有對應的自動化 product-flow 與 security tests，位於 `tests/VibeDeck.Host.Tests/`。
 
-## 開發
+## 為什麼我做 VibeDeck
 
-主要 Solution：
+我常看到那種裝在電腦旁邊或機殼裡的小螢幕，用來顯示溫度和系統資訊。看久了才發現，我真正想要的其實不是再買一塊硬體，而是一個地方，放那些值得偶爾看一眼，但又不值得佔著主螢幕的東西。
+
+Coding agent 有時候只是卡著等核准。AI 額度想知道，但不需要一直開著 App。打遊戲時 GPU 溫度偶爾要看，Windows 通知也最好待在旁邊，不要跳到眼前。
+
+而我桌上本來就有一支幾乎沒在用的舊手機。
+
+這就是 VibeDeck 最基本的想法：**把你已經有的螢幕重新拿來用，給它一份真正有用的工作。**
+
+## 開發資訊
+
+主要 solution：
 
 ```text
 VibeDeck.sln
@@ -311,31 +225,25 @@ scripts/                    build, install, validation, and release tooling
 docs/                       architecture and product documentation
 ```
 
-目前正式 Installer 使用的是上游 **Virtual Display Driver** 整合。`driver/VibeDeck.Idd/` 是另一條實驗中的 VibeDeck IDD 開發線，不會偷偷取代 production Setup 的 driver path。
+正式安裝程式目前使用 upstream **Virtual Display Driver** 整合。`driver/VibeDeck.Idd/` 是另一條獨立開發線，不會偷偷取代 production Setup 的 driver path。
 
-## 問題回報與建議
+## 回饋與問題
 
-遇到 Bug、特定裝置相容性問題，或想到一個適合閒置螢幕的新用途，都歡迎開 GitHub Issue。
+遇到 bug、特定裝置問題，或想到新的閒置螢幕用途，都可以開 GitHub Issue。
 
-VibeDeck 目前主要採直接維護開發，而不是以公開 Pull Request queue 作為主要開發流程。如果你有實作想法，建議先開 Issue 討論實際使用情境。詳細方式請見 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
+VibeDeck 目前主要透過直接開發維護，不是以開放 PR queue 為主。如果你有實作想法，建議先開 Issue 討論使用情境。詳細流程請看 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
 
 ## Roadmap
 
-核心方向很簡單：
+目前優先方向：
 
-1. 讓 Display path 延遲更低、連線更穩
+1. 降低 Display latency，並提升連線韌性
 2. 讓 Deck 更容易製作、分享與組合
-3. 讓同一台裝置在 Display 與 Deck 之間的切換更像原生體驗
-4. 持續改善手機、平板和電子紙裝置體驗，同時避免依賴平台專屬 Client App
+3. 讓同一台裝置在 Display 與 Deck 之間切換得更自然
+4. 持續改善手機、平板與電子紙體驗，同時維持副裝置不用安裝平台專屬 App
 
-VibeDeck 刻意比「手機當副螢幕」更廣。**閒置螢幕只是硬體，真正的產品是你讓它去做什麼。**
+## License
 
-## 歷史
+VibeDeck 採用 **PolyForm Shield License 1.0.0**。在授權允許的用途內，可以使用、修改與重新散布，但不能拿它來提供與 VibeDeck 競爭的產品。實際條款請以 [`LICENSE`](LICENSE) 為準。
 
-VibeDeck 是從早期的 PhoneMonitor prototype 演化而來。舊 hackathon 記錄與產品快照會保留在 `docs/history/`，作為歷史資料，而不是拿來定義現在的產品。
-
-## 授權
-
-VibeDeck 以 **PolyForm Shield License 1.0.0** 公開原始碼。你可以在授權允許的用途下使用、修改與散布，但不能拿它來提供與 VibeDeck 競爭的產品。實際法律條款請以 [`LICENSE`](LICENSE) 為準。
-
-第三方元件仍依各自的授權條款使用，相關聲明請見 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)。
+第三方元件仍使用各自的授權，整理在 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)。
