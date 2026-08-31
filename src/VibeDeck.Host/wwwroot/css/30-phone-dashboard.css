@@ -401,7 +401,16 @@
 
 /* Compact phone presentation is selected by native container space. */
 @container sideboard-view (max-width: 44rem) {
-  .mobile-overview { display: flex; }
+  .mobile-overview {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .mobile-quota-strip {
+    margin-top: clamp(0px, 2cqh, 16px);
+  }
 }
 
 /* Below this content width two full action labels and a quota identity no

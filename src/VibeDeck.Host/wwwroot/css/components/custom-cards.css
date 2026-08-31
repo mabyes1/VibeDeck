@@ -303,6 +303,11 @@
   overflow-wrap: anywhere;
 }
 
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) .custom-status-value,
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) .custom-metric-value {
+  font-size: clamp(18px, min(4cqw, 7cqh), 34px);
+}
+
 .custom-metric-unit {
   margin-left: 4px;
   color: rgba(247,242,232,.72);
@@ -375,6 +380,48 @@
   margin-left: 2px;
   color: var(--side-accent);
   animation: custom-stream-caret 650ms steps(1, end) infinite;
+}
+
+@container sideboard-view (max-height: 30rem) {
+.custom-card {
+    gap: 4px;
+    padding: 6px;
+    scrollbar-gutter: auto;
+}
+
+.custom-card-header,
+.custom-status-content,
+.custom-metric-content { gap: 3px; }
+
+.custom-card-title {
+    font-size: 12px;
+    line-height: 1.05;
+}
+
+.custom-card-source,
+.custom-card-footer,
+.custom-card-freshness,
+.custom-feed-meta {
+    font-size: 9px;
+    line-height: 1.05;
+}
+
+.custom-status-value,
+.custom-metric-value {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.custom-status-detail,
+.custom-card-empty,
+.custom-feed-text,
+.custom-key-value-list {
+    font-size: 10px;
+    line-height: 1.12;
+}
+
+.custom-feed-list { gap: 3px; }
+.custom-feed-item { padding: 4px 5px; }
 }
 
 @keyframes custom-stream-caret {

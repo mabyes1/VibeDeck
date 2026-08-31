@@ -12,7 +12,7 @@ import {
 import { createDisplayInputController } from "./modules/display-input.js?v=50";
 import { createCustomCardsController } from "./modules/custom-cards.js?v=55";
 import { createActivityFeedController } from "./modules/activity-feed.js?v=55";
-import { createDashboardLayoutController } from "./modules/dashboard-layout.js?v=65";
+import { createDashboardLayoutController } from "./modules/dashboard-layout.js?v=67";
 import { createQuotaController } from "./modules/quota-controller.js?v=52";
 import {
   createQuotaAccountNavigator,
@@ -39,7 +39,7 @@ import { createPairingSessionController } from "./modules/pairing-session-contro
 import { createProductUpdateController } from "./modules/product-update-controller.js?v=1";
 import { createDisplayInstallController } from "./modules/display-install-controller.js?v=2";
 import { createTurnSettingsController } from "./modules/turn-settings-controller.js?v=1";
-import { createKeepAwakeController } from "./modules/keep-awake-controller.js?v=1";
+import { createKeepAwakeController } from "./modules/keep-awake-controller.js?v=6";
 import { createDisplaySourceController } from "./modules/display-source-controller.js?v=2";
 import {
   chooseAutoDisplayMode,
@@ -56,7 +56,7 @@ import {
 } from "./modules/secondary-card-dialog.js?v=3";
 import { createSideboardController } from "./modules/sideboard.js?v=51";
 import { createAppThemeController } from "./modules/app-theme.js?v=3";
-import { createMobileOverviewController } from "./modules/mobile-overview.js?v=3";
+import { createMobileOverviewController } from "./modules/mobile-overview.js?v=4";
 import { isFullscreenDisplayStreaming as isFullscreenDisplayStreamingPolicy } from "./modules/dashboard-background-policy.js?v=1";
 import { createStreamController } from "./modules/stream-controller.js?v=56";
 import { createStreamDebugOverlay } from "./modules/stream-debug-overlay.js?v=1";
@@ -145,6 +145,8 @@ import {
     const displayInstallDetail = document.getElementById("displayInstallDetail");
     const openSideboardFromEmpty = document.getElementById("openSideboardFromEmpty");
     const exitViewer = document.getElementById("exitViewer");
+    const dashboardExitViewer = document.getElementById("dashboardExitViewer");
+    const mobileFullscreen = document.getElementById("mobileFullscreen");
     const streamPreset = document.getElementById("streamPreset");
     const streamFps = document.getElementById("streamFps");
     const streamQuality = document.getElementById("streamQuality");
@@ -474,6 +476,30 @@ import {
       root.style.setProperty("--safe-area-inset-left", iphone && landscape ? "44px" : "0px");
     }
 
+    function syncSideboardContentSafeArea(width, height) {
+      const root = document.documentElement;
+      root.style.removeProperty("--sideboard-content-inset-left");
+      root.style.removeProperty("--sideboard-content-inset-right");
+      if (!isIphone() || width <= height) return;
+
+      // iPhone's native safe-area rectangle is intentionally conservative in
+      // landscape and may reserve both horizontal sides. Sideboard content can
+      // use the opposite side while still keeping the background under the
+      // physical safe area. Safari's exposed landscape angle is opposite the
+      // physical notch side for this purpose: 90deg => notch on the left,
+      // 270deg => notch on the right. Device Lab draws its notch on the left.
+      let angle = isDevicePreview("iphone-xs") ? 90 : Number(window.screen?.orientation?.angle);
+      if (!Number.isFinite(angle)) angle = Number(window.orientation);
+      angle = ((angle % 360) + 360) % 360;
+      if (angle === 90) {
+        root.style.setProperty("--sideboard-content-inset-left", "var(--safe-area-inset-left, env(safe-area-inset-left, 0px))");
+        root.style.setProperty("--sideboard-content-inset-right", "0px");
+      } else if (angle === 270) {
+        root.style.setProperty("--sideboard-content-inset-left", "0px");
+        root.style.setProperty("--sideboard-content-inset-right", "var(--safe-area-inset-right, env(safe-area-inset-right, 0px))");
+      }
+    }
+
     function isMobileClient() {
       if (isDevicePreview()) return MOBILE_DEVICE_PREVIEW_KINDS.has(devicePreviewKind);
       return isMobileUA();
@@ -700,9 +726,9 @@ import {
       if (!trusted) {
         tip.innerHTML = tLegacy("HTTPS 就緒。回 PC 配對並掃 QR，成功後同一頁加入主畫面。");
       } else if (!isStandaloneApp()) {
-        tip.innerHTML = tLegacy("已配對。分享 → <strong>加入主畫面</strong>，打開後點 <strong>長亮 ON</strong>。");
+        tip.innerHTML = tLegacy("已配對。分享 → <strong>加入主畫面</strong>；開啟 VibeDeck 後會自動保持螢幕常亮。");
       } else {
-        tip.innerHTML = tLegacy("主畫面模式。用副螢幕時點 <strong>長亮 ON</strong>。");
+        tip.innerHTML = tLegacy("主畫面模式。開啟 VibeDeck 後會自動保持螢幕常亮。");
       }
     }
 
@@ -850,6 +876,8 @@ import {
         width = height;
         height = swapped;
       }
+
+      syncSideboardContentSafeArea(width, height);
 
       document.documentElement.style.setProperty("--viewer-width", `${width}px`);
       document.documentElement.style.setProperty("--viewer-height", `${height}px`);
@@ -2077,8 +2105,6 @@ import {
       document,
       window,
       navigator,
-      localStorage,
-      button: document.getElementById("keepAwake"),
       video: document.getElementById("keepAwakeVideo"),
       isIos,
       isMobileClient,
@@ -2259,13 +2285,18 @@ import {
     }
 
     function setDashboardConnectionState(state) {
-      dashboardConnectionState = state === "online" ? "online" : "connecting";
+      dashboardConnectionState = state === "online"
+        ? "online"
+        : state === "offline" || state === "disconnected"
+          ? "offline"
+          : "connecting";
       document.querySelectorAll("[data-eink-connection-state]").forEach(element => {
         const online = dashboardConnectionState === "online";
-        element.textContent = online ? "連線中" : "正在連線";
+        const offline = dashboardConnectionState === "offline";
+        element.textContent = online ? "CONNECTED" : offline ? "DISCONNECTED" : "CONNECTING";
         element.classList.toggle("online", online);
-        element.classList.toggle("connecting", !online);
-        element.classList.toggle("offline", !online);
+        element.classList.toggle("connecting", !online && !offline);
+        element.classList.toggle("offline", offline);
       });
     }
 
@@ -2473,6 +2504,7 @@ import {
       const isDisplayMode = activeMode === "display";
       document.body.classList.toggle("viewer-fullscreen", isDisplayMode);
       document.body.classList.toggle("dashboard-viewer", !isDisplayMode);
+      if (!isDisplayMode && mobileFullscreen) mobileFullscreen.textContent = "EXIT";
       // E-ink / sideboard also need the immersive body class for 100dvh layout.
       if (!isDisplayMode) {
         document.body.classList.add("viewer-immersive");
@@ -2495,7 +2527,10 @@ import {
       // A tablet already held landscape does not need the transform, so allow
       // real browser fullscreen there instead of leaving Chrome chrome visible.
       const displayUsesCssRotation = isDisplayMode && document.body.classList.contains("force-landscape");
-      const useBrowserFullscreen = !isIos() && !displayUsesCssRotation;
+      // Device Lab compares layout inside a fixed simulated viewport. Native
+      // fullscreen would let Android previews escape the iframe while iOS
+      // stays on the CSS path, making the two device previews incomparable.
+      const useBrowserFullscreen = !isDevicePreview() && !isIos() && !displayUsesCssRotation;
       if (useBrowserFullscreen) {
         const root = document.documentElement;
         const candidates = [
@@ -2549,6 +2584,7 @@ import {
       document.body.classList.remove("viewer-fullscreen");
       document.body.classList.remove("dashboard-viewer");
       document.body.classList.remove("viewer-immersive");
+      if (mobileFullscreen) mobileFullscreen.textContent = tLegacy("全螢幕");
       resumeDashboardBackgroundWork();
       try {
         if (document.exitFullscreen && (document.fullscreenElement || document.webkitFullscreenElement)) {
@@ -3106,12 +3142,9 @@ import {
     document.querySelectorAll("[data-dashboard-mode]").forEach(button => {
       button.addEventListener("click", () => setMode(button.dataset.dashboardMode));
     });
-    const keepAwakeButton = document.getElementById("keepAwake");
-    if (keepAwakeButton) {
-      keepAwakeButton.addEventListener("click", keepAwakeController.toggle);
-    }
     fullscreen.addEventListener("click", enterLandscapeViewer);
     exitViewer.addEventListener("click", exitLandscapeViewer);
+    dashboardExitViewer?.addEventListener("click", exitLandscapeViewer);
     function onFullscreenChromeChange() {
       const inFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
       if (!inFs && !isIos()) {
@@ -3202,7 +3235,7 @@ import {
         scheduleAutoDisplayMode(120);
       }, 120);
     });
-    window.addEventListener("offline", () => setDashboardConnectionState("connecting"));
+    window.addEventListener("offline", () => setDashboardConnectionState("offline"));
     window.addEventListener("online", () => {
       setDashboardConnectionState("connecting");
       scheduleDashboardRefresh(activeMode === "quota" ? "quota" : "sideboard", true);

@@ -122,19 +122,19 @@
   transition: width .18s ease;
 }
 
-body.pc-console.mode-sideboard .quota-mini-card select {
+body.mode-sideboard:not(.eink-client) .quota-mini-card select {
   border-color: var(--side-glass-line);
   border-radius: 7px;
   background: rgba(7, 9, 14, .46);
 }
 
-body.pc-console.mode-sideboard .quota-mini-bar {
+body.mode-sideboard:not(.eink-client) .quota-mini-bar {
   border-color: var(--side-glass-line);
   border-radius: 999px;
   background: rgba(255, 255, 255, .07);
 }
 
-body.pc-console.mode-sideboard .quota-mini-bar span {
+body.mode-sideboard:not(.eink-client) .quota-mini-bar span {
   border-radius: inherit;
   background: var(--grad-accent);
 }

@@ -17,7 +17,7 @@
   <link id="manifestLink" rel="manifest" href="/manifest.json?v=54">
   <link rel="icon" type="image/svg+xml" href="/icons/vibedeck.svg?v=1" sizes="any">
   <title>VibeDeck</title>
-  <link rel="stylesheet" href="/index.css?v=156">
+  <link rel="stylesheet" href="/index.css?v=164">
   <style>
     /* Pairing is the recovery path: keep it usable even if an old iOS asset or
        a later boot request fails. JS only hides it after trust is confirmed. */
@@ -147,7 +147,6 @@
           </select>
         </label>
         <button id="einkModeToggle" type="button" aria-pressed="false" title="切換成電子紙版面（BOOX / 電子書）">電子書</button>
-        <button id="keepAwake" type="button">長亮 ON</button>
         <button id="fullscreen" type="button">全螢幕</button>
         <button id="refresh" type="button">重新連線</button>
         <button id="productUpdate" type="button" hidden>檢查更新</button>
@@ -572,11 +571,8 @@
           </div>
           <div class="sideboard-top-controls">
             <div class="dashboard-view-controls">
-              <div class="dashboard-mode-switch" role="group" aria-label="切換資訊頁面">
-                <button type="button" data-dashboard-mode="sideboard" aria-pressed="true">資訊板</button>
-                <button type="button" data-dashboard-mode="quota" aria-pressed="false" hidden>額度</button>
-              </div>
-              <span class="eink-connection-state connecting" data-eink-connection-state role="status">正在連線</span>
+              <span class="eink-connection-state connecting" data-eink-connection-state role="status">CONNECTING</span>
+              <button id="dashboardExitViewer" class="dashboard-exit-viewer" type="button" aria-label="Exit fullscreen">EXIT</button>
               <button id="launchDeckWindow" type="button" hidden data-i18n="ui.launchDeck">在虛擬螢幕顯示資訊板</button>
               <button id="dashboardEditToggle" class="dashboard-edit-toggle" type="button" aria-pressed="false">編輯版面</button>
             </div>
@@ -587,7 +583,7 @@
           <div class="mobile-overview-head">
             <div>
               <strong>資訊總覽</strong>
-              <span id="mobileConnectionState">正在連線</span>
+              <span id="mobileConnectionState">CONNECTING</span>
             </div>
             <div class="mobile-overview-actions">
               <button id="mobileFullscreen" type="button">全螢幕</button>
@@ -917,11 +913,7 @@
             <div id="quotaTabs" class="quota-tabs" role="tablist" aria-label="Quota provider tabs"></div>
           </div>
           <div class="dashboard-view-controls">
-            <div class="dashboard-mode-switch" role="group" aria-label="切換資訊頁面">
-              <button type="button" data-dashboard-mode="sideboard" aria-pressed="false">資訊板</button>
-              <button type="button" data-dashboard-mode="quota" aria-pressed="true" hidden>額度</button>
-            </div>
-            <span class="eink-connection-state connecting" data-eink-connection-state role="status">正在連線</span>
+            <span class="eink-connection-state connecting" data-eink-connection-state role="status">CONNECTING</span>
           </div>
           <span id="quotaUpdated" class="quota-status">--</span>
         </div>
@@ -984,6 +976,6 @@
 
   <button id="exitViewer" class="exit-viewer" type="button" aria-label="Exit viewer">×</button>
 
-  <script type="module" src="/index.js?v=163"></script>
+  <script type="module" src="/index.js?v=170"></script>
 </body>
 </html>

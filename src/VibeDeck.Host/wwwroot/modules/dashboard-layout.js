@@ -595,7 +595,6 @@ export function createDashboardLayoutController({
       else apply();
     }, 180);
   });
-
   return {
     load,
     loadIfNeeded: () => layoutLoaded ? Promise.resolve() : load(),

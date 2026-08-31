@@ -1646,3 +1646,59 @@ body.eink-client .quota-sideboard-slot > .quota-mini-compat {
 
   .quota-sideboard-family-select { max-width: 48%; }
 }
+
+@container sideboard-view (max-height: 30rem) {
+.quota-sideboard-slot {
+    --quota-account-gap: 2px;
+    --quota-account-padding: 2px 5px;
+    --quota-email-size: 10px;
+    --quota-pair-gap: 5px;
+    --quota-provider-gap: 2px;
+    --quota-provider-title-size: 9px;
+    --quota-window-gap: 2px 4px;
+    --quota-window-label-size: 8px;
+    --quota-window-value-size: 12px;
+    --quota-credit-size: 9px;
+    --quota-footer-gap: 3px;
+    --quota-footer-padding-top: 2px;
+}
+
+.quota-sideboard-account-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
+    align-items: center;
+}
+
+.quota-sideboard-account-card > .quota-account-head {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.quota-sideboard-account-card > .quota-card-toolbar {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.quota-sideboard-account-card > :is(.quota-pair, .quota-source-detail, .quota-credit-row, .quota-footer, .quota-action-status) {
+    grid-column: 1 / -1;
+}
+
+.quota-sideboard-account-card .quota-account-head { gap: 4px; }
+.quota-sideboard-account-card .quota-card-toolbar { gap: 4px; }
+
+.quota-sideboard-family-select {
+    min-height: 24px;
+    padding: 2px 22px 2px 6px;
+    font-size: 9px;
+}
+
+.quota-sideboard-account-card .quota-window small,
+.quota-sideboard-account-card .quota-source-detail,
+.quota-sideboard-account-card .quota-action-status,
+.quota-sideboard-account-card .quota-time {
+    font-size: 8px;
+    line-height: 1.05;
+}
+
+.quota-sideboard-account-card .quota-time { padding: 2px 5px; }
+}

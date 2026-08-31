@@ -176,7 +176,7 @@ export function createSideboardController({
       onWorkPulse?.(workPulse);
       onConnectionChange?.("online");
     } catch (error) {
-      onConnectionChange?.("connecting");
+      onConnectionChange?.("offline");
       if (isTrustRequiredError(error)) {
         sideHeadline.textContent = tLegacy("資訊板已鎖定");
         sideSummary.textContent = tLegacy("請先配對手機。");

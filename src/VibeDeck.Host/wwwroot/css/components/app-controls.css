@@ -137,7 +137,6 @@
   100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
 }
 
-body:not(.pc-console) #keepAwake,
 body:not(.pc-console) #fullscreen {
   min-height: 36px;
 }
@@ -154,7 +153,6 @@ body:not(.pc-console):not(.eink-client) .view-switcher .mode-button.active {
 }
 
 body.pc-console:not(.deck-window) #einkModeToggle,
-body.pc-console:not(.deck-window) #keepAwake,
 body.pc-console:not(.deck-window) #fullscreen {
   display: none;
 }
@@ -269,16 +267,6 @@ body.device-trusted:not(.pc-console):not(.mode-display) .utility-controls #refre
 body.device-trusted:not(.pc-console):not(.mode-display) .locale-control select {
   min-height: 44px;
   max-width: 148px;
-}
-
-body.ios-client .utility-controls #keepAwake {
-  display: inline-flex;
-}
-
-body #keepAwake.active {
-  background: rgba(112, 217, 139, .22);
-  border-color: rgba(112, 217, 139, .5);
-  color: #9dffb8;
 }
 
 body.device-trusted:not(.pc-console).mode-display #displaySettingsToggle {

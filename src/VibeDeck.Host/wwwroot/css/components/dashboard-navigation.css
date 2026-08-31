@@ -1,6 +1,6 @@
-/* Dashboard navigation / connection chrome --------------------------------
- * Owns local mode switching, view-control wrapping, and the compact
- * connection badge used by dashboard viewers and e-ink clients. */
+/* Dashboard connection chrome ---------------------------------------------
+ * Owns view-control wrapping and the compact text-only connection state used
+ * by dashboard viewers and e-ink clients. */
 
 .eink-connection-state {
   display: none;
@@ -10,58 +10,42 @@ body.eink-client .eink-connection-state {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  justify-content: center;
-  min-height: 44px;
   max-width: 100%;
-  padding: 4px 12px;
-  border: 3px solid #000;
-  border-radius: 4px;
-  background: #fffef8;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #000;
-  font-size: clamp(22px, 3.8vw, 32px);
+  font-size: clamp(16px, 2.8vw, 22px);
   font-weight: 900;
   line-height: 1;
-  letter-spacing: .04em;
-  white-space: normal;
-  text-align: center;
+  letter-spacing: .08em;
+  white-space: nowrap;
 }
 
 body.eink-client .eink-connection-state.online {
-  border-color: #000;
-  color: #fffef8;
-  background: #000;
+  color: #000;
 }
 
 body.remote-client:not(.eink-client):is(.dashboard-viewer, .viewer-immersive, .deck-window) .eink-connection-state {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  padding: 4px 10px;
-  border: 2px solid currentColor;
-  border-radius: 4px;
+  padding: 0;
+  border: 0;
   color: var(--side-accent, #fff);
   background: transparent;
-  font-size: 17px;
+  font-size: 13px;
   font-weight: 900;
   line-height: 1;
+  letter-spacing: .08em;
   white-space: nowrap;
 }
 
 body.remote-client:not(.eink-client) .eink-connection-state.online {
-  color: #071015;
-  border-color: var(--side-accent, #fff);
-  background: var(--side-accent, #fff);
+  color: var(--side-accent, #fff);
 }
 
-/* Local dashboard navigation appears only where global navigation is hidden. */
-body:not(.dashboard-viewer):not(.viewer-immersive):not(.deck-window) .dashboard-mode-switch {
-  display: none;
-}
-
-.dashboard-view-controls,
-.dashboard-mode-switch {
+.dashboard-view-controls {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -74,29 +58,25 @@ body:not(.dashboard-viewer):not(.viewer-immersive):not(.deck-window) .dashboard-
   flex-wrap: wrap;
 }
 
-.dashboard-mode-switch {
-  padding: 3px;
-  border: 1px solid var(--side-line, rgba(255,255,255,.22));
-  border-radius: 5px;
-  background: rgba(255,255,255,.06);
-}
-
-.dashboard-mode-switch button {
-  min-height: 38px;
-  padding: 5px 10px;
-  border: 1px solid transparent;
-  border-radius: 3px;
-  background: transparent;
-  color: inherit;
-  font-size: 17px;
+.dashboard-exit-viewer {
+  display: none;
+  min-height: 30px;
+  padding: 4px 9px;
+  border: 1px solid var(--side-glass-line, rgba(255, 255, 255, .18));
+  border-radius: 9px;
+  color: var(--side-text, #f7f2e8);
+  background: rgba(255, 255, 255, .045);
+  font: inherit;
+  font-size: 11px;
   font-weight: 800;
-  white-space: nowrap;
+  line-height: 1;
+  letter-spacing: .06em;
 }
 
-.dashboard-mode-switch button.active {
-  border-color: var(--side-accent, currentColor);
-  background: var(--side-accent, #fff);
-  color: #071015;
+body.dashboard-viewer.remote-client:not(.eink-client) .dashboard-exit-viewer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 body.eink-client .dashboard-view-controls {
@@ -104,30 +84,4 @@ body.eink-client .dashboard-view-controls {
   flex-wrap: wrap;
   min-width: 0;
   max-width: 100%;
-}
-
-body.eink-client .dashboard-mode-switch {
-  flex: 1 1 180px;
-  flex-wrap: wrap;
-  min-width: 0;
-  max-width: 100%;
-  border: 2px solid #000;
-  border-radius: 4px;
-  background: #fffef8;
-}
-
-body.eink-client .dashboard-mode-switch button {
-  flex: 1 1 88px;
-  min-width: 0;
-  min-height: 44px;
-  border: 2px solid transparent;
-  background: #fffef8;
-  color: #000;
-  white-space: normal;
-}
-
-body.eink-client .dashboard-mode-switch button.active {
-  border-color: #000;
-  background: #000;
-  color: #fffef8;
 }

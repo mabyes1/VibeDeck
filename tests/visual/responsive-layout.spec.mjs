@@ -55,6 +55,19 @@ function einkSideboardCases() {
   return cases;
 }
 
+function deviceLabPresetCases() {
+  return [
+    { name: "boox-go-color-7-portrait", width: 794, height: 1054, device: "boox-go-color-7", eink: true },
+    { name: "boox-go-color-7-landscape", width: 1054, height: 794, device: "boox-go-color-7", eink: true },
+    { name: "asus-zenpad-p024-portrait", width: 569, height: 911, device: "asus-zenpad-p024" },
+    { name: "asus-zenpad-p024-landscape", width: 911, height: 569, device: "asus-zenpad-p024" },
+    { name: "galaxy-s23-portrait", width: 360, height: 780, device: "galaxy-s23" },
+    { name: "galaxy-s23-landscape", width: 780, height: 360, device: "galaxy-s23" },
+    { name: "iphone-xs-portrait", width: 375, height: 812, device: "iphone-xs" },
+    { name: "iphone-xs-landscape", width: 812, height: 375, device: "iphone-xs" },
+  ];
+}
+
 async function openSideboard(page, scenario) {
   if (process.env.VIBEDECK_TEST_SOURCE_ASSETS === "1") {
     await page.route("**/*", route => {
@@ -199,6 +212,194 @@ test.describe("continuous responsive Sideboard", () => {
       expect(audit.shellSize[1]).toBeGreaterThan(0);
     });
   }
+
+  test("wide iphone landscape keeps saved geometry and compacts card typography", async ({ page }) => {
+    await openSideboard(page, {
+      name: "wide-iphone-landscape",
+      width: 926,
+      height: 428,
+      device: "iphone-xs",
+    });
+    const audit = await layoutAudit(page);
+    const density = await page.evaluate(() => ({
+      containerType: getComputedStyle(document.querySelector(".sideboard-view")).containerType,
+      metricValue: getComputedStyle(document.querySelector(".metric-value")).fontSize,
+      activityText: getComputedStyle(document.querySelector(".activity-feed-text") || document.querySelector(".activity-feed-card")).fontSize,
+    }));
+
+    expect(audit.dashboard).toBe(true);
+    expect(audit.overview).toBe(false);
+    expect(audit.overlaps).toEqual([]);
+    expect(audit.clipped).toEqual([]);
+    expect(density.containerType).toBe("size");
+    expect(density.metricValue).toBe("18px");
+    expect(Number.parseFloat(density.activityText)).toBeLessThanOrEqual(10);
+  });
+
+  test("portrait compact overview stays intrinsic before and during dashboard fullscreen", async ({ page }) => {
+    await openSideboard(page, {
+      name: "galaxy-s23-portrait",
+      width: 360,
+      height: 780,
+      device: "galaxy-s23",
+    });
+    const readGeometry = () => page.evaluate(() => {
+      const activity = document.querySelector(".mobile-activity-preview").getBoundingClientRect();
+      const quota = document.querySelector(".mobile-quota-strip").getBoundingClientRect();
+      return {
+        activityHeight: activity.height,
+        activityBottom: activity.bottom,
+        quotaTop: quota.top,
+        gap: quota.top - activity.bottom,
+      };
+    });
+    const normal = await readGeometry();
+    expect(normal.activityHeight).toBeLessThan(190);
+    expect(normal.gap).toBeGreaterThanOrEqual(8);
+    expect(normal.gap).toBeLessThanOrEqual(34);
+
+    await page.locator("#fullscreen").click({ force: true });
+    const fullscreen = await readGeometry();
+    expect(fullscreen.activityHeight).toBeLessThan(190);
+    expect(fullscreen.gap).toBeGreaterThanOrEqual(8);
+    expect(fullscreen.gap).toBeLessThanOrEqual(34);
+  });
+
+  test("portrait fullscreen reuses the compact fullscreen button as EXIT", async ({ page }) => {
+    await openSideboard(page, {
+      name: "galaxy-s23-portrait-exit",
+      width: 360,
+      height: 780,
+      device: "galaxy-s23",
+    });
+    await page.locator("#fullscreen").click({ force: true });
+    await expect(page.locator("#mobileFullscreen")).toHaveText("EXIT");
+    await expect(page.locator("#exitViewer")).toBeHidden();
+    await page.locator("#mobileFullscreen").click({ force: true });
+    await expect(page.locator("body.dashboard-viewer")).toHaveCount(0);
+    await expect(page.locator("#mobileFullscreen")).not.toHaveText("EXIT");
+  });
+
+  test("iphone landscape fullscreen keeps EXIT beside connection state and gives quota the recovered height", async ({ page }) => {
+    await openSideboard(page, {
+      name: "iphone-xs-landscape-inline-exit",
+      width: 812,
+      height: 375,
+      device: "iphone-xs",
+    });
+    await page.locator("#fullscreen").click({ force: true });
+    await expect(page.locator("#dashboardExitViewer")).toBeVisible();
+    await expect(page.locator("#exitViewer")).toBeHidden();
+    const geometry = await page.evaluate(() => {
+      const connection = document.querySelector("#sideboardView [data-eink-connection-state]").getBoundingClientRect();
+      const exit = document.querySelector("#dashboardExitViewer").getBoundingClientRect();
+      const quota = document.querySelector('[data-dashboard-key="quota-mini"]');
+      const host = document.querySelector("#quotaSideboardCard");
+      const card = host.firstElementChild;
+      return {
+        exitAfterConnection: exit.left >= connection.right - 1,
+        quotaClientHeight: quota.clientHeight,
+        quotaScrollHeight: quota.scrollHeight,
+        hostClientHeight: host.clientHeight,
+        hostScrollHeight: host.scrollHeight,
+        rows: [...(card?.children || [])].map(node => ({
+          className: node.className,
+          height: node.getBoundingClientRect().height,
+        })),
+      };
+    });
+    expect(geometry.exitAfterConnection).toBe(true);
+    expect(geometry.quotaScrollHeight - geometry.quotaClientHeight).toBeLessThanOrEqual(2);
+    expect(geometry.hostScrollHeight - geometry.hostClientHeight, JSON.stringify(geometry.rows)).toBeLessThanOrEqual(2);
+  });
+
+  test("iphone landscape preview keeps the large safe inset only on the notch side", async ({ page }) => {
+    await openSideboard(page, {
+      name: "iphone-xs-landscape-safe-area",
+      width: 812,
+      height: 375,
+      device: "iphone-xs",
+    });
+    await page.locator("#fullscreen").click({ force: true });
+    const padding = await page.evaluate(() => {
+      const style = getComputedStyle(document.querySelector(".sideboard-shell"));
+      return {
+        left: Number.parseFloat(style.paddingLeft),
+        right: Number.parseFloat(style.paddingRight),
+      };
+    });
+    expect(padding.left - padding.right).toBeGreaterThan(35);
+  });
+
+  for (const scenario of [
+    { name: "iphone-xs-viewer", width: 812, height: 375, device: "iphone-xs" },
+    { name: "galaxy-s23-viewer", width: 780, height: 360, device: "galaxy-s23" },
+  ]) {
+    test(`${scenario.name} uses the same in-frame dashboard viewer contract`, async ({ page }) => {
+      await openSideboard(page, scenario);
+      await page.locator("#fullscreen").click({ force: true });
+      await expect(page.locator("body.dashboard-viewer.viewer-immersive.mode-sideboard")).toHaveCount(1);
+      const nativeFullscreen = await page.evaluate(() => Boolean(document.fullscreenElement || document.webkitFullscreenElement));
+      const audit = await layoutAudit(page);
+      expect(nativeFullscreen).toBe(false);
+      expect(audit.documentOverflowX).toBe(false);
+      expect(audit.overlaps).toEqual([]);
+      expect(audit.clipped).toEqual([]);
+    });
+  }
+});
+
+test.describe("Device Lab preset matrix", () => {
+  for (const scenario of deviceLabPresetCases()) {
+    test(scenario.name, async ({ page }) => {
+      await openSideboard(page, scenario);
+
+      const initial = await layoutAudit(page);
+      expect(initial.documentOverflowX).toBe(false);
+      expect(initial.overlaps).toEqual([]);
+      expect(initial.chromeOverlaps).toEqual([]);
+      expect(initial.clipped, JSON.stringify(initial.wideDescendants, null, 2)).toEqual([]);
+
+      if (scenario.eink) {
+        await expect(page.locator("body.eink-client.dashboard-viewer")).toHaveCount(1);
+        await expect(page.locator("#exitViewer")).toBeVisible();
+        return;
+      }
+
+      const compact = initial.overview;
+      const enter = compact ? page.locator("#mobileFullscreen") : page.locator("#fullscreen");
+      await enter.click({ force: true });
+      await expect(page.locator("body.dashboard-viewer.viewer-immersive.mode-sideboard")).toHaveCount(1);
+
+      const fullscreen = await layoutAudit(page);
+      expect(fullscreen.documentOverflowX).toBe(false);
+      expect(fullscreen.overlaps).toEqual([]);
+      expect(fullscreen.chromeOverlaps).toEqual([]);
+      expect(fullscreen.clipped, JSON.stringify(fullscreen.wideDescendants, null, 2)).toEqual([]);
+
+      if (compact) {
+        await expect(page.locator("#mobileFullscreen")).toHaveText("EXIT");
+      } else {
+        await expect(page.locator("#dashboardExitViewer")).toBeVisible();
+        const quotaOverflow = await page.evaluate(() => {
+          const host = document.querySelector("#quotaSideboardCard");
+          const slot = document.querySelector(".quota-sideboard-slot");
+          if (!host || !slot || !host.getClientRects().length) return null;
+          return {
+            hostX: host.scrollWidth - host.clientWidth,
+            hostY: host.scrollHeight - host.clientHeight,
+            slotX: slot.scrollWidth - slot.clientWidth,
+            slotY: slot.scrollHeight - slot.clientHeight,
+          };
+        });
+        expect(quotaOverflow).not.toBeNull();
+        expect(quotaOverflow.hostX).toBeLessThanOrEqual(2);
+        expect(quotaOverflow.hostY).toBeLessThanOrEqual(2);
+        expect(quotaOverflow.slotX).toBeLessThanOrEqual(2);
+        expect(quotaOverflow.slotY).toBeLessThanOrEqual(2);
+      }
+    });
+  }
 });
 
 test.describe("continuous E-Ink Sideboard", () => {
@@ -320,12 +521,13 @@ test.describe("App theme controls", () => {
     await expect(accountCard).not.toHaveCSS("background-image", "none");
   });
 
-  test("immersive viewer keeps a reachable glass exit pill above product chrome", async ({ page }) => {
-    await openSideboard(page, { name: "viewer-exit-pill", width: 911, height: 569, device: "asus-zenpad-p024" });
+  test("dashboard immersive viewer keeps EXIT inline instead of floating over product chrome", async ({ page }) => {
+    await openSideboard(page, { name: "viewer-inline-exit", width: 911, height: 569, device: "asus-zenpad-p024" });
     await page.locator("body").evaluate(body => {
       body.classList.add("dashboard-viewer", "viewer-immersive");
     });
-    const exit = page.locator("#exitViewer");
+    await expect(page.locator("#exitViewer")).toBeHidden();
+    const exit = page.locator("#dashboardExitViewer");
     await expect(exit).toBeVisible();
     const geometry = await exit.evaluate(element => {
       const rect = element.getBoundingClientRect();
@@ -334,14 +536,12 @@ test.describe("App theme controls", () => {
         top: rect.top,
         right: rect.right,
         bottom: rect.bottom,
-        zIndex: Number.parseInt(getComputedStyle(element).zIndex || "0", 10),
         width: innerWidth,
         height: innerHeight,
       };
     });
-    expect(geometry.zIndex).toBeGreaterThan(12);
-    expect(geometry.right - geometry.left).toBeGreaterThanOrEqual(48);
-    expect(geometry.bottom - geometry.top).toBeGreaterThanOrEqual(48);
+    expect(geometry.right - geometry.left).toBeGreaterThanOrEqual(36);
+    expect(geometry.bottom - geometry.top).toBeGreaterThanOrEqual(28);
     expect(geometry.left).toBeGreaterThanOrEqual(0);
     expect(geometry.top).toBeGreaterThanOrEqual(0);
     expect(geometry.right).toBeLessThanOrEqual(geometry.width);

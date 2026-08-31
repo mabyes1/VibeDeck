@@ -331,6 +331,21 @@ body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) main {
 body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) .sideboard-view.active {
   height: 100%;
   min-height: 0;
+  /* Read-mode layout is fully definite in both axes, so it can safely own a
+   * two-dimensional query container. Card density now follows the actual
+   * Sideboard box instead of a JS viewport-height classifier. */
+  container: sideboard-view / size;
+}
+
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) .sideboard-shell {
+  --side-title-size: clamp(16px, min(3.4cqw, 5.8cqh), 28px);
+  --side-kicker-size: clamp(9px, min(1.2cqw, 2.4cqh), 11px);
+  --side-big-size: clamp(34px, min(10.4cqw, 14cqh), 84px);
+  --side-summary-size: clamp(9px, min(1.5cqw, 2.6cqh), 13px);
+  --side-feed-size: clamp(10px, min(1.45cqw, 2.7cqh), 13px);
+  /* Safe-area padding remains real layout space, but it should look like part
+   * of the dashboard surface rather than a detached black footer. */
+  background: linear-gradient(180deg, rgba(255, 255, 255, .012), rgba(255, 255, 255, .006));
 }
 
 /* A finite read canvas has exactly one content scroller per card. Decorative
@@ -341,6 +356,53 @@ body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) .sideboard-shell
 
 body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) #systemSideboardPage.dashboard-grid {
   overflow: hidden;
+}
+
+/* A wide-but-short LCD surface keeps the persisted 12-column geometry, while
+ * the card internals respond to the actual Sideboard block size. This is a
+ * CSS container contract rather than a device class or a JS height threshold. */
+@container sideboard-view (max-height: 30rem) {
+.side-load {
+    --side-kicker-size: 9px;
+    --side-big-size: 34px;
+    --side-summary-size: 9px;
+    --side-summary-line: 1.12;
+    gap: 2px;
+    padding: 5px 7px;
+}
+
+.side-load-normal,
+.side-load-alert { gap: 2px; }
+
+.side-load-normal > strong,
+.side-load-alert > strong {
+    font-size: 16px;
+    line-height: 1.05;
+}
+
+.side-load-normal > span,
+.side-load-alert > span {
+    font-size: 10px;
+    line-height: 1.1;
+}
+
+.side-summary { gap: 1px; }
+
+.side-feed {
+    gap: 3px;
+    padding: 6px;
+}
+
+.feed-heading {
+    font-size: 9px;
+    line-height: 1.05;
+}
+
+.feed-list {
+    gap: 2px;
+    font-size: 10px;
+    line-height: 1.12;
+}
 }
 
 body.deck-window.mode-sideboard .side-title strong {
@@ -367,16 +429,16 @@ body.deck-window.mode-sideboard #systemSideboardPage.dashboard-grid {
   min-height: 0;
 }
 
-/* Desktop visual hierarchy. Keep the dashboard geometry untouched, but give
- * the canvas and its primary cards enough depth to read as product surfaces
- * instead of a collection of equally loud bordered boxes. */
-body.pc-console.mode-sideboard .sideboard-shell {
+/* LCD visual hierarchy. Keep dashboard geometry untouched, but render the
+ * same glass material on the PC console and trusted LCD viewers. E-Ink owns
+ * its intentionally flat black/white material further below. */
+body.mode-sideboard:not(.eink-client) .sideboard-shell {
   border-color: transparent;
   border-radius: 16px;
   box-shadow: none;
 }
 
-body.pc-console.mode-sideboard:not(.dashboard-edit-mode) .side-panel {
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) .side-panel {
   border-color: var(--side-glass-line);
   border-radius: 12px;
   background:
@@ -387,19 +449,19 @@ body.pc-console.mode-sideboard:not(.dashboard-edit-mode) .side-panel {
     var(--side-glass-shadow);
 }
 
-body.pc-console.mode-sideboard:not(.dashboard-edit-mode) [data-dashboard-key="system-load"] {
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) [data-dashboard-key="system-load"] {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .05),
     0 8px 24px rgba(0, 0, 0, .12);
 }
 
-body.pc-console.mode-sideboard:not(.dashboard-edit-mode) [data-dashboard-key="activity-feed"] {
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) [data-dashboard-key="activity-feed"] {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .05),
     0 8px 24px rgba(0, 0, 0, .12);
 }
 
-body.pc-console.mode-sideboard:not(.dashboard-edit-mode) [data-dashboard-key="quota-mini"] {
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) [data-dashboard-key="quota-mini"] {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .05),
     0 8px 24px rgba(0, 0, 0, .12);
@@ -454,9 +516,9 @@ body.eink-client.mode-sideboard:not(.dashboard-edit-mode) .sideboard-shell {
 
 body.ios-client.remote-client:not(.eink-client).dashboard-viewer.mode-sideboard .sideboard-shell {
   padding-top: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
-  padding-right: calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right, 0px)));
+  padding-right: calc(10px + var(--sideboard-content-inset-right, var(--safe-area-inset-right, env(safe-area-inset-right, 0px))));
   padding-bottom: calc(8px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
-  padding-left: calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left, 0px)));
+  padding-left: calc(10px + var(--sideboard-content-inset-left, var(--safe-area-inset-left, env(safe-area-inset-left, 0px))));
 }
 
 @container sideboard-view (max-width: 44rem) {

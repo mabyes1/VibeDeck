@@ -1,7 +1,6 @@
 /* E-Ink app-shell exclusions. Visual primitives live in eink-primitives.css. */
 body.eink-client #displayMode,
 body.eink-client .display-view.app-view,
-body.eink-client #keepAwake,
 body.eink-client header .panel.panel {
   display: none;
 }
@@ -242,8 +241,8 @@ body.eink-client header .panel.panel {
     }
 
     body.viewer-fullscreen .exit-viewer,
-    body.dashboard-viewer .exit-viewer,
-    body.viewer-immersive .exit-viewer {
+    body.viewer-immersive:not(.dashboard-viewer) .exit-viewer,
+    body.dashboard-viewer.eink-client .exit-viewer {
       display: inline-grid;
       place-items: center;
     }

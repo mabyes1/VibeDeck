@@ -48,6 +48,11 @@
   transition: transform .2s cubic-bezier(.4, 0, .2, 1), box-shadow .2s ease, border-color .2s ease;
 }
 
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) .metric-card {
+  --metric-value-size: clamp(18px, min(3.7cqw, 6.2cqh), 32px);
+  --metric-sub-size: clamp(9px, min(1.35cqw, 2.4cqh), 12px);
+}
+
 .metric-card:hover {
   transform: translateY(-1px);
   border-color: var(--side-glass-line-hover);
@@ -127,6 +132,30 @@ body.pc-console.mode-sideboard .metric-card:hover {
 
 body.deck-window.mode-sideboard .metric-value {
   line-height: 1.08;
+}
+
+/* Keep one-row metric cards legible when the Sideboard's own block size is
+ * short. Saved card geometry remains unchanged; only internal density moves. */
+@container sideboard-view (max-height: 30rem) {
+.metric-card {
+    --metric-card-padding: 4px 6px;
+    --metric-card-row-gap: 1px;
+    --metric-card-column-gap: 4px;
+    --metric-title-size: 11px;
+    --metric-title-line: 1;
+    --metric-value-size: 18px;
+    --metric-value-line: 1;
+    --metric-sub-size: 9px;
+    --metric-sub-line: 1.05;
+    --metric-bar-height: 3px;
+    overflow: hidden;
+}
+
+.metric-sub {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 }
 
 body.eink-client #systemSideboardPage.dashboard-grid .metric-card {

@@ -17,6 +17,12 @@ test("compact Sideboard is selected by container space instead of a device selec
   assert.match(shell, /container:\s*sideboard-view\s*\/\s*inline-size/);
   assert.match(shell, /\.sideboard-shell\s*\{[\s\S]*min-width:\s*0/);
   assert.match(phone, /@container\s+sideboard-view\s*\(max-width:\s*44rem\)/);
+  assert.match(phone, /\.mobile-overview\s*\{[\s\S]*display:\s*flex[\s\S]*flex-direction:\s*column/);
+  assert.doesNotMatch(phone, /\.mobile-overview\s*\{[^}]*min-height:\s*100cqh/);
+  assert.doesNotMatch(phone, /\.mobile-overview\s*\{[^}]*max-height:\s*100cqh/);
+  assert.match(phone, /\.mobile-quota-strip\s*\{\s*margin-top:\s*clamp\(0px,\s*2cqh,\s*16px\)/);
+  assert.doesNotMatch(phone, /\.mobile-quota-strip\s*\{\s*margin-top:\s*auto/);
+  assert.doesNotMatch(phone, /grid-template-rows:\s*auto\s+auto\s+auto\s+minmax\(108px,\s*1fr\)\s+auto/);
   assert.match(phone, /@container\s+sideboard-view\s*\(max-width:\s*18rem\)[\s\S]*\.mobile-overview-actions[\s\S]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
   assert.match(shell, /@container sideboard-view[^}]*[\s\S]*\.sideboard-shell\s*\{[^}]*scrollbar-gutter:\s*auto/);
   assert.match(phone, /\.mobile-overview-section,[\s\S]*var\(--theme-glass/);
@@ -57,6 +63,65 @@ test("dashboard row geometry comes from the persisted layout model", async () =>
   assert.doesNotMatch(controller, /dashboard-card-hidden/);
   assert.doesNotMatch(shell, /viewport-portrait\s+#systemSideboardPage\.dashboard-grid/);
   assert.doesNotMatch(controller, /isTabletClient|tablet-(?:portrait|landscape)/);
+});
+
+test("short LCD dashboards use a two-axis CSS container without changing saved geometry", async () => {
+  const [shell, metrics, activity, cards, quota, controller] = await Promise.all([
+    css("components/sideboard-shell.css"),
+    css("components/metric-card.css"),
+    css("components/activity-feed.css"),
+    css("components/custom-cards.css"),
+    css("components/quota-page.css"),
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/modules/dashboard-layout.js", import.meta.url), "utf8"),
+  ]);
+
+  assert.doesNotMatch(shell, /container:\s*dashboard-read-grid\s*\/\s*size/);
+  assert.match(shell, /\.sideboard-view\.active\s*\{[\s\S]*container:\s*sideboard-view\s*\/\s*size/);
+  for (const owner of [shell, metrics, activity, cards, quota]) {
+    assert.match(owner, /@container\s+sideboard-view\s*\(max-height:\s*30rem\)/);
+    assert.doesNotMatch(owner, /dashboard-short-canvas/);
+  }
+  assert.match(shell, /min\(3\.4cqw,\s*5\.8cqh\)/);
+  assert.match(metrics, /min\(3\.7cqw,\s*6\.2cqh\)/);
+  assert.match(cards, /min\(4cqw,\s*7cqh\)/);
+  assert.match(metrics, /--metric-value-size:\s*18px/);
+  assert.match(activity, /\.activity-feed-text\s*\{[\s\S]*font-size:\s*10px/);
+  assert.match(cards, /\.custom-status-value,[\s\S]*font-size:\s*18px/);
+  assert.match(quota, /--quota-window-value-size:\s*12px/);
+  assert.doesNotMatch(controller, /syncReadDensity|dashboard-short-canvas|height\s*<=\s*416/);
+});
+
+test("Device Lab keeps Android and iPhone viewer fullscreen on the same CSS path", async () => {
+  const index = await readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8");
+  assert.match(index, /const useBrowserFullscreen = !isDevicePreview\(\) && !isIos\(\) && !displayUsesCssRotation/);
+});
+
+test("dashboard fullscreen reuses existing controls instead of reserving or overlaying viewer space", async () => {
+  const [html, core, navigation, mobile, index] = await Promise.all([
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.html", import.meta.url), "utf8"),
+    css("10-core.css"),
+    css("components/dashboard-navigation.css"),
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/modules/mobile-overview.js", import.meta.url), "utf8"),
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8"),
+  ]);
+  assert.match(html, /data-eink-connection-state[^>]*>CONNECTING<\/span>\s*<button id="dashboardExitViewer"/);
+  assert.match(navigation, /body\.dashboard-viewer\.remote-client:not\(\.eink-client\) \.dashboard-exit-viewer/);
+  assert.doesNotMatch(core, /dashboard-viewer\.mode-sideboard[^}]*padding-top:\s*42px/);
+  assert.doesNotMatch(core, /dashboard-viewer\.mode-sideboard[^}]*\.exit-viewer[^}]*left:\s*50%/);
+  assert.match(mobile, /classList\.contains\("dashboard-viewer"\)[\s\S]*byId\("exitViewer"\)\?\.click/);
+  assert.match(index, /dashboardExitViewer\?\.addEventListener\("click",\s*exitLandscapeViewer\)/);
+});
+
+test("iPhone landscape Sideboard content uses only the physical notch side", async () => {
+  const [index, shell] = await Promise.all([
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8"),
+    css("components/sideboard-shell.css"),
+  ]);
+  assert.match(index, /function syncSideboardContentSafeArea\(width, height\)/);
+  assert.match(index, /angle === 90[\s\S]*--sideboard-content-inset-left[\s\S]*--sideboard-content-inset-right", "0px"/);
+  assert.match(index, /angle === 270[\s\S]*--sideboard-content-inset-left", "0px"[\s\S]*--sideboard-content-inset-right/);
+  assert.match(shell, /--sideboard-content-inset-right/);
+  assert.match(shell, /--sideboard-content-inset-left/);
 });
 
 test("remote dashboard waits for trusted layout data and never retries an invalid empty board", async () => {
@@ -135,9 +200,12 @@ test("quota identity text can break at arbitrary narrow widths", async () => {
 });
 
 test("LCD product surfaces share the Host-owned neutral glass material", async () => {
-  const [tokens, core, quota, setup, pairing] = await Promise.all([
+  const [tokens, core, shell, activity, mini, quota, setup, pairing] = await Promise.all([
     css("00-base-tokens.css"),
     css("10-core.css"),
+    css("components/sideboard-shell.css"),
+    css("components/activity-feed.css"),
+    css("components/quota-mini-card.css"),
     css("components/quota-page.css"),
     css("components/setup-diagnostics.css"),
     css("components/pairing-setup.css"),
@@ -152,8 +220,13 @@ test("LCD product surfaces share the Host-owned neutral glass material", async (
   assert.doesNotMatch(quota, /radial-gradient\(circle at 62% 52%,\s*rgba\(77,\s*207,\s*255/);
   assert.match(setup, /\.setup-panels \.panel\s*\{[\s\S]*background:\s*var\(--theme-surface\)/);
   assert.match(pairing, /\.connect-panel\s*\{[\s\S]*background:\s*var\(--theme-surface\)/);
-  assert.match(core, /body\.viewer-immersive \.exit-viewer/);
+  assert.match(core, /body\.viewer-immersive:not\(\.dashboard-viewer\) \.exit-viewer/);
   assert.match(core, /\.exit-viewer\s*\{[\s\S]*z-index:\s*5000/);
+  assert.match(shell, /body\.mode-sideboard:not\(\.dashboard-edit-mode\):not\(\.eink-client\) \.side-panel/);
+  assert.match(activity, /body\.mode-sideboard:not\(\.eink-client\) \.activity-feed-item\s*\{[\s\S]*linear-gradient/);
+  assert.match(mini, /body\.mode-sideboard:not\(\.eink-client\) \.quota-mini-bar span\s*\{[\s\S]*var\(--grad-accent\)/);
+  assert.doesNotMatch(activity, /body\.pc-console\.mode-sideboard \.activity-feed-item\s*\{/);
+  assert.doesNotMatch(mini, /body\.pc-console\.mode-sideboard \.quota-mini-bar/);
 });
 
 test("Custom Cards management responds to its own container", async () => {
@@ -263,4 +336,21 @@ test("custom Deck help responds to its viewport container", async () => {
   assert.match(deck, /container:\s*custom-deck-view\s*\/\s*size/);
   assert.match(deck, /@container\s+custom-deck-view\s*\(max-width:\s*48rem\)/);
   assert.doesNotMatch(deck, /(?:phone|mobile)-client|viewport-(?:portrait|landscape)|!important/);
+});
+
+test("immersive dashboard chrome has no redundant mode switch and uses text-only connection states", async () => {
+  const [html, js, navigation] = await Promise.all([
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.html", import.meta.url), "utf8"),
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8"),
+    css("components/dashboard-navigation.css"),
+  ]);
+
+  assert.doesNotMatch(html, /class="dashboard-mode-switch"/);
+  assert.match(html, /data-eink-connection-state[^>]*>CONNECTING</);
+  assert.match(js, /CONNECTED/);
+  assert.match(js, /CONNECTING/);
+  assert.match(js, /DISCONNECTED/);
+  assert.doesNotMatch(navigation, /\.dashboard-mode-switch/);
+  assert.match(navigation, /\.eink-connection-state[\s\S]*border:\s*0;/);
+  assert.match(navigation, /\.eink-connection-state[\s\S]*background:\s*transparent;/);
 });

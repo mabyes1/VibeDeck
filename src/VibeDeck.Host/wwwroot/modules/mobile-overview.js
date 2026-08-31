@@ -82,7 +82,7 @@ export function createMobileOverviewController() {
     setText("mobileDetailHealth", textOf("sideHealth", tLegacy("等待資料")));
 
     const connection = document.querySelector("#sideboardView [data-eink-connection-state]");
-    setText("mobileConnectionState", connection?.textContent?.trim() || tLegacy("正在連線"));
+    setText("mobileConnectionState", connection?.textContent?.trim() || "CONNECTING");
     byId("mobileConnectionState")?.classList.toggle("online", connection?.classList.contains("online"));
   }
 
@@ -228,7 +228,13 @@ export function createMobileOverviewController() {
     renderLayoutEditor();
     openPanel(layoutPanel);
   });
-  byId("mobileFullscreen")?.addEventListener("click", () => byId("fullscreen")?.click());
+  byId("mobileFullscreen")?.addEventListener("click", () => {
+    if (document.body.classList.contains("dashboard-viewer")) {
+      byId("exitViewer")?.click();
+    } else {
+      byId("fullscreen")?.click();
+    }
+  });
   byId("mobileQuotaOpen")?.addEventListener("click", () => byId("quotaMode")?.click());
   root.querySelectorAll("[data-mobile-panel-close]").forEach(button => button.addEventListener("click", closePanels));
   root.querySelectorAll("[data-mobile-activity-filter]").forEach(button => button.addEventListener("click", () => {
