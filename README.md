@@ -6,86 +6,23 @@
 
 > **Give your spare screen a new job.**
 >
-> A Windows Host that turns a spare browser-capable screen into a **real Windows display** or a **browser-native, hackable Deck**.
+> VibeDeck turns an old phone, tablet, laptop, e-paper device, or other browser-capable screen into either a **real Windows display** or a **browser-native custom Deck**.
 >
 > **Host: Windows 10/11 · Client: modern browser · No client app required.**
 
 **[Download the latest Windows release](https://github.com/mabyes1/VibeDeck/releases/latest)** · [Build from source](#build-from-source)
 
-VibeDeck is a Windows host for spare phones, tablets, e-paper devices, laptops, and other browser-capable screens. It has two distinct paths that can share the same device:
+## What VibeDeck does
 
-- **Display** renders an actual Windows display over the network.
-- **Deck** renders purpose-built HTML/CSS/JS directly in the device browser.
+VibeDeck gives one spare screen two very different jobs:
 
-Those two rendering paths can power very different jobs. Out of the box, VibeDeck can be a real Windows display, a custom HTML Deck, an AI quota monitor, or a system information board with Windows notifications.
+| | |
+|---|---|
+| **Real Windows Display** | Move normal Windows applications onto the spare device. VibeDeck captures a Windows display, streams it over WebRTC, and relays input back to the PC. |
+| **Custom HTML Decks** | Run purpose-built HTML, CSS, and JavaScript directly in the device browser at its native resolution. |
+| **Glanceable built-in views** | Keep AI quota, system state, tasks, activity, and Windows notifications nearby without taking over a desktop monitor. |
 
-## Why I built VibeDeck
-
-Recently I started seeing those tiny displays people mount inside a PC case to show CPU/GPU temperatures, utilization, and other system stats.
-
-They looked great. I was immediately tempted.
-
-Then I saw the price: a few hundred to a few thousand NT dollars.
-
-Once I thought about it, I realized I did not really want that piece of hardware.
-
-I just wanted somewhere to put information that was **not important enough to deserve my main screen, but not unimportant enough to ignore.**
-
-So I did not buy one.
-
-I also use Claude Code and Codex heavily for development.
-
-My main monitor is for code and documents. The second one used to hold chat and reference material. Then an Agent joined the desk.
-
-But I do not actually want to stare at an Agent while it works. I do not care what it is doing every second.
-
-Sometimes I only need to know:
-
-**Is it finished? Is it stuck? Is it waiting for me to press Allow?**
-
-Anyone who uses coding agents has probably left one running for half an hour, come back, and discovered that it spent twenty-nine of those minutes waiting for an approval.
-
-Then I looked at an old phone on my desk whose only remaining job was being an alarm clock.
-
-And that little display still sitting in my shopping cart flashed back into my head.
-
-**What if the Agent could just live over there?**
-
-So I built something that turns an old phone or tablet into another Windows display.
-
-That was the earliest version of VibeDeck.
-
-After using it for a while, development started burning through enough AI quota to give me quota anxiety.
-
-Then it clicked: **isn't quota the same kind of information?**
-
-I do not need to stare at it, but I do want to know how much is left whenever I glance over.
-
-So I added the quota view.
-
-I also play games when I am not developing. GPU temperature and CPU load are exactly the kind of things I sometimes want to glance at while playing.
-
-Windows notifications are things I do not want jumping in front of me, but also cannot completely ignore. Weather is similar.
-
-They are all the same kind of information.
-
-**They do not deserve to take over my screen, but they deserve somewhere nearby to live.**
-
-At that point I had one more thought.
-
-If you like the architecture but think my interface is ugly, that is completely fair.
-
-So I left an escape hatch.
-
-An HTML Deck is just ordinary HTML, CSS, and JavaScript. You can build your own quota board, information panel, controls, or put in whatever you actually want to see.
-
-You can ignore every interface I made if you want.
-
-**If a browser can render it, it can basically become your Deck.**
-
-VibeDeck ended up becoming something pretty different from what I first imagined.
-
-It is not about buying another tiny display. It is about taking the old phones, tablets, and screens you already own, the ones that still work but no longer have much of a purpose, and **giving them a job again.**
+The same device can switch between Display and Deck views. Use Windows pixels when you need a real desktop application; use browser-native rendering when a small-screen interface makes more sense.
 
 ## Real product captures
 
@@ -110,70 +47,37 @@ These are captures from the actual VibeDeck product and hardware, not UI mockups
   </tr>
 </table>
 
-## Four useful jobs. One spare screen.
+## Real Windows apps on a spare screen
 
-| | What it does |
-|---|---|
-| **Real Windows Display** | Put an actual Windows application on the spare screen. VibeDeck uses a real Windows display, streams it over WebRTC, and relays input back to Windows. |
-| **Hackable HTML Decks** | Drop in `index.html`, CSS, and JavaScript to build a purpose-made interface that renders natively in the device browser. |
-| **AI Quota at a glance** | Keep Codex, Claude, AGY, reset times, percentages, and remaining credits visible without opening another app. |
-| **Info Board + Windows Notifications** | See CPU, RAM, GPU, VRAM, activity, tasks, and desktop notifications together on a glanceable second screen. |
-
-The result is not just screen mirroring and not just a dashboard. It is a small-screen runtime where Windows pixels and browser-native interfaces can coexist on the same device.
-
-## Real Windows applications, not a fake monitor
-
-Use a spare device as a real Windows display. VibeDeck creates or discovers a Windows display, captures it, streams it to the browser, and relays input back to Windows. Normal Windows applications can be moved onto that display just like any other monitor.
+Display mode gives the browser device a real Windows display to show. Normal Windows applications can be moved onto it just like another monitor.
 
 ![VibeDeck real Windows display](docs/assets/social-preview2.png)
 
-Good for:
+Useful for:
 
-- putting a normal Windows app on a dedicated small screen
-- dashboards that already exist as desktop software
+- putting a desktop app on a dedicated small screen
+- dashboards that already exist as Windows software
 - temporary second-display workflows
 - devices where installing a native client would be annoying or impossible
 
-## One glance for quota, system state, and notifications
-
-The built-in information board is designed for the things that are useful precisely because they stay visible: AI quota, machine telemetry, activity, tasks, and Windows notifications from the optional notification companion.
-
-![VibeDeck Sideboard with AI quota, system status and Windows notifications](docs/assets/social-preview3.png)
-
-This is deliberately different from shrinking a desktop dashboard onto a small screen. The browser-native layout can reflow for phones, tablets, and e-paper devices while keeping the important numbers readable.
-
 ## Build the screen you actually want
 
-Run a browser-native experience directly on the spare screen. A Deck is simply a folder with a manifest plus normal web files.
+A Deck is ordinary HTML, CSS, and JavaScript rendered directly by the device browser.
 
 **If it can be a webpage, it can be a Deck.**
 
-Decks avoid video encoding entirely, stay sharp at the device's native resolution, and are easy to inspect, modify, and replace. Put in `index.html`, add the CSS and JavaScript you want, and VibeDeck discovers the Deck automatically.
-
-The repository includes **Coding Pet** as a tiny example Deck.
+Decks avoid video encoding, stay sharp at the device's native resolution, and can reflow for phones, tablets, or e-paper screens. VibeDeck discovers valid Deck folders automatically.
 
 ![VibeDeck custom HTML Deck](docs/assets/social-preview1.png)
 
-## Why VibeDeck
+VibeDeck ships with a few useful examples:
 
-- **Windows Host, browser client.** The Host runs on Windows 10/11; phones, tablets, BOOX devices, macOS/Linux computers, and other browser-capable screens all use the same web client.
-- **Real Windows display.** Display mode is backed by Windows display enumeration rather than a fake canvas pretending to be a monitor.
-- **Hackable by default.** Decks are ordinary HTML, CSS, and JavaScript.
-- **One device, multiple jobs.** A device can move between Display, Sideboard, Quota, Custom Decks, and other purpose-built views.
-- **Local authority.** Pairing and device trust remain controlled by the Windows Host even when remote connectivity is enabled.
-- **No secondary-device installer.** The browser is the client.
-
-## Built-in Decks and views
-
-VibeDeck currently includes several small-screen experiences:
-
-- **Display** for Windows screen streaming and remote input
-- **Sideboard** for system state, activity, tasks, AI quota, and Windows notification history
+- **Sideboard** for CPU, GPU, memory, activity, tasks, AI quota, and Windows notification history
 - **Quota** for focused AI usage and account quota views
-- **Custom Decks** for user-authored browser-native interfaces
+- **Coding Pet** as a small custom Deck example
 - **Remote access** for reaching a trusted Host outside the local network
 
-These are applications built on VibeDeck, not the definition of VibeDeck itself. The platform is the combination of the Windows Host, display path, browser runtime, trust model, and Deck model.
+Use them, modify your own Decks, or ignore the built-in views completely.
 
 ## Build your own Deck
 
@@ -209,19 +113,19 @@ VibeDeck discovers valid Deck folders automatically, and a Deck itself has no bu
 
 ### Windows setup
 
-Download the latest published Windows Setup from the **[GitHub Releases page](https://github.com/mabyes1/VibeDeck/releases/latest)**. The normal product path is a single installer:
+Download the latest published Windows Setup from the **[GitHub Releases page](https://github.com/mabyes1/VibeDeck/releases/latest)**:
 
 ```text
 VibeDeck-Setup-<version>.exe
 ```
 
-Install it from the signed-in Windows desktop so the Host is registered and launched in the interactive user session. VibeDeck stores persistent machine data under:
+Install it from the signed-in Windows desktop. Persistent machine data is stored under:
 
 ```text
 C:\ProgramData\VibeDeck
 ```
 
-After installation, open VibeDeck on the Windows PC and follow the connection flow for the spare device. Local discovery starts over HTTP and upgrades the device to HTTPS for normal use.
+Open VibeDeck on the PC and follow the connection flow on the spare device. Local discovery starts over HTTP and upgrades the device to HTTPS for normal use.
 
 > **Windows signing note:** current public builds are not yet Authenticode-signed, so Windows may show an unknown-publisher / SmartScreen warning. Release assets include a SHA-256 checksum for integrity verification.
 
@@ -250,7 +154,7 @@ pwsh scripts/package-windows-setup.ps1
 
 ## How it works
 
-VibeDeck has two rendering paths.
+VibeDeck has two rendering paths:
 
 ```text
 Display / Pixel Path
@@ -269,7 +173,7 @@ Deck HTML/CSS/JS
 browser-native rendering
 ```
 
-The Windows Host owns display discovery, streaming, pairing, device trust, Deck discovery, local data services, and optional remote connectivity. The secondary device owns only the browser UI.
+The Windows Host owns display discovery, streaming, pairing, device trust, Deck discovery, local data services, and optional remote connectivity. The secondary device only needs the browser UI.
 
 For deeper architecture notes, see:
 
@@ -281,7 +185,7 @@ For deeper architecture notes, see:
 
 ## Security and privacy
 
-VibeDeck treats the Windows Host as the local authority.
+The Windows Host remains the local authority.
 
 - Devices pair before receiving trusted APIs.
 - Device credentials are scoped to VibeDeck and can be revoked.
@@ -290,6 +194,16 @@ VibeDeck treats the Windows Host as the local authority.
 - The Host uses HTTPS for normal mobile/PWA operation.
 
 Security behavior and trust boundaries are covered by the automated product-flow and security tests in `tests/VibeDeck.Host.Tests/`.
+
+## Why I built it
+
+I kept seeing small PC displays made for temperatures and system stats. They looked useful, but what I actually wanted was not another piece of hardware. I wanted somewhere to put information that was worth glancing at but not worth occupying a main monitor.
+
+The same problem kept showing up elsewhere. Coding agents sometimes sit waiting for approval. AI quota is useful to know without opening another app. GPU temperature matters while gaming, but not enough to live on the main display. Windows notifications are useful precisely when they can stay out of the way.
+
+There was already an old phone on my desk doing almost nothing.
+
+That became the basic idea behind VibeDeck: **use the screens you already own, and give them a useful job.**
 
 ## Development
 
@@ -315,24 +229,18 @@ The production installer currently uses the upstream **Virtual Display Driver** 
 
 ## Feedback and issues
 
-Found a bug, a device-specific problem, or a useful new job for a spare screen? Open a GitHub Issue. Bug reports and product ideas are welcome.
+Found a bug, a device-specific problem, or a useful new job for a spare screen? Open a GitHub Issue.
 
 VibeDeck is primarily maintained through direct project development rather than an open pull-request queue. If you have an implementation idea, start with an Issue so the use case can be discussed first. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the current contribution workflow.
 
 ## Roadmap
 
-The core direction is simple:
+Current priorities:
 
-1. make the Display path lower-latency and more resilient
+1. lower Display latency and improve resilience
 2. make Decks easier to author, share, and compose
 3. make switching between Display and Deck feel native on the same device
-4. keep improving phone, tablet, and e-paper behavior without requiring platform-specific client apps
-
-VibeDeck is intentionally broader than a phone monitor: the spare screen is the hardware; the useful job is the product.
-
-## History
-
-VibeDeck grew out of an earlier PhoneMonitor prototype. Historical hackathon notes and product snapshots are preserved under `docs/history/` rather than defining the current product surface.
+4. keep improving phone, tablet, and e-paper behavior without platform-specific client apps
 
 ## License
 
