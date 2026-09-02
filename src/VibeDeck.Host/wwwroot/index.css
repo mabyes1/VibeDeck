@@ -4,7 +4,7 @@
 
 /* App foundation. */
 @import url("/css/00-base-tokens.css?v=4");
-@import url("/css/10-core.css?v=13");
+@import url("/css/10-core.css?v=14");
 
 /* Early feature baselines. Display precedes its later control owner; the
    legacy-numbered compact dashboard file is container-driven. */
@@ -17,7 +17,7 @@
 @import url("/css/components/eink-primitives.css?v=3");
 
 /* Final component owners. */
-@import url("/css/components/sideboard-shell.css?v=19");
+@import url("/css/components/sideboard-shell.css?v=20");
 @import url("/css/components/dashboard-editor.css?v=7");
 @import url("/css/components/custom-cards.css?v=7");
 @import url("/css/components/dashboard-navigation.css?v=3");
@@ -29,7 +29,7 @@
 @import url("/css/components/quota-mini-card.css?v=10");
 @import url("/css/components/activity-feed.css?v=12");
 @import url("/css/components/quota-page.css?v=24");
-@import url("/css/components/custom-deck.css?v=3");
+@import url("/css/components/custom-deck.css?v=5");
 
 /* Final E-Ink dashboard content. */
 @import url("/css/components/eink-dashboard-content.css?v=4");

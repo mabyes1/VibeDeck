@@ -97,6 +97,32 @@ async function openSideboard(page, scenario) {
   await page.locator("body.mode-sideboard").waitFor();
 }
 
+async function openDeckShell(page, scenario) {
+  if (process.env.VIBEDECK_TEST_SOURCE_ASSETS === "1") {
+    await page.route("**/*", route => {
+      const url = new URL(route.request().url());
+      const relative = decodeURIComponent(url.pathname).replace(/^\/+/, "");
+      const sourcePath = path.resolve(sourceWebRoot, relative);
+      const isLocalAsset = sourcePath.startsWith(sourceWebRoot + path.sep) &&
+        /\.(?:css|html|js|json|svg)$/i.test(sourcePath) && existsSync(sourcePath);
+      return isLocalAsset ? route.fulfill({ path: sourcePath }) : route.continue();
+    });
+  }
+  await page.setViewportSize({ width: scenario.width, height: scenario.height });
+  const query = new URLSearchParams({
+    mode: "deck",
+    source: "responsive-test",
+    preview: String(Date.now()),
+  });
+  if (scenario.device) {
+    query.set("devicePreview", scenario.device);
+    query.set("previewTrust", "paired");
+  }
+  await page.goto(`${host}/index.html?${query}`, { waitUntil: "domcontentloaded" });
+  await page.locator(`body.mode-deck`).waitFor();
+  await page.locator("#customDeckView").waitFor();
+}
+
 async function layoutAudit(page) {
   return page.evaluate(() => {
     const visible = element => Boolean(
@@ -265,7 +291,7 @@ test.describe("continuous responsive Sideboard", () => {
     expect(fullscreen.gap).toBeLessThanOrEqual(34);
   });
 
-  test("portrait fullscreen reuses the compact fullscreen button as EXIT", async ({ page }) => {
+  test("portrait fullscreen hides exit chrome and Back leaves viewer", async ({ page }) => {
     await openSideboard(page, {
       name: "galaxy-s23-portrait-exit",
       width: 360,
@@ -273,14 +299,13 @@ test.describe("continuous responsive Sideboard", () => {
       device: "galaxy-s23",
     });
     await page.locator("#fullscreen").click({ force: true });
-    await expect(page.locator("#mobileFullscreen")).toHaveText("EXIT");
+    await expect(page.locator("#mobileFullscreen")).toBeHidden();
     await expect(page.locator("#exitViewer")).toBeHidden();
-    await page.locator("#mobileFullscreen").click({ force: true });
+    await page.evaluate(() => history.back());
     await expect(page.locator("body.dashboard-viewer")).toHaveCount(0);
-    await expect(page.locator("#mobileFullscreen")).not.toHaveText("EXIT");
   });
 
-  test("iphone landscape fullscreen keeps EXIT beside connection state and gives quota the recovered height", async ({ page }) => {
+  test("iphone landscape fullscreen has no exit chrome and gives quota the full height", async ({ page }) => {
     await openSideboard(page, {
       name: "iphone-xs-landscape-inline-exit",
       width: 812,
@@ -288,16 +313,13 @@ test.describe("continuous responsive Sideboard", () => {
       device: "iphone-xs",
     });
     await page.locator("#fullscreen").click({ force: true });
-    await expect(page.locator("#dashboardExitViewer")).toBeVisible();
+    await expect(page.locator("#dashboardExitViewer")).toBeHidden();
     await expect(page.locator("#exitViewer")).toBeHidden();
     const geometry = await page.evaluate(() => {
-      const connection = document.querySelector("#sideboardView [data-eink-connection-state]").getBoundingClientRect();
-      const exit = document.querySelector("#dashboardExitViewer").getBoundingClientRect();
       const quota = document.querySelector('[data-dashboard-key="quota-mini"]');
       const host = document.querySelector("#quotaSideboardCard");
       const card = host.firstElementChild;
       return {
-        exitAfterConnection: exit.left >= connection.right - 1,
         quotaClientHeight: quota.clientHeight,
         quotaScrollHeight: quota.scrollHeight,
         hostClientHeight: host.clientHeight,
@@ -308,7 +330,6 @@ test.describe("continuous responsive Sideboard", () => {
         })),
       };
     });
-    expect(geometry.exitAfterConnection).toBe(true);
     expect(geometry.quotaScrollHeight - geometry.quotaClientHeight).toBeLessThanOrEqual(2);
     expect(geometry.hostScrollHeight - geometry.hostClientHeight, JSON.stringify(geometry.rows)).toBeLessThanOrEqual(2);
   });
@@ -321,14 +342,21 @@ test.describe("continuous responsive Sideboard", () => {
       device: "iphone-xs",
     });
     await page.locator("#fullscreen").click({ force: true });
-    const padding = await page.evaluate(() => {
-      const style = getComputedStyle(document.querySelector(".sideboard-shell"));
+    const geometry = await page.evaluate(() => {
+      const shell = document.querySelector(".sideboard-shell");
+      const style = getComputedStyle(shell);
+      const shellRect = shell.getBoundingClientRect();
       return {
         left: Number.parseFloat(style.paddingLeft),
         right: Number.parseFloat(style.paddingRight),
+        bottom: Number.parseFloat(style.paddingBottom),
+        shellBottom: shellRect.bottom,
+        viewportBottom: innerHeight,
       };
     });
-    expect(padding.left - padding.right).toBeGreaterThan(35);
+    expect(geometry.left - geometry.right).toBeGreaterThan(35);
+    expect(geometry.bottom).toBe(0);
+    expect(Math.abs(geometry.viewportBottom - geometry.shellBottom)).toBeLessThanOrEqual(1);
   });
 
   for (const scenario of [
@@ -362,7 +390,7 @@ test.describe("Device Lab preset matrix", () => {
 
       if (scenario.eink) {
         await expect(page.locator("body.eink-client.dashboard-viewer")).toHaveCount(1);
-        await expect(page.locator("#exitViewer")).toBeVisible();
+        await expect(page.locator("#exitViewer")).toBeHidden();
         return;
       }
 
@@ -378,9 +406,9 @@ test.describe("Device Lab preset matrix", () => {
       expect(fullscreen.clipped, JSON.stringify(fullscreen.wideDescendants, null, 2)).toEqual([]);
 
       if (compact) {
-        await expect(page.locator("#mobileFullscreen")).toHaveText("EXIT");
+        await expect(page.locator("#mobileFullscreen")).toBeHidden();
       } else {
-        await expect(page.locator("#dashboardExitViewer")).toBeVisible();
+        await expect(page.locator("#dashboardExitViewer")).toBeHidden();
         const quotaOverflow = await page.evaluate(() => {
           const host = document.querySelector("#quotaSideboardCard");
           const slot = document.querySelector(".quota-sideboard-slot");
@@ -521,30 +549,33 @@ test.describe("App theme controls", () => {
     await expect(accountCard).not.toHaveCSS("background-image", "none");
   });
 
-  test("dashboard immersive viewer keeps EXIT inline instead of floating over product chrome", async ({ page }) => {
+  test("dashboard immersive viewer has no visible exit chrome", async ({ page }) => {
     await openSideboard(page, { name: "viewer-inline-exit", width: 911, height: 569, device: "asus-zenpad-p024" });
     await page.locator("body").evaluate(body => {
       body.classList.add("dashboard-viewer", "viewer-immersive");
     });
     await expect(page.locator("#exitViewer")).toBeHidden();
-    const exit = page.locator("#dashboardExitViewer");
-    await expect(exit).toBeVisible();
-    const geometry = await exit.evaluate(element => {
-      const rect = element.getBoundingClientRect();
-      return {
-        left: rect.left,
-        top: rect.top,
-        right: rect.right,
-        bottom: rect.bottom,
-        width: innerWidth,
-        height: innerHeight,
-      };
-    });
-    expect(geometry.right - geometry.left).toBeGreaterThanOrEqual(36);
-    expect(geometry.bottom - geometry.top).toBeGreaterThanOrEqual(28);
-    expect(geometry.left).toBeGreaterThanOrEqual(0);
-    expect(geometry.top).toBeGreaterThanOrEqual(0);
-    expect(geometry.right).toBeLessThanOrEqual(geometry.width);
-    expect(geometry.bottom).toBeLessThanOrEqual(geometry.height);
+    await expect(page.locator("#dashboardExitViewer")).toBeHidden();
+  });
+
+  test("Custom Deck immersive viewer has no blocking chrome and Back/Escape exit", async ({ page }) => {
+    await openDeckShell(page, { name: "deck-viewer-exit", width: 780, height: 360, device: "galaxy-s23" });
+    expect(await page.evaluate(() => document.getElementById("keepAwakeVideo")?.parentElement === document.body)).toBe(true);
+    await page.locator("#fullscreen").click({ force: true });
+    await expect(page.locator("body.deck-viewer.viewer-immersive")).toHaveCount(1);
+    await expect(page.locator("body.dashboard-viewer")).toHaveCount(0);
+    await expect(page.locator("#exitViewer")).toBeHidden();
+    await expect(page.locator("#dashboardExitViewer")).toBeHidden();
+
+    await page.evaluate(() => history.back());
+    await expect(page.locator("body.deck-viewer")).toHaveCount(0);
+    await expect(page.locator("body.viewer-immersive")).toHaveCount(0);
+    await expect(page.locator("#customDeckView")).toBeVisible();
+
+    await page.locator("#fullscreen").click({ force: true });
+    await expect(page.locator("body.deck-viewer.viewer-immersive")).toHaveCount(1);
+    await page.keyboard.press("Escape");
+    await expect(page.locator("body.deck-viewer")).toHaveCount(0);
+    await expect(page.locator("body.viewer-immersive")).toHaveCount(0);
   });
 });

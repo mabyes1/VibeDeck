@@ -203,7 +203,7 @@ Example `deck.json`:
 }
 ```
 
-VibeDeck discovers valid Deck folders automatically. See `docs/custom-data-sources-spec.md` and the bundled `src/VibeDeck.Host/DeckExamples/coding-pet/` example for the current extension model.
+VibeDeck discovers valid Deck folders automatically, and a Deck itself has no build step. Static Decks run inside a `sandbox="allow-scripts"` iframe, so they must not assume they are same-origin with the VibeDeck shell or directly call protected Host APIs. Host-provided Deck data uses the read-only Deck Bridge and `/api/deck-data/*` contract. See `docs/custom-decks.md` for the precise sandbox, data-access and fullscreen rules. The bundled `src/VibeDeck.Host/DeckExamples/coding-pet/` is a plain front-end example. `docs/custom-data-sources-spec.md` describes a separate push-data/card model rather than the Custom Deck runtime.
 
 ## Quick start
 

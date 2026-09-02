@@ -176,6 +176,8 @@
     "sideboard": "資訊板",
     "quota": "額度",
     "display": "副螢幕",
+    "customDeck": "Custom Deck",
+    "deck": "Deck",
     "setup": "裝置設定",
     "trustState": "配對狀態",
     "paired": "已配對",

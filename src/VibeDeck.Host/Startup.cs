@@ -22,6 +22,7 @@ using VibeDeck.Host.Appearance;
 using VibeDeck.Host.Connect;
 using VibeDeck.Host.CustomDecks;
 using VibeDeck.Host.CustomSources;
+using VibeDeck.Host.Stocks;
 using VibeDeck.Host.Diagnostics;
 using VibeDeck.Host.Display;
 using VibeDeck.Host.Dashboard;
@@ -77,6 +78,15 @@ namespace VibeDeck.Host
             services.AddSingleton<DashboardEventHub>();
             services.AddSingleton<DashboardLayoutService>();
             services.AddSingleton<AppearanceThemeService>();
+            services.AddSingleton<MitakeQuoteService>();
+            services.AddHostedService(sp => sp.GetRequiredService<MitakeQuoteService>());
+            services.AddHttpClient("stock-market", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(3);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("VibeDeck/0.1 (+local market deck)");
+            });
+            services.AddSingleton<StockMarketOverviewService>();
+            services.AddHostedService(sp => sp.GetRequiredService<StockMarketOverviewService>());
             services.AddSingleton<CustomDeckService>();
             services.AddSingleton<CustomDeckProxyService>();
             services.AddSingleton<AuditTrailService>();
@@ -272,6 +282,7 @@ namespace VibeDeck.Host
             {
                 MapCustomSourceEndpoints(endpoints);
                 MapCustomDeckEndpoints(endpoints);
+                MapStockEndpoints(endpoints);
                 MapAppearanceEndpoints(endpoints);
                 MapDashboardLayoutEndpoints(endpoints);
                 MapDiagnosticsEndpoints(endpoints);

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>VibeDeck Device Lab</title>
-  <link rel="stylesheet" href="/device-lab.css?v=1">
+  <link rel="stylesheet" href="/device-lab.css?v=2">
   <script>
     if (location.hostname !== "localhost") {
       location.replace(`http://localhost:5000/device-lab.html${location.search}${location.hash}`);
@@ -44,8 +44,13 @@
           <option value="sideboard" data-i18n="sideboard">資訊板</option>
           <option value="quota" data-i18n="quota">額度</option>
           <option value="display" data-i18n="display">副螢幕</option>
+          <option value="deck" data-i18n="customDeck">Custom Deck</option>
           <option value="setup" data-i18n="setup">裝置設定</option>
         </select>
+      </label>
+      <label id="deckControl" hidden>
+        <span data-i18n="deck">Deck</span>
+        <select id="deckSelect" aria-label="Custom Deck"></select>
       </label>
       <label>
         <span data-i18n="trustState">配對狀態</span>
@@ -98,6 +103,6 @@
     <span id="deviceSource"></span>
   </footer>
 
-  <script src="/device-lab.js?v=5" defer></script>
+  <script src="/device-lab.js?v=6" defer></script>
 </body>
 </html>

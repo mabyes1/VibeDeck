@@ -203,7 +203,7 @@ my-deck/
 }
 ```
 
-VibeDeck 會自動探索有效的 Deck 資料夾。目前的擴充模型可參考 `docs/custom-data-sources-spec.md`，以及內附的 `src/VibeDeck.Host/DeckExamples/coding-pet/` 範例。
+VibeDeck 會自動探索有效的 Deck 資料夾，Deck 本身不需要 build。Static Deck 會在 `sandbox="allow-scripts"` 的隔離 iframe 中執行，因此不能假設自己與 VibeDeck 主頁同源，也不能直接裸呼叫受保護的 Host API。需要 Host 提供資料時，請使用 read-only Deck Bridge 與 `/api/deck-data/*` 契約。完整規則請看 `docs/custom-decks.md`；內附的 `src/VibeDeck.Host/DeckExamples/coding-pet/` 可作為純前端範例。`docs/custom-data-sources-spec.md` 則是另一套「外部系統推資料進卡片」模型，不等同 Custom Deck。
 
 ## 快速開始
 

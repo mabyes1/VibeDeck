@@ -28,3 +28,15 @@ test("dead WebRTC peers use bounded full-session rebuild before JPEG", async () 
   assert.match(controller, /fallbackToJpeg\(generation/);
   assert.doesNotMatch(controller, /restartIce\(\)/);
 });
+
+test("initial WebRTC negotiation cannot remain stuck forever", async () => {
+  const controller = await readFile(
+    new URL("../../src/VibeDeck.Host/wwwroot/modules/stream-controller.js", import.meta.url),
+    "utf8");
+
+  assert.match(controller, /WEBRTC_INITIAL_CONNECT_TIMEOUT_MS\s*=\s*18000/);
+  assert.match(controller, /scheduleInitialConnectRecovery\(peer, generation\)/);
+  assert.match(controller, /initial-connect-timeout/);
+  assert.match(controller, /rebuildRtcSession\(peer, generation, "initial-connect-timeout"\)/);
+  assert.match(controller, /後自動重試/);
+});

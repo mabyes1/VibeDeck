@@ -6,6 +6,7 @@ import {
 } from "./webrtc-retry-scheduler.js?v=1";
 
 const WEBRTC_DISCONNECT_GRACE_MS = 12000;
+const WEBRTC_INITIAL_CONNECT_TIMEOUT_MS = 18000;
 const WEBRTC_SESSION_REBUILD_LIMIT = 2;
 const WEBRTC_REBUILD_STABLE_MS = 30000;
 const JPEG_RECONNECT_MAX_MS = 15000;
@@ -82,6 +83,8 @@ export function createStreamController({
   let webrtcCooldownUntil = 0;
   let rtcSessionRebuildAttempts = 0;
   let rebuildingRtcSession = false;
+  let initialConnectTimer = null;
+  let initialConnectDeadline = 0;
   let selectedPath = "";
   let lastDiagnosticKey = "";
   const webrtcRetryScheduler = createRetryScheduler({
@@ -102,6 +105,11 @@ export function createStreamController({
   }
 
   function clearRtcRecoveryTimers() {
+    if (initialConnectTimer) {
+      clearRecoveryTimer(initialConnectTimer);
+      initialConnectTimer = null;
+    }
+    initialConnectDeadline = 0;
     if (disconnectTimer) {
       clearRecoveryTimer(disconnectTimer);
       disconnectTimer = null;
@@ -396,7 +404,40 @@ export function createStreamController({
       type: answer.Type || answer.type || "answer",
       sdp: answer.Sdp || answer.sdp || ""
     });
+    scheduleInitialConnectRecovery(peer, generation);
     return true;
+  }
+
+  function scheduleInitialConnectRecovery(peer, generation) {
+    if (generation !== connectGeneration || rtcPeer !== peer || peer.connectionState === "connected") return;
+    if (initialConnectTimer) clearRecoveryTimer(initialConnectTimer);
+
+    initialConnectDeadline = getNow() + WEBRTC_INITIAL_CONNECT_TIMEOUT_MS;
+    const tick = () => {
+      initialConnectTimer = null;
+      if (generation !== connectGeneration || rtcPeer !== peer) return;
+      if (peer.connectionState === "connected") {
+        initialConnectDeadline = 0;
+        return;
+      }
+
+      const remainingMs = initialConnectDeadline - getNow();
+      if (remainingMs <= 0) {
+        initialConnectDeadline = 0;
+        report("webrtc", "initial-connect-timeout", {
+          path: selectedPath,
+          reason: "initial-connect-timeout",
+        }, true);
+        void rebuildRtcSession(peer, generation, "initial-connect-timeout");
+        return;
+      }
+
+      const remainingSeconds = Math.ceil(remainingMs / 1000);
+      setStatus(`${tLegacy("正在建立 WebRTC 連線")} · ${remainingSeconds}s ${tLegacy("後自動重試")}`, false);
+      initialConnectTimer = setRecoveryTimer(tick, Math.min(1000, remainingMs));
+    };
+
+    tick();
   }
 
   function scheduleRtcRecovery(peer, generation, reason) {

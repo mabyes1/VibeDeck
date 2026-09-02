@@ -44,6 +44,8 @@ let labMessages = {};
 const deviceSelect = document.getElementById("deviceSelect");
 const orientationSelect = document.getElementById("orientationSelect");
 const modeSelect = document.getElementById("modeSelect");
+const deckControl = document.getElementById("deckControl");
+const deckSelect = document.getElementById("deckSelect");
 const trustStateSelect = document.getElementById("trustStateSelect");
 const languageSelect = document.getElementById("languageSelect");
 const scaleSelect = document.getElementById("scaleSelect");
@@ -61,6 +63,44 @@ const deviceSource = document.getElementById("deviceSource");
 
 let loadTimer = 0;
 let statusTimer = 0;
+let deckCatalog = [];
+
+function readDeckField(value, pascal, camel, fallback = "") {
+  return value?.[pascal] ?? value?.[camel] ?? fallback;
+}
+
+async function loadDeckCatalog(preferredDeckId = "") {
+  try {
+    const response = await fetch("/api/decks", { cache: "no-store" });
+    if (!response.ok) throw new Error(`Deck catalog failed to load (${response.status})`);
+    const payload = await response.json();
+    const rawDecks = payload.Decks ?? payload.decks ?? [];
+    deckCatalog = Array.isArray(rawDecks) ? rawDecks.map(deck => ({
+      id: String(readDeckField(deck, "Id", "id", "")).trim(),
+      name: String(readDeckField(deck, "Name", "name", "")).trim(),
+      icon: String(readDeckField(deck, "Icon", "icon", "")).trim(),
+    })).filter(deck => deck.id && deck.name) : [];
+  } catch {
+    deckCatalog = [];
+  }
+
+  deckSelect.replaceChildren();
+  for (const deck of deckCatalog) {
+    const option = document.createElement("option");
+    option.value = deck.id;
+    option.textContent = `${deck.icon ? `${deck.icon} ` : ""}${deck.name}`;
+    deckSelect.appendChild(option);
+  }
+
+  const requested = String(preferredDeckId || "").trim();
+  const fallback = deckCatalog.find(deck => deck.id === "stock-watch")?.id || deckCatalog[0]?.id || "";
+  deckSelect.value = deckCatalog.some(deck => deck.id === requested) ? requested : fallback;
+  deckSelect.disabled = deckCatalog.length === 0;
+}
+
+function syncDeckControl() {
+  deckControl.hidden = modeSelect.value !== "deck";
+}
 
 function text(key, values = {}) {
   return String(labMessages[key] || key)
@@ -113,6 +153,10 @@ function previewUrl() {
   if (deviceSelect.value === "boox-go-color-7" && ["sideboard", "quota"].includes(modeSelect.value)) {
     parameters.set("viewer", "1");
   }
+  if (modeSelect.value === "deck") {
+    parameters.set("viewer", "1");
+    if (deckSelect.value) parameters.set("deck", deckSelect.value);
+  }
   if (trustStateSelect.value === "local" && modeSelect.value === "setup") {
     parameters.delete("mode");
   }
@@ -146,6 +190,7 @@ function configureFrame({ reload = true } = {}) {
     modeSelect.value = "sideboard";
   }
   modeSelect.querySelector('option[value="display"]').disabled = deviceSelect.value === "boox-go-color-7";
+  syncDeckControl();
   deviceFrame.dataset.device = deviceSelect.value;
   deviceFrame.dataset.orientation = orientationSelect.value;
   deviceScreen.style.width = `${width}px`;
@@ -245,6 +290,7 @@ deviceSelect.addEventListener("change", () => {
 });
 orientationSelect.addEventListener("change", () => configureFrame());
 modeSelect.addEventListener("change", () => configureFrame());
+deckSelect.addEventListener("change", () => configureFrame());
 trustStateSelect.addEventListener("change", () => configureFrame());
 languageSelect.addEventListener("change", async () => {
   await loadLanguage();
@@ -267,6 +313,11 @@ async function start() {
   trustStateSelect.value = parameters.get("trust") || "paired";
   if (!["paired", "unpaired", "pending", "local"].includes(trustStateSelect.value)) trustStateSelect.value = "paired";
   orientationSelect.value = currentDevice().defaultOrientation;
+  const requestedMode = parameters.get("mode") || "";
+  if (["sideboard", "quota", "display", "deck", "setup"].includes(requestedMode)) {
+    modeSelect.value = requestedMode;
+  }
+  await loadDeckCatalog(parameters.get("deck") || "");
   await loadLanguage();
   configureFrame();
   statusTimer = window.setInterval(inspectLayout, 1500);

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { deckIdFromMode, deckMode, deckSandbox, normalizeDeckCatalog } from "../../src/VibeDeck.Host/wwwroot/modules/custom-deck-controller.js";
+import { deckIdFromMode, deckMode, deckSandbox, isDeckDataPath, normalizeDeckCatalog } from "../../src/VibeDeck.Host/wwwroot/modules/custom-deck-controller.js";
 
 test("deck mode round-trips a deck id", () => {
   assert.equal(deckMode("coding-pet"), "deck:coding-pet");
@@ -41,6 +41,15 @@ test("same-origin embed does not receive allow-same-origin", () => {
     deckSandbox("embed", "http://10.0.0.42:5000/internal", "http://10.0.0.42:5000"),
     "allow-scripts allow-forms",
   );
+});
+
+test("static Deck bridge only accepts same-host deck-data paths", () => {
+  const origin = "https://192.168.0.17:5443";
+  assert.equal(isDeckDataPath("/api/deck-data/stock-quotes", origin), true);
+  assert.equal(isDeckDataPath("/api/deck-data/foo?x=1", origin), true);
+  assert.equal(isDeckDataPath("/api/quotas", origin), false);
+  assert.equal(isDeckDataPath("https://example.com/api/deck-data/foo", origin), false);
+  assert.equal(isDeckDataPath("//example.com/api/deck-data/foo", origin), false);
 });
 
 test("catalog drops unusable deck records", () => {

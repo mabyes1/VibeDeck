@@ -73,12 +73,6 @@ body.remote-client:not(.eink-client) .eink-connection-state.online {
   letter-spacing: .06em;
 }
 
-body.dashboard-viewer.remote-client:not(.eink-client) .dashboard-exit-viewer {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
 body.eink-client .dashboard-view-controls {
   flex: 1 1 220px;
   flex-wrap: wrap;
