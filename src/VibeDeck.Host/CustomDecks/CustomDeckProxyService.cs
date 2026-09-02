@@ -97,7 +97,7 @@ namespace VibeDeck.Host.CustomDecks
             {
                 text = RootAttribute.Replace(text, match =>
                     match.Groups["head"].Value + prefix + match.Groups["path"].Value);
-                var injection = $"<base href=\"{prefix}\">{BuildBridgeScript(prefix, baseUri)}";
+                var injection = $"<base href=\"{prefix}\">{BuildBridgeScript(prefix, baseUri)}{CustomDeckViewerBridge.Script}";
                 var head = text.IndexOf("<head", StringComparison.OrdinalIgnoreCase);
                 var close = head >= 0 ? text.IndexOf('>', head) : -1;
                 text = close >= 0 ? text.Insert(close + 1, injection) : injection + text;

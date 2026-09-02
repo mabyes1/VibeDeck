@@ -109,6 +109,17 @@ namespace VibeDeck.Host.Tests
             Assert.Contains("action=\"/deck-proxy/internal-monitor/login\"", html);
             Assert.Contains("src=\"/deck-proxy/internal-monitor/app.js\"", html);
             Assert.Contains("const prefix = \"/deck-proxy/internal-monitor/\"", html);
+            Assert.Contains("action: \"toggle-viewer\"", html);
+        }
+
+        [Fact]
+        public void StaticDeckViewerBridgeIsInjectedIntoHead()
+        {
+            var html = CustomDeckViewerBridge.Inject("<html><head><title>Deck</title></head><body></body></html>");
+
+            Assert.Contains("vibedeck:deck-environment", html);
+            Assert.Contains("action: \"toggle-viewer\"", html);
+            Assert.True(html.IndexOf("toggle-viewer", StringComparison.Ordinal) < html.IndexOf("<title>", StringComparison.Ordinal));
         }
 
         [Fact]

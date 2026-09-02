@@ -17,7 +17,7 @@
   <link id="manifestLink" rel="manifest" href="/manifest.json?v=54">
   <link rel="icon" type="image/svg+xml" href="/icons/vibedeck.svg?v=1" sizes="any">
   <title>VibeDeck</title>
-  <link rel="stylesheet" href="/index.css?v=164">
+  <link rel="stylesheet" href="/index.css?v=166">
   <style>
     /* Pairing is the recovery path: keep it usable even if an old iOS asset or
        a later boot request fails. JS only hides it after trust is confirmed. */
@@ -943,7 +943,7 @@
           <span>Deck folder</span>
           <code id="customDeckFolderPath">C:\ProgramData\VibeDeck\Decks</code>
         </div>
-        <p class="custom-deck-security-note">Deck 資料夾會作為 Web assets 提供給裝置瀏覽器。不要把密碼、Token、憑證或其他 secrets 放進 Deck；V1 不提供 Host Bridge 或敏感系統能力。</p>
+        <p class="custom-deck-security-note">Static Deck 會在 <code>sandbox="allow-scripts"</code> 的隔離 iframe 中執行，因此不是 VibeDeck 主頁的同源腳本，也不能直接讀取受保護的 Host API。需要 Host 資料時，請使用文件中的 read-only Deck Bridge；不要把密碼、Token、憑證或其他 secrets 放進 Deck。</p>
         <div class="custom-deck-help-actions">
           <button id="customDeckOpenFolder" type="button">Open Deck Folder</button>
           <button id="customDeckOpenExample" class="secondary" type="button">View Coding Pet</button>
@@ -956,6 +956,8 @@
         class="custom-deck-frame"
         title="Custom Deck"
         sandbox="allow-scripts"
+        allow="fullscreen"
+        allowfullscreen
         referrerpolicy="no-referrer"
         hidden></iframe>
     </section>
@@ -976,6 +978,6 @@
 
   <button id="exitViewer" class="exit-viewer" type="button" aria-label="Exit viewer">×</button>
 
-  <script type="module" src="/index.js?v=170"></script>
+  <script type="module" src="/index.js?v=174"></script>
 </body>
 </html>

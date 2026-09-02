@@ -47,7 +47,7 @@ import {
   readClientDisplayMetrics,
 } from "./modules/display-auto-mode.js?v=1";
 import { createHostAuthController } from "./modules/host-auth-controller.js?v=1";
-import { createCustomDeckController } from "./modules/custom-deck-controller.js?v=3";
+import { createCustomDeckController } from "./modules/custom-deck-controller.js?v=5";
 import { createQuotaMiniCardController } from "./modules/quota-mini-card.js?v=60";
 import { createQuotaSideboardCardController } from "./modules/quota-sideboard-card.js?v=3";
 import {
@@ -346,6 +346,8 @@ import {
     let streamDebugOverlay = null;
     let streamStats = null;
     let activeMode = "display";
+    let viewerHistoryToken = "";
+    let ignoreNextViewerPopstate = false;
     let dashboardConnectionState = "connecting";
     let sideboardTimer = null;
     let quotaTimer = null;
@@ -474,6 +476,58 @@ import {
       root.style.setProperty("--safe-area-inset-right", iphone && landscape ? "44px" : "0px");
       root.style.setProperty("--safe-area-inset-bottom", iphone ? (landscape ? "21px" : "34px") : "0px");
       root.style.setProperty("--safe-area-inset-left", iphone && landscape ? "44px" : "0px");
+    }
+
+    function readCustomDeckSafeArea() {
+      const root = document.documentElement;
+      const rootStyle = getComputedStyle(root);
+      const names = ["top", "right", "bottom", "left"];
+      const values = Object.fromEntries(names.map(name => {
+        const value = Number.parseFloat(rootStyle.getPropertyValue(`--safe-area-inset-${name}`));
+        return [name, Number.isFinite(value) ? value : null];
+      }));
+      if (names.every(name => values[name] != null)) return values;
+
+      const probe = document.createElement("div");
+      probe.setAttribute("aria-hidden", "true");
+      probe.style.cssText = [
+        "position:fixed",
+        "visibility:hidden",
+        "pointer-events:none",
+        "inset:0 auto auto 0",
+        "padding-top:env(safe-area-inset-top,0px)",
+        "padding-right:env(safe-area-inset-right,0px)",
+        "padding-bottom:env(safe-area-inset-bottom,0px)",
+        "padding-left:env(safe-area-inset-left,0px)",
+      ].join(";");
+      document.body.appendChild(probe);
+      const style = getComputedStyle(probe);
+      const safeArea = {
+        top: Number.parseFloat(style.paddingTop) || 0,
+        right: Number.parseFloat(style.paddingRight) || 0,
+        bottom: Number.parseFloat(style.paddingBottom) || 0,
+        left: Number.parseFloat(style.paddingLeft) || 0,
+      };
+      probe.remove();
+      return safeArea;
+    }
+
+    function getCustomDeckEnvironment() {
+      const viewport = window.visualViewport;
+      const rootStyle = getComputedStyle(document.documentElement);
+      return {
+        devicePreview: devicePreviewKind || "",
+        viewerActive: isViewerActive(),
+        safeArea: readCustomDeckSafeArea(),
+        viewport: {
+          innerWidth: window.innerWidth,
+          innerHeight: window.innerHeight,
+          visualWidth: viewport?.width || window.innerWidth,
+          visualHeight: viewport?.height || window.innerHeight,
+          viewerWidth: Number.parseFloat(rootStyle.getPropertyValue("--viewer-width")) || window.innerWidth,
+          viewerHeight: Number.parseFloat(rootStyle.getPropertyValue("--viewer-height")) || window.innerHeight,
+        },
+      };
     }
 
     function syncSideboardContentSafeArea(width, height) {
@@ -882,6 +936,7 @@ import {
       document.documentElement.style.setProperty("--viewer-width", `${width}px`);
       document.documentElement.style.setProperty("--viewer-height", `${height}px`);
       applyForcedLandscape();
+      customDeckController?.syncEnvironment?.();
     }
 
     function describeClient() {
@@ -1695,6 +1750,13 @@ import {
       navigate: setMode,
       getActiveMode: () => activeMode,
       isLocalRequest: () => deviceLocalRequest,
+      exitViewer: () => exitLandscapeViewer(),
+      toggleViewer: () => {
+        if (!isIos() && !isMobileClient()) return;
+        if (isViewerActive()) return exitLandscapeViewer();
+        return enterLandscapeViewer({ skipFullscreenApi: true });
+      },
+      getEnvironment: getCustomDeckEnvironment,
       shouldPoll: () => !isFullscreenDisplayStreaming(),
     });
 
@@ -2101,11 +2163,15 @@ import {
       confirmAction,
       isLocalRequest: () => deviceLocalRequest,
     });
+    const keepAwakeVideo = document.getElementById("keepAwakeVideo");
+    if (keepAwakeVideo && keepAwakeVideo.parentElement !== document.body) {
+      document.body.appendChild(keepAwakeVideo);
+    }
     const keepAwakeController = createKeepAwakeController({
       document,
       window,
       navigator,
-      video: document.getElementById("keepAwakeVideo"),
+      video: keepAwakeVideo,
       isIos,
       isMobileClient,
       setWakeState,
@@ -2499,11 +2565,41 @@ import {
       return viewportPortrait !== streamPortrait ? "90" : "0";
     }
 
-    async function enterLandscapeViewer() {
+    function isViewerActive() {
+      return document.body.classList.contains("viewer-fullscreen") ||
+        document.body.classList.contains("dashboard-viewer") ||
+        document.body.classList.contains("deck-viewer") ||
+        document.body.classList.contains("viewer-immersive");
+    }
+
+    function armViewerHistory() {
+      if (viewerHistoryToken) return;
+      const token = `viewer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      try {
+        const previousState = history.state && typeof history.state === "object" ? history.state : {};
+        history.pushState({ ...previousState, __vibeDeckViewer: token }, "", location.href);
+        viewerHistoryToken = token;
+      } catch {
+        viewerHistoryToken = "";
+      }
+    }
+
+    function clearViewerHistory() {
+      if (!viewerHistoryToken) return;
+      const token = viewerHistoryToken;
+      viewerHistoryToken = "";
+      if (history.state?.__vibeDeckViewer !== token) return;
+      ignoreNextViewerPopstate = true;
+      history.back();
+    }
+
+    async function enterLandscapeViewer({ skipFullscreenApi = false } = {}) {
       updateViewportSize();
       const isDisplayMode = activeMode === "display";
+      const isDeckMode = activeMode === "deck" || activeMode.startsWith("deck:");
       document.body.classList.toggle("viewer-fullscreen", isDisplayMode);
-      document.body.classList.toggle("dashboard-viewer", !isDisplayMode);
+      document.body.classList.toggle("dashboard-viewer", !isDisplayMode && !isDeckMode);
+      document.body.classList.toggle("deck-viewer", isDeckMode);
       if (!isDisplayMode && mobileFullscreen) mobileFullscreen.textContent = "EXIT";
       // E-ink / sideboard also need the immersive body class for 100dvh layout.
       if (!isDisplayMode) {
@@ -2512,6 +2608,8 @@ import {
         document.body.classList.remove("viewer-immersive");
         suspendDashboardBackgroundWork();
       }
+      armViewerHistory();
+      customDeckController?.syncEnvironment?.();
       const mainContent = document.querySelector("main");
       mainContent?.scrollTo({ top: 0, left: 0 });
       window.scrollTo(0, 1);
@@ -2530,7 +2628,7 @@ import {
       // Device Lab compares layout inside a fixed simulated viewport. Native
       // fullscreen would let Android previews escape the iframe while iOS
       // stays on the CSS path, making the two device previews incomparable.
-      const useBrowserFullscreen = !isDevicePreview() && !isIos() && !displayUsesCssRotation;
+      const useBrowserFullscreen = !skipFullscreenApi && !isDevicePreview() && !isIos() && !displayUsesCssRotation;
       if (useBrowserFullscreen) {
         const root = document.documentElement;
         const candidates = [
@@ -2580,16 +2678,20 @@ import {
       }
     }
 
-    async function exitLandscapeViewer() {
+    async function exitLandscapeViewer({ fromHistory = false, skipFullscreenApi = false } = {}) {
       document.body.classList.remove("viewer-fullscreen");
       document.body.classList.remove("dashboard-viewer");
+      document.body.classList.remove("deck-viewer");
       document.body.classList.remove("viewer-immersive");
       if (mobileFullscreen) mobileFullscreen.textContent = tLegacy("全螢幕");
       resumeDashboardBackgroundWork();
+      if (!fromHistory) clearViewerHistory();
+      else viewerHistoryToken = "";
+      customDeckController?.syncEnvironment?.();
       try {
-        if (document.exitFullscreen && (document.fullscreenElement || document.webkitFullscreenElement)) {
+        if (!skipFullscreenApi && document.exitFullscreen && (document.fullscreenElement || document.webkitFullscreenElement)) {
           await document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
+        } else if (!skipFullscreenApi && document.webkitExitFullscreen) {
           document.webkitExitFullscreen();
         }
       } catch {
@@ -3148,11 +3250,10 @@ import {
     function onFullscreenChromeChange() {
       const inFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
       if (!inFs && !isIos()) {
-        // Keep CSS immersive for e-ink panel until user taps exit; only drop display
-        // stream chrome when the system fullscreen shell closes.
-        if (activeMode === "display") {
-          document.body.classList.remove("viewer-fullscreen");
-          resumeDashboardBackgroundWork();
+        // Native browser Escape / Back may close the fullscreen shell before our
+        // own history sentinel is popped. Finish the same viewer-exit contract.
+        if (activeMode === "display" && document.body.classList.contains("viewer-fullscreen")) {
+          exitLandscapeViewer({ skipFullscreenApi: true });
         }
       }
       updateViewportSize();
@@ -3160,6 +3261,16 @@ import {
     }
     document.addEventListener("fullscreenchange", onFullscreenChromeChange);
     document.addEventListener("webkitfullscreenchange", onFullscreenChromeChange);
+    window.addEventListener("popstate", () => {
+      if (ignoreNextViewerPopstate) {
+        ignoreNextViewerPopstate = false;
+        return;
+      }
+      if (!isViewerActive() || !viewerHistoryToken) return;
+      viewerHistoryToken = "";
+      exitLandscapeViewer({ fromHistory: true });
+    });
+
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible") {
         scheduleDashboardRefresh("sideboard", true);
@@ -3185,18 +3296,18 @@ import {
       keepAwakeController.handlePointerDown();
     }, { passive: true });
 
-    // Single taps drive PC mouse; double-tap toggles iPhone fullscreen viewer.
-    screen.addEventListener("dblclick", event => {
+    // Mobile viewer contract: double-tap content to enter or leave the viewer.
+    // Native Back/history remains available too (including iOS edge-swipe Back).
+    document.querySelector("main")?.addEventListener("dblclick", event => {
       if (!isIos() && !isMobileClient()) return;
+      // Display is an input surface: preserve native Windows double-click semantics.
+      // Its viewer has the one explicit top-right exit X instead.
+      if (activeMode === "display") return;
+      if (document.body.classList.contains("dashboard-edit-mode")) return;
+      if (event.target instanceof Element && event.target.closest("button, a, input, select, textarea, [contenteditable='true'], [role='button']")) return;
       event.preventDefault();
-      if (displayInputController?.isTouchGestureActive?.()) return;
-      toggleDisplayViewerFromScreen();
-    });
-    rtcScreen.addEventListener("dblclick", event => {
-      if (!isIos() && !isMobileClient()) return;
-      event.preventDefault();
-      if (displayInputController?.isTouchGestureActive?.()) return;
-      toggleDisplayViewerFromScreen();
+      if (isViewerActive()) exitLandscapeViewer();
+      else enterLandscapeViewer();
     });
     window.addEventListener("beforeinstallprompt", event => {
       event.preventDefault();
@@ -3212,6 +3323,11 @@ import {
       updateInstallState();
     });
     document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && isViewerActive()) {
+        event.preventDefault();
+        exitLandscapeViewer();
+        return;
+      }
       if (activeMode !== "quota") return;
       if (event.key === "ArrowLeft") {
         changeQuotaAccount(quotaActiveTab, -1);

@@ -93,10 +93,10 @@ test("short LCD dashboards use a two-axis CSS container without changing saved g
 
 test("Device Lab keeps Android and iPhone viewer fullscreen on the same CSS path", async () => {
   const index = await readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8");
-  assert.match(index, /const useBrowserFullscreen = !isDevicePreview\(\) && !isIos\(\) && !displayUsesCssRotation/);
+  assert.match(index, /const useBrowserFullscreen = !skipFullscreenApi && !isDevicePreview\(\) && !isIos\(\) && !displayUsesCssRotation/);
 });
 
-test("dashboard fullscreen reuses existing controls instead of reserving or overlaying viewer space", async () => {
+test("dashboard fullscreen keeps viewer exit chrome hidden", async () => {
   const [html, core, navigation, mobile, index] = await Promise.all([
     readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.html", import.meta.url), "utf8"),
     css("10-core.css"),
@@ -105,7 +105,8 @@ test("dashboard fullscreen reuses existing controls instead of reserving or over
     readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8"),
   ]);
   assert.match(html, /data-eink-connection-state[^>]*>CONNECTING<\/span>\s*<button id="dashboardExitViewer"/);
-  assert.match(navigation, /body\.dashboard-viewer\.remote-client:not\(\.eink-client\) \.dashboard-exit-viewer/);
+  assert.match(navigation, /\.dashboard-exit-viewer\s*\{[^}]*display:\s*none/);
+  assert.doesNotMatch(navigation, /body\.dashboard-viewer\.remote-client:not\(\.eink-client\) \.dashboard-exit-viewer/);
   assert.doesNotMatch(core, /dashboard-viewer\.mode-sideboard[^}]*padding-top:\s*42px/);
   assert.doesNotMatch(core, /dashboard-viewer\.mode-sideboard[^}]*\.exit-viewer[^}]*left:\s*50%/);
   assert.match(mobile, /classList\.contains\("dashboard-viewer"\)[\s\S]*byId\("exitViewer"\)\?\.click/);
@@ -220,7 +221,7 @@ test("LCD product surfaces share the Host-owned neutral glass material", async (
   assert.doesNotMatch(quota, /radial-gradient\(circle at 62% 52%,\s*rgba\(77,\s*207,\s*255/);
   assert.match(setup, /\.setup-panels \.panel\s*\{[\s\S]*background:\s*var\(--theme-surface\)/);
   assert.match(pairing, /\.connect-panel\s*\{[\s\S]*background:\s*var\(--theme-surface\)/);
-  assert.match(core, /body\.viewer-immersive:not\(\.dashboard-viewer\) \.exit-viewer/);
+  assert.match(core, /body\.viewer-immersive \.exit-viewer/);
   assert.match(core, /\.exit-viewer\s*\{[\s\S]*z-index:\s*5000/);
   assert.match(shell, /body\.mode-sideboard:not\(\.dashboard-edit-mode\):not\(\.eink-client\) \.side-panel/);
   assert.match(activity, /body\.mode-sideboard:not\(\.eink-client\) \.activity-feed-item\s*\{[\s\S]*linear-gradient/);
@@ -353,4 +354,35 @@ test("immersive dashboard chrome has no redundant mode switch and uses text-only
   assert.doesNotMatch(navigation, /\.dashboard-mode-switch/);
   assert.match(navigation, /\.eink-connection-state[\s\S]*border:\s*0;/);
   assert.match(navigation, /\.eink-connection-state[\s\S]*background:\s*transparent;/);
+});
+
+test("fullscreen exit is chrome-free and uses Back/Escape/double-tap viewer contracts", async () => {
+  const [js, core, customDeck] = await Promise.all([
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8"),
+    css("10-core.css"),
+    css("components/custom-deck.css"),
+  ]);
+
+  assert.match(js, /const isDeckMode = activeMode === "deck" \|\| activeMode\.startsWith\("deck:"\)/);
+  assert.match(js, /classList\.toggle\("dashboard-viewer", !isDisplayMode && !isDeckMode\)/);
+  assert.match(js, /classList\.toggle\("deck-viewer", isDeckMode\)/);
+  assert.match(js, /classList\.remove\("deck-viewer"\)/);
+  assert.match(js, /history\.pushState\([\s\S]*__vibeDeckViewer/);
+  assert.match(js, /window\.addEventListener\("popstate"/);
+  assert.match(js, /event\.key === "Escape" && isViewerActive\(\)/);
+  assert.match(js, /querySelector\("main"\)\?\.addEventListener\("dblclick"/);
+  assert.match(js, /if \(activeMode === "display"\) return;/);
+  assert.match(js, /if \(isViewerActive\(\)\) exitLandscapeViewer\(\);[\s\S]*else enterLandscapeViewer\(\);/);
+  assert.match(js, /toggleViewer:[\s\S]*enterLandscapeViewer\(\{ skipFullscreenApi: true \}\)/);
+  assert.match(js, /viewerActive: isViewerActive\(\)/);
+  assert.doesNotMatch(js, /viewerTwoFingerGesture|event\.touches\.length !== 2/);
+  assert.match(core, /body\.viewer-fullscreen:not\(\.mode-display\) \.exit-viewer[\s\S]*display:\s*none/);
+  assert.match(core, /body\.viewer-fullscreen\.mode-display \.exit-viewer[\s\S]*display:\s*grid/);
+  assert.doesNotMatch(customDeck, /custom-deck-exit-rail-width/);
+});
+
+test("keep-awake fallback media is moved outside fullscreen-hidden header", async () => {
+  const js = await readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8");
+  assert.match(js, /const keepAwakeVideo = document\.getElementById\("keepAwakeVideo"\)/);
+  assert.match(js, /document\.body\.appendChild\(keepAwakeVideo\)/);
 });

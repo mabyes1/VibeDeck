@@ -36,7 +36,7 @@ test("landscape tablets may use the real Fullscreen API", async () => {
   const index = await readFile(new URL("index.js", root), "utf8");
 
   assert.match(index, /displayUsesCssRotation\s*=\s*isDisplayMode\s*&&\s*document\.body\.classList\.contains\("force-landscape"\)/);
-  assert.match(index, /useBrowserFullscreen\s*=\s*!isDevicePreview\(\)\s*&&\s*!isIos\(\)\s*&&\s*!displayUsesCssRotation/);
+  assert.match(index, /useBrowserFullscreen\s*=\s*!skipFullscreenApi\s*&&\s*!isDevicePreview\(\)\s*&&\s*!isIos\(\)\s*&&\s*!displayUsesCssRotation/);
 });
 
 test("fullscreen PWAs enter the VibeDeck viewer so exit chrome remains meaningful", async () => {

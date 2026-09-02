@@ -240,10 +240,18 @@ body.eink-client header .panel.panel {
       text-shadow: 0 1px 3px rgba(0, 0, 0, .55);
     }
 
-    body.viewer-fullscreen .exit-viewer,
-    body.viewer-immersive:not(.dashboard-viewer) .exit-viewer,
-    body.dashboard-viewer.eink-client .exit-viewer {
-      display: inline-grid;
+    /* Display is the sole exception to chrome-free viewer exit because its
+       double-click belongs to the remote Windows input surface. Other viewers
+       use double-tap plus browser/system Back (including iOS edge-swipe Back). */
+    body.viewer-fullscreen:not(.mode-display) .exit-viewer,
+    body.viewer-immersive .exit-viewer,
+    body.dashboard-viewer .exit-viewer,
+    body.viewer-immersive #mobileFullscreen {
+      display: none;
+    }
+
+    body.viewer-fullscreen.mode-display .exit-viewer {
+      display: grid;
       place-items: center;
     }
 
