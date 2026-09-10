@@ -71,6 +71,14 @@ namespace VibeDeck.Host.Streaming
             {
                 return false;
             }
+            // FFmpeg ddagrab uses the DXGI output index of its default adapter.
+            // A Win32 monitor-enumeration index is unrelated and can capture a
+            // different screen. Secondary adapters safely use bitmap fallback
+            // until the runtime explicitly selects their D3D11 device.
+            if (display.AdapterIndex != 0 || display.OutputIndex < 0)
+            {
+                return false;
+            }
 
             var dimensions = GpuStreamQualityLadder.FitWithin(display.Width, display.Height);
             var profiles = GpuStreamQualityLadder.Create(requestedFps, requestedQuality);

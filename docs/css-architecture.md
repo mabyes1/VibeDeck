@@ -38,7 +38,7 @@ and therefore needs no specificity escape hatch.
 
 - Components respond to the space they receive. Use a named container and a
   content breakpoint when a component changes composition; do not infer that
-  composition from a model name, user agent, or a `phone-client` selector.
+  composition from a model name, user agent, or a `mobile-client` selector.
 - Grid columns use `minmax(0, 1fr)` (or another explicit content floor), and
   flexible children set `min-width: 0` so long labels cannot widen the page.
 - Viewport and document shells own scrolling. A child may use `overflow:hidden`
@@ -58,7 +58,19 @@ then final component owners, then narrow overlays.
 ### Foundation and compatibility
 
 - `00-base-tokens.css`: global tokens and hard document contracts such as
-  `[hidden]`.
+  `[hidden]`. The application palette is exposed here through `--theme-*`
+  tokens; runtime values are owned by `modules/app-theme.js` and are shared by
+  Setup, Display, Sideboard, Quota, and the app shell rather than by a page skin.
+  LCD product surfaces also share `--theme-surface`,
+  `--theme-surface-strong`, `--theme-control`, `--theme-line`, and
+  `--theme-glass-blur`. Feature owners may change geometry, but they should not
+  invent another opaque page skin. Accent color belongs on data, selected
+  controls, CTA, or semantic status rather than across a whole card surface.
+  Appearance persistence is Host-owned under `AppPaths.AppearanceDirectory`
+  (`theme.json` + `background.webp`) and is exposed through `/api/appearance/*`.
+  Browser `localStorage` is only a startup cache / one-time migration source;
+  it must never become a second authoritative theme store. E-Ink intentionally
+  ignores the colorful LCD appearance layer.
 - `10-core.css`: application shell, shared viewer geometry, remote trust gating,
   base controls, and PC console behavior.
 - `components/access-gates.css`: remote Host authentication, iOS install hint,
@@ -99,6 +111,11 @@ then final component owners, then narrow overlays.
 If a component selector appears outside its owner, first decide whether it is a
 real application-shell/compatibility contract. If it is only restating the
 component's appearance, move or delete it instead of adding another override.
+
+Viewer chrome follows the same ownership rule. `.exit-viewer` owns its fixed
+position and stacking level; generic `body > *` shell rules must not reclaim
+those properties. Fullscreen and immersive viewers must keep that escape
+control reachable above feature chrome.
 
 ## Regression gates
 

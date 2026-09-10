@@ -109,6 +109,10 @@ select:focus-visible {
   font-weight: 700;
 }
 
+.lab-controls label[hidden] {
+  display: none;
+}
+
 .lab-controls select {
   min-width: 112px;
   padding: 0 34px 0 11px;

@@ -19,18 +19,22 @@ body.mode-deck main { grid-template-rows: minmax(0, 1fr); align-content: stretch
   justify-self: center;
   overflow: auto;
   padding: clamp(18px, 3vw, 34px);
-  border: 1px solid rgba(255,255,255,.12);
+  border: 1px solid var(--theme-line, rgba(255,255,255,.12));
   border-radius: 18px;
-  background: radial-gradient(circle at 90% 8%, rgba(112,217,139,.1), transparent 34%), linear-gradient(160deg, rgba(18,28,34,.98), rgba(8,13,18,.98));
-  box-shadow: 0 24px 70px rgba(0,0,0,.35);
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.05), rgba(255,255,255,.012)),
+    var(--theme-glass, rgba(255,255,255,.07));
+  box-shadow: var(--theme-shadow, 0 24px 70px rgba(0,0,0,.28)), inset 0 1px 0 rgba(255,255,255,.05);
+  backdrop-filter: blur(var(--theme-glass-blur, 20px)) saturate(112%);
+  -webkit-backdrop-filter: blur(var(--theme-glass-blur, 20px)) saturate(112%);
 }
 .custom-deck-help-copy { max-width: 680px; }
-.custom-deck-kicker { color: #70d98b; font-size: 11px; font-weight: 900; letter-spacing: .16em; }
+.custom-deck-kicker { color: rgba(245,247,251,.72); font-size: 11px; font-weight: 900; letter-spacing: .16em; }
 .custom-deck-help h1 { margin: 7px 0 10px; font-size: clamp(28px, 5vw, 48px); letter-spacing: -.04em; }
 .custom-deck-help p { margin: 0; color: var(--muted); line-height: 1.6; }
 .custom-deck-steps { margin: 22px 0; padding-left: 24px; line-height: 1.75; }
 .custom-deck-steps code, .custom-deck-manifest, .custom-deck-folder-row code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
-.custom-deck-manifest { margin: 0 0 18px; padding: 14px 16px; overflow: auto; border: 1px solid rgba(143,209,255,.16); border-radius: 12px; background: rgba(0,0,0,.28); color: #dff6ff; line-height: 1.55; }
+.custom-deck-manifest { margin: 0 0 18px; padding: 14px 16px; overflow: auto; border: 1px solid var(--theme-line); border-radius: 12px; background: rgba(0,0,0,.22); color: rgba(245,247,251,.9); line-height: 1.55; }
 .custom-deck-folder-row { display: grid; gap: 6px; min-width: 0; margin-bottom: 14px; }
 .custom-deck-folder-row > span { color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .custom-deck-folder-row code { min-width: 0; overflow-wrap: anywhere; color: var(--text); }

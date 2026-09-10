@@ -1,7 +1,10 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Net;
+using Microsoft.AspNetCore.Http;
 using VibeDeck.Host.CustomDecks;
+using VibeDeck.Host.Security;
 using Xunit;
 
 namespace VibeDeck.Host.Tests
@@ -34,6 +37,129 @@ namespace VibeDeck.Host.Tests
             Assert.Equal("Coding Pet", deck.Name);
             Assert.Equal("🐱", deck.Icon);
             Assert.Equal("/decks/coding-pet/index.html", deck.Url);
+            Assert.Equal("static", deck.Type);
+        }
+
+        [Fact]
+        public void PrivateNetworkProxyDeckIsDiscovered()
+        {
+            WriteDeck("internal-monitor", "{\"name\":\"Internal Monitor\",\"type\":\"proxy\",\"url\":\"http://10.0.0.42:8666\"}", createEntry: false);
+
+            var deck = Assert.Single(new CustomDeckService(Path.Combine(root, "Decks")).Discover().Decks);
+
+            Assert.Equal("proxy", deck.Type);
+            Assert.Equal("/deck-proxy/internal-monitor/", deck.Url);
+            Assert.Equal("http://10.0.0.42:8666/", deck.ProxyTargetUrl);
+        }
+
+        [Fact]
+        public void EmbedDeckUsesItsRemoteUrlDirectly()
+        {
+            WriteDeck("internal-monitor", "{\"name\":\"Internal Monitor\",\"type\":\"embed\",\"url\":\"http://10.0.0.42:8666/\"}", createEntry: false);
+
+            var deck = Assert.Single(new CustomDeckService(Path.Combine(root, "Decks")).Discover().Decks);
+
+            Assert.Equal("embed", deck.Type);
+            Assert.Equal("http://10.0.0.42:8666/", deck.Url);
+            Assert.Empty(deck.Entry);
+            Assert.Empty(deck.ProxyTargetUrl);
+        }
+
+        [Theory]
+        [InlineData("javascript:alert(1)")]
+        [InlineData("file:///C:/Windows/win.ini")]
+        [InlineData("http://user:password@10.0.0.42:8666/")]
+        public void UnsafeEmbedTargetBecomesIssue(string url)
+        {
+            WriteDeck("unsafe-embed", $"{{\"name\":\"Unsafe\",\"type\":\"embed\",\"url\":\"{url}\"}}", createEntry: false);
+
+            var catalog = new CustomDeckService(Path.Combine(root, "Decks")).Discover();
+
+            Assert.Empty(catalog.Decks);
+            Assert.Single(catalog.Issues);
+        }
+
+        [Theory]
+        [InlineData("https://8.8.8.8/")]
+        [InlineData("https://example.com/")]
+        [InlineData("file:///C:/Windows/win.ini")]
+        public void UnsafeProxyTargetBecomesIssue(string url)
+        {
+            WriteDeck("unsafe", $"{{\"name\":\"Unsafe\",\"type\":\"proxy\",\"url\":\"{url}\"}}", createEntry: false);
+
+            var catalog = new CustomDeckService(Path.Combine(root, "Decks")).Discover();
+
+            Assert.Empty(catalog.Decks);
+            Assert.Single(catalog.Issues);
+        }
+
+        [Fact]
+        public void ProxyHtmlIsRewrittenUnderDeckRoute()
+        {
+            var deck = new CustomDeckDescriptor { Id = "internal-monitor", Type = "proxy" };
+            var upstream = new Uri("http://10.0.0.42:8666/");
+
+            var html = CustomDeckProxyService.RewriteText(
+                "<html><head></head><body><form action=\"/login\"><script src=\"/app.js\"></script></form></body></html>",
+                "text/html",
+                deck,
+                upstream);
+
+            Assert.Contains("<base href=\"/deck-proxy/internal-monitor/\">", html);
+            Assert.Contains("action=\"/deck-proxy/internal-monitor/login\"", html);
+            Assert.Contains("src=\"/deck-proxy/internal-monitor/app.js\"", html);
+            Assert.Contains("const prefix = \"/deck-proxy/internal-monitor/\"", html);
+            Assert.Contains("action: \"toggle-viewer\"", html);
+        }
+
+        [Fact]
+        public void StaticDeckViewerBridgeIsInjectedIntoHead()
+        {
+            var html = CustomDeckViewerBridge.Inject("<html><head><title>Deck</title></head><body></body></html>");
+
+            Assert.Contains("vibedeck:deck-environment", html);
+            Assert.Contains("action: \"toggle-viewer\"", html);
+            Assert.True(html.IndexOf("toggle-viewer", StringComparison.Ordinal) < html.IndexOf("<title>", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void ProxyRequestCannotEscapeConfiguredOrigin()
+        {
+            var upstream = new Uri("http://10.0.0.42:8666/");
+
+            var target = CustomDeckProxyService.BuildTarget(upstream, "status", "?full=1");
+
+            Assert.Equal("http://10.0.0.42:8666/status?full=1", target.ToString());
+        }
+
+        [Fact]
+        public void ProxySessionIdentitySurvivesSandboxedIframeRequestsWithoutProxyCookie()
+        {
+            var first = new DefaultHttpContext();
+            first.Connection.RemoteIpAddress = IPAddress.Parse("192.168.0.55");
+            first.Request.Headers.UserAgent = "Tablet Browser";
+            var second = new DefaultHttpContext();
+            second.Connection.RemoteIpAddress = IPAddress.Parse("192.168.0.55");
+            second.Request.Headers.UserAgent = "Tablet Browser";
+
+            Assert.Equal(
+                CustomDeckProxyService.BuildSessionIdentity(first),
+                CustomDeckProxyService.BuildSessionIdentity(second));
+        }
+
+        [Fact]
+        public void ProxySessionIdentityPrefersPairedDeviceToken()
+        {
+            var first = new DefaultHttpContext();
+            first.Connection.RemoteIpAddress = IPAddress.Parse("192.168.0.55");
+            first.Request.Headers.Cookie = $"{DeviceTrustService.CookieName}=paired-device-token";
+            var second = new DefaultHttpContext();
+            second.Connection.RemoteIpAddress = IPAddress.Parse("192.168.0.99");
+            second.Request.Headers[DeviceTrustService.HeaderName] = "paired-device-token";
+
+            Assert.Equal(
+                CustomDeckProxyService.BuildSessionIdentity(first),
+                CustomDeckProxyService.BuildSessionIdentity(second));
         }
 
         [Fact]

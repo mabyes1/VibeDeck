@@ -57,7 +57,7 @@ namespace VibeDeck.Host.Security
 
                 // Existing installs exported PFX files with an empty password. Re-protect
                 // them in place (same certificates, same keys) so HTTPS keeps working and
-                // phones never need to re-trust the root because of this upgrade.
+                // mobile devices never need to re-trust the root because of this upgrade.
                 UpgradeLegacyPfxProtection();
 
                 var rootCreated = false;
@@ -201,7 +201,7 @@ namespace VibeDeck.Host.Security
 
         /// <summary>
         /// Re-exports legacy empty-password PFX files with a DPAPI-protected random
-        /// password. Certificates and private keys are unchanged, so the phone-side
+        /// password. Certificates and private keys are unchanged, so client-side
         /// trust of the root and the current HTTPS endpoint identity both survive.
         /// Any failure leaves the legacy file in place and HTTPS keeps working.
         /// </summary>
@@ -320,7 +320,7 @@ namespace VibeDeck.Host.Security
         /// A root that carries NameConstraints minted for a previous machine name can no
         /// longer vouch for the current host names, so it must be rolled. Legacy roots
         /// without the extension are deliberately kept: recreating them would force every
-        /// paired phone to re-trust the root, which is worse than the missing pin.
+        /// paired device to re-trust the root, which is worse than the missing pin.
         /// </summary>
         private static bool RootConstraintsStale(X509Certificate2 rootCertificate)
         {

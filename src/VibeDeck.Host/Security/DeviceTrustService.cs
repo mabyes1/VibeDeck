@@ -338,7 +338,7 @@ namespace VibeDeck.Host.Security
             {
                 // Last-seen persistence is telemetry, not authorization. A
                 // damaged ProgramData ACL must never turn a valid device-token
-                // check into HTTP 500 and lock every paired phone out.
+                // check into HTTP 500 and lock every paired device out.
                 SaveDevices(force: false);
             }
             catch (IOException)

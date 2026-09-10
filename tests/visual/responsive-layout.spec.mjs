@@ -55,6 +55,19 @@ function einkSideboardCases() {
   return cases;
 }
 
+function deviceLabPresetCases() {
+  return [
+    { name: "boox-go-color-7-portrait", width: 794, height: 1054, device: "boox-go-color-7", eink: true },
+    { name: "boox-go-color-7-landscape", width: 1054, height: 794, device: "boox-go-color-7", eink: true },
+    { name: "asus-zenpad-p024-portrait", width: 569, height: 911, device: "asus-zenpad-p024" },
+    { name: "asus-zenpad-p024-landscape", width: 911, height: 569, device: "asus-zenpad-p024" },
+    { name: "galaxy-s23-portrait", width: 360, height: 780, device: "galaxy-s23" },
+    { name: "galaxy-s23-landscape", width: 780, height: 360, device: "galaxy-s23" },
+    { name: "iphone-xs-portrait", width: 375, height: 812, device: "iphone-xs" },
+    { name: "iphone-xs-landscape", width: 812, height: 375, device: "iphone-xs" },
+  ];
+}
+
 async function openSideboard(page, scenario) {
   if (process.env.VIBEDECK_TEST_SOURCE_ASSETS === "1") {
     await page.route("**/*", route => {
@@ -82,6 +95,32 @@ async function openSideboard(page, scenario) {
   }
   await page.goto(`${host}/index.html?${query}`, { waitUntil: "domcontentloaded" });
   await page.locator("body.mode-sideboard").waitFor();
+}
+
+async function openDeckShell(page, scenario) {
+  if (process.env.VIBEDECK_TEST_SOURCE_ASSETS === "1") {
+    await page.route("**/*", route => {
+      const url = new URL(route.request().url());
+      const relative = decodeURIComponent(url.pathname).replace(/^\/+/, "");
+      const sourcePath = path.resolve(sourceWebRoot, relative);
+      const isLocalAsset = sourcePath.startsWith(sourceWebRoot + path.sep) &&
+        /\.(?:css|html|js|json|svg)$/i.test(sourcePath) && existsSync(sourcePath);
+      return isLocalAsset ? route.fulfill({ path: sourcePath }) : route.continue();
+    });
+  }
+  await page.setViewportSize({ width: scenario.width, height: scenario.height });
+  const query = new URLSearchParams({
+    mode: "deck",
+    source: "responsive-test",
+    preview: String(Date.now()),
+  });
+  if (scenario.device) {
+    query.set("devicePreview", scenario.device);
+    query.set("previewTrust", "paired");
+  }
+  await page.goto(`${host}/index.html?${query}`, { waitUntil: "domcontentloaded" });
+  await page.locator(`body.mode-deck`).waitFor();
+  await page.locator("#customDeckView").waitFor();
 }
 
 async function layoutAudit(page) {
@@ -199,6 +238,196 @@ test.describe("continuous responsive Sideboard", () => {
       expect(audit.shellSize[1]).toBeGreaterThan(0);
     });
   }
+
+  test("wide iphone landscape keeps saved geometry and compacts card typography", async ({ page }) => {
+    await openSideboard(page, {
+      name: "wide-iphone-landscape",
+      width: 926,
+      height: 428,
+      device: "iphone-xs",
+    });
+    const audit = await layoutAudit(page);
+    const density = await page.evaluate(() => ({
+      containerType: getComputedStyle(document.querySelector(".sideboard-view")).containerType,
+      metricValue: getComputedStyle(document.querySelector(".metric-value")).fontSize,
+      activityText: getComputedStyle(document.querySelector(".activity-feed-text") || document.querySelector(".activity-feed-card")).fontSize,
+    }));
+
+    expect(audit.dashboard).toBe(true);
+    expect(audit.overview).toBe(false);
+    expect(audit.overlaps).toEqual([]);
+    expect(audit.clipped).toEqual([]);
+    expect(density.containerType).toBe("size");
+    expect(density.metricValue).toBe("18px");
+    expect(Number.parseFloat(density.activityText)).toBeLessThanOrEqual(10);
+  });
+
+  test("portrait compact overview stays intrinsic before and during dashboard fullscreen", async ({ page }) => {
+    await openSideboard(page, {
+      name: "galaxy-s23-portrait",
+      width: 360,
+      height: 780,
+      device: "galaxy-s23",
+    });
+    const readGeometry = () => page.evaluate(() => {
+      const activity = document.querySelector(".mobile-activity-preview").getBoundingClientRect();
+      const quota = document.querySelector(".mobile-quota-strip").getBoundingClientRect();
+      return {
+        activityHeight: activity.height,
+        activityBottom: activity.bottom,
+        quotaTop: quota.top,
+        gap: quota.top - activity.bottom,
+      };
+    });
+    const normal = await readGeometry();
+    expect(normal.activityHeight).toBeLessThan(190);
+    expect(normal.gap).toBeGreaterThanOrEqual(8);
+    expect(normal.gap).toBeLessThanOrEqual(34);
+
+    await page.locator("#fullscreen").click({ force: true });
+    const fullscreen = await readGeometry();
+    expect(fullscreen.activityHeight).toBeLessThan(190);
+    expect(fullscreen.gap).toBeGreaterThanOrEqual(8);
+    expect(fullscreen.gap).toBeLessThanOrEqual(34);
+  });
+
+  test("portrait fullscreen hides exit chrome and Back leaves viewer", async ({ page }) => {
+    await openSideboard(page, {
+      name: "galaxy-s23-portrait-exit",
+      width: 360,
+      height: 780,
+      device: "galaxy-s23",
+    });
+    await page.locator("#fullscreen").click({ force: true });
+    await expect(page.locator("#mobileFullscreen")).toBeHidden();
+    await expect(page.locator("#exitViewer")).toBeHidden();
+    await page.evaluate(() => history.back());
+    await expect(page.locator("body.dashboard-viewer")).toHaveCount(0);
+  });
+
+  test("iphone landscape fullscreen has no exit chrome and gives quota the full height", async ({ page }) => {
+    await openSideboard(page, {
+      name: "iphone-xs-landscape-inline-exit",
+      width: 812,
+      height: 375,
+      device: "iphone-xs",
+    });
+    await page.locator("#fullscreen").click({ force: true });
+    await expect(page.locator("#dashboardExitViewer")).toBeHidden();
+    await expect(page.locator("#exitViewer")).toBeHidden();
+    const geometry = await page.evaluate(() => {
+      const quota = document.querySelector('[data-dashboard-key="quota-mini"]');
+      const host = document.querySelector("#quotaSideboardCard");
+      const card = host.firstElementChild;
+      return {
+        quotaClientHeight: quota.clientHeight,
+        quotaScrollHeight: quota.scrollHeight,
+        hostClientHeight: host.clientHeight,
+        hostScrollHeight: host.scrollHeight,
+        rows: [...(card?.children || [])].map(node => ({
+          className: node.className,
+          height: node.getBoundingClientRect().height,
+        })),
+      };
+    });
+    expect(geometry.quotaScrollHeight - geometry.quotaClientHeight).toBeLessThanOrEqual(2);
+    expect(geometry.hostScrollHeight - geometry.hostClientHeight, JSON.stringify(geometry.rows)).toBeLessThanOrEqual(2);
+  });
+
+  test("iphone landscape preview keeps the large safe inset only on the notch side", async ({ page }) => {
+    await openSideboard(page, {
+      name: "iphone-xs-landscape-safe-area",
+      width: 812,
+      height: 375,
+      device: "iphone-xs",
+    });
+    await page.locator("#fullscreen").click({ force: true });
+    const geometry = await page.evaluate(() => {
+      const shell = document.querySelector(".sideboard-shell");
+      const style = getComputedStyle(shell);
+      const shellRect = shell.getBoundingClientRect();
+      return {
+        left: Number.parseFloat(style.paddingLeft),
+        right: Number.parseFloat(style.paddingRight),
+        bottom: Number.parseFloat(style.paddingBottom),
+        shellBottom: shellRect.bottom,
+        viewportBottom: innerHeight,
+      };
+    });
+    expect(geometry.left - geometry.right).toBeGreaterThan(35);
+    expect(geometry.bottom).toBe(0);
+    expect(Math.abs(geometry.viewportBottom - geometry.shellBottom)).toBeLessThanOrEqual(1);
+  });
+
+  for (const scenario of [
+    { name: "iphone-xs-viewer", width: 812, height: 375, device: "iphone-xs" },
+    { name: "galaxy-s23-viewer", width: 780, height: 360, device: "galaxy-s23" },
+  ]) {
+    test(`${scenario.name} uses the same in-frame dashboard viewer contract`, async ({ page }) => {
+      await openSideboard(page, scenario);
+      await page.locator("#fullscreen").click({ force: true });
+      await expect(page.locator("body.dashboard-viewer.viewer-immersive.mode-sideboard")).toHaveCount(1);
+      const nativeFullscreen = await page.evaluate(() => Boolean(document.fullscreenElement || document.webkitFullscreenElement));
+      const audit = await layoutAudit(page);
+      expect(nativeFullscreen).toBe(false);
+      expect(audit.documentOverflowX).toBe(false);
+      expect(audit.overlaps).toEqual([]);
+      expect(audit.clipped).toEqual([]);
+    });
+  }
+});
+
+test.describe("Device Lab preset matrix", () => {
+  for (const scenario of deviceLabPresetCases()) {
+    test(scenario.name, async ({ page }) => {
+      await openSideboard(page, scenario);
+
+      const initial = await layoutAudit(page);
+      expect(initial.documentOverflowX).toBe(false);
+      expect(initial.overlaps).toEqual([]);
+      expect(initial.chromeOverlaps).toEqual([]);
+      expect(initial.clipped, JSON.stringify(initial.wideDescendants, null, 2)).toEqual([]);
+
+      if (scenario.eink) {
+        await expect(page.locator("body.eink-client.dashboard-viewer")).toHaveCount(1);
+        await expect(page.locator("#exitViewer")).toBeHidden();
+        return;
+      }
+
+      const compact = initial.overview;
+      const enter = compact ? page.locator("#mobileFullscreen") : page.locator("#fullscreen");
+      await enter.click({ force: true });
+      await expect(page.locator("body.dashboard-viewer.viewer-immersive.mode-sideboard")).toHaveCount(1);
+
+      const fullscreen = await layoutAudit(page);
+      expect(fullscreen.documentOverflowX).toBe(false);
+      expect(fullscreen.overlaps).toEqual([]);
+      expect(fullscreen.chromeOverlaps).toEqual([]);
+      expect(fullscreen.clipped, JSON.stringify(fullscreen.wideDescendants, null, 2)).toEqual([]);
+
+      if (compact) {
+        await expect(page.locator("#mobileFullscreen")).toBeHidden();
+      } else {
+        await expect(page.locator("#dashboardExitViewer")).toBeHidden();
+        const quotaOverflow = await page.evaluate(() => {
+          const host = document.querySelector("#quotaSideboardCard");
+          const slot = document.querySelector(".quota-sideboard-slot");
+          if (!host || !slot || !host.getClientRects().length) return null;
+          return {
+            hostX: host.scrollWidth - host.clientWidth,
+            hostY: host.scrollHeight - host.clientHeight,
+            slotX: slot.scrollWidth - slot.clientWidth,
+            slotY: slot.scrollHeight - slot.clientHeight,
+          };
+        });
+        expect(quotaOverflow).not.toBeNull();
+        expect(quotaOverflow.hostX).toBeLessThanOrEqual(2);
+        expect(quotaOverflow.hostY).toBeLessThanOrEqual(2);
+        expect(quotaOverflow.slotX).toBeLessThanOrEqual(2);
+        expect(quotaOverflow.slotY).toBeLessThanOrEqual(2);
+      }
+    });
+  }
 });
 
 test.describe("continuous E-Ink Sideboard", () => {
@@ -214,4 +443,139 @@ test.describe("continuous E-Ink Sideboard", () => {
       expect(audit.clipped, JSON.stringify(audit.wideDescendants, null, 2)).toEqual([]);
     });
   }
+});
+
+test.describe("App theme controls", () => {
+  test("appearance controls live in Setup and update shared theme tokens", async ({ page }) => {
+    await openSideboard(page, { name: "theme-picker", width: 1_280, height: 800 });
+    await expect(page.locator(".setup-panels #appThemeColorA")).toHaveCount(1);
+    await expect(page.locator("#sideboardShell #appThemeColorA")).toHaveCount(0);
+    await page.locator('[data-app-palette="aurora"]').evaluate(button => button.click());
+    await expect(page.locator("#appThemeColorA")).toHaveValue("#155d4a");
+    await expect(page.locator("#appThemeColorB")).toHaveValue("#173d57");
+    await expect(page.locator("html")).toHaveCSS("--theme-palette-a", "#155d4a");
+    await expect(page.locator("#sideboardShell")).toHaveCSS("--side-palette-a", "#155d4a");
+    await page.locator("#appThemeBackgroundMode").evaluate(select => {
+      select.value = "solid";
+      select.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await expect(page.locator("html")).toHaveAttribute("data-theme-background", "solid");
+    await page.locator("#appThemeGlassOpacity").evaluate(input => {
+      input.value = "10";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await expect(page.locator("html")).toHaveCSS("--theme-glass", "rgba(255, 255, 255, 0.100)");
+  });
+
+  test("E-Ink keeps appearance settings out of the reading surface", async ({ page }) => {
+    await openSideboard(page, {
+      name: "eink-theme-picker",
+      width: 794,
+      height: 1_054,
+      device: "boox-go-color-7",
+      eink: true,
+    });
+    await expect(page.locator(".appearance-theme-panel")).toBeHidden();
+  });
+
+  test("custom wallpaper is compressed, applied, and removable", async ({ page }) => {
+    await openSideboard(page, { name: "theme-wallpaper", width: 1_280, height: 800 });
+    const hostTheme = {
+      colorA: "#4b1f66",
+      colorB: "#17344d",
+      angle: 132,
+      intensity: 72,
+      backgroundFit: "cover",
+      backgroundPosition: "center",
+      backgroundBlur: 0,
+      backgroundDim: 24,
+      glassOpacity: 7,
+      glassBlur: 20,
+      glassBorder: 12,
+    };
+    await page.route("**/api/appearance/background*", async route => {
+      const method = route.request().method();
+      if (method === "POST") {
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({
+            configured: true,
+            theme: { ...hostTheme, backgroundMode: "image" },
+            hasBackgroundImage: true,
+            backgroundUrl: "/api/appearance/background?v=test-wallpaper",
+          }),
+        });
+        return;
+      }
+      if (method === "DELETE") {
+        await route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({
+            configured: true,
+            theme: { ...hostTheme, backgroundMode: "gradient" },
+            hasBackgroundImage: false,
+            backgroundUrl: "",
+          }),
+        });
+        return;
+      }
+      await route.fulfill({ status: 404 });
+    });
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGMMqFjAwMDAxMDAwMDAAAAQugFsZnyF3gAAAABJRU5ErkJggg==",
+      "base64",
+    );
+    await page.locator("#appThemeBackgroundUpload").setInputFiles({
+      name: "wallpaper.png",
+      mimeType: "image/png",
+      buffer: png,
+    });
+    await expect(page.locator("html")).toHaveAttribute("data-theme-background", "image");
+    await expect(page.locator("html")).toHaveCSS("--theme-background-image", /\/api\/appearance\/background\?v=test-wallpaper/);
+    await page.locator("#appThemeBackgroundClear").evaluate(button => button.click());
+    await expect(page.locator("html")).toHaveAttribute("data-theme-background", "gradient");
+    await expect(page.locator("html")).toHaveCSS("--theme-background-image", "none");
+  });
+
+  test("Quota uses the shared glass canvas instead of its legacy opaque skin", async ({ page }) => {
+    await openSideboard(page, { name: "quota-glass", width: 1_280, height: 800 });
+    await page.locator("#quotaMode").evaluate(button => button.click());
+    await page.locator("body.mode-quota").waitFor();
+    await expect(page.locator(".quota-shell")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(page.locator(".quota-shell")).toHaveCSS("background-image", "none");
+    await expect(page.locator(".quota-shell")).toHaveCSS("border-top-width", "0px");
+    const accountCard = page.locator(".quota-account-card").first();
+    await expect(accountCard).toHaveCSS("border-top-width", "1px");
+    await expect(accountCard).not.toHaveCSS("background-image", "none");
+  });
+
+  test("dashboard immersive viewer has no visible exit chrome", async ({ page }) => {
+    await openSideboard(page, { name: "viewer-inline-exit", width: 911, height: 569, device: "asus-zenpad-p024" });
+    await page.locator("body").evaluate(body => {
+      body.classList.add("dashboard-viewer", "viewer-immersive");
+    });
+    await expect(page.locator("#exitViewer")).toBeHidden();
+    await expect(page.locator("#dashboardExitViewer")).toBeHidden();
+  });
+
+  test("Custom Deck immersive viewer has no blocking chrome and Back/Escape exit", async ({ page }) => {
+    await openDeckShell(page, { name: "deck-viewer-exit", width: 780, height: 360, device: "galaxy-s23" });
+    expect(await page.evaluate(() => document.getElementById("keepAwakeVideo")?.parentElement === document.body)).toBe(true);
+    await page.locator("#fullscreen").click({ force: true });
+    await expect(page.locator("body.deck-viewer.viewer-immersive")).toHaveCount(1);
+    await expect(page.locator("body.dashboard-viewer")).toHaveCount(0);
+    await expect(page.locator("#exitViewer")).toBeHidden();
+    await expect(page.locator("#dashboardExitViewer")).toBeHidden();
+
+    await page.evaluate(() => history.back());
+    await expect(page.locator("body.deck-viewer")).toHaveCount(0);
+    await expect(page.locator("body.viewer-immersive")).toHaveCount(0);
+    await expect(page.locator("#customDeckView")).toBeVisible();
+
+    await page.locator("#fullscreen").click({ force: true });
+    await expect(page.locator("body.deck-viewer.viewer-immersive")).toHaveCount(1);
+    await page.keyboard.press("Escape");
+    await expect(page.locator("body.deck-viewer")).toHaveCount(0);
+    await expect(page.locator("body.viewer-immersive")).toHaveCount(0);
+  });
 });

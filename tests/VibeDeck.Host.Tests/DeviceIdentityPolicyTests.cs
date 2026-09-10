@@ -13,9 +13,10 @@ namespace VibeDeck.Host.Tests
         [InlineData("Phone", "BOOX Go Color 7", "Mozilla/5.0 Android", "BOOX Go Color 7")]
         [InlineData("Phone", "sm-s9110", "Mozilla/5.0 Android", "Samsung SM-S9110")]
         [InlineData("My Reader", "", "Mozilla/5.0", "My Reader")]
-        [InlineData("Phone", "", "Mozilla/5.0 Android", "Android Phone")]
-        [InlineData("Phone", "", "Mozilla/5.0 iPad", "iPhone")]
-        public void ResolveNamePreservesExistingIdentityRules(string name, string model, string userAgent, string expected)
+        [InlineData("Phone", "", "Mozilla/5.0 Android", "Android device")]
+        [InlineData("Phone", "", "Mozilla/5.0 iPad", "iPad")]
+        [InlineData("Phone", "", "Mozilla/5.0 iPhone", "iPhone")]
+        public void ResolveNamePrefersModelThenUsesPlatformNeutralFallback(string name, string model, string userAgent, string expected)
         {
             Assert.Equal(expected, DeviceIdentityPolicy.ResolveName(name, model, userAgent));
         }

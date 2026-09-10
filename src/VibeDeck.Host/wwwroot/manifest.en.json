@@ -5,9 +5,9 @@
   "description": "Turn your phone into a PC second display, sideboard, and AI quota dashboard.",
   "lang": "en",
   "dir": "ltr",
-  "start_url": "/index.html?source=pwa&lang=en&v=52",
+  "start_url": "/index.html?source=pwa&lang=en&v=54",
   "scope": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "display_override": ["fullscreen", "standalone", "browser"],
   "orientation": "any",
   "background_color": "#f2f0e8",
@@ -18,8 +18,8 @@
     { "src": "/icons/vibedeck.svg?v=1", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ],
   "shortcuts": [
-    { "name": "Sideboard", "short_name": "Sideboard", "url": "/index.html?mode=sideboard&source=pwa&lang=en&v=52", "icons": [{ "src": "/icons/vibedeck.svg?v=1", "sizes": "any", "type": "image/svg+xml" }] },
-    { "name": "AI quota", "short_name": "Quota", "url": "/index.html?mode=quota&source=pwa&lang=en&v=52", "icons": [{ "src": "/icons/vibedeck.svg?v=1", "sizes": "any", "type": "image/svg+xml" }] },
-    { "name": "Display", "short_name": "Display", "url": "/index.html?mode=display&source=pwa&lang=en&v=52", "icons": [{ "src": "/icons/vibedeck.svg?v=1", "sizes": "any", "type": "image/svg+xml" }] }
+    { "name": "Sideboard", "short_name": "Sideboard", "url": "/index.html?mode=sideboard&source=pwa&lang=en&v=54", "icons": [{ "src": "/icons/vibedeck.svg?v=1", "sizes": "any", "type": "image/svg+xml" }] },
+    { "name": "AI quota", "short_name": "Quota", "url": "/index.html?mode=quota&source=pwa&lang=en&v=54", "icons": [{ "src": "/icons/vibedeck.svg?v=1", "sizes": "any", "type": "image/svg+xml" }] },
+    { "name": "Display", "short_name": "Display", "url": "/index.html?mode=display&source=pwa&lang=en&v=54", "icons": [{ "src": "/icons/vibedeck.svg?v=1", "sizes": "any", "type": "image/svg+xml" }] }
   ]
 }

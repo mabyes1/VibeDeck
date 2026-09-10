@@ -14,7 +14,7 @@ test("header gives flexible width to the two-row control area", () => {
 test("header geometry follows component space rather than device identity", () => {
   assert.match(css, /@container\s+app-header\s*\(max-width:\s*32rem\)/);
   assert.match(css, /@container\s+app-header\s*\(min-width:\s*48rem\)/);
-  assert.doesNotMatch(css, /phone-client[^,{]*(?:viewport-(?:portrait|landscape)|@media)/);
+  assert.doesNotMatch(css, /(?:phone|mobile)-client[^,{]*(?:viewport-(?:portrait|landscape)|@media)/);
   assert.doesNotMatch(css, /viewport-(?:portrait|landscape)/);
   assert.doesNotMatch(css, /@media\s*\(max-width:\s*(?:760px|1100px)\)/);
 });

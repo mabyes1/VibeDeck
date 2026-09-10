@@ -17,10 +17,10 @@
 
   .mobile-overview button {
     min-height: 38px;
-    border: 1px solid var(--side-line, rgba(151, 225, 210, .24));
+    border: 1px solid var(--theme-line, rgba(255, 255, 255, .12));
     border-radius: 10px;
     color: inherit;
-    background: rgba(11, 27, 32, .88);
+    background: rgba(255, 255, 255, .045);
     font: inherit;
   }
 
@@ -70,10 +70,14 @@
   .mobile-detail-block,
   .mobile-detail-host,
   .mobile-detail-metrics article {
-    border: 1px solid var(--side-line, rgba(151, 225, 210, .22));
+    border: 1px solid var(--theme-line, rgba(255, 255, 255, .12));
     border-radius: 12px;
-    background: linear-gradient(145deg, rgba(14, 34, 40, .96), rgba(7, 20, 25, .96));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035);
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .008)),
+      var(--theme-glass, rgba(255, 255, 255, .07));
+    box-shadow: var(--theme-shadow, 0 14px 38px rgba(0, 0, 0, .16)), inset 0 1px 0 rgba(255, 255, 255, .05);
+    backdrop-filter: blur(var(--theme-glass-blur, 20px)) saturate(116%);
+    -webkit-backdrop-filter: blur(var(--theme-glass-blur, 20px)) saturate(116%);
   }
 
   .mobile-system-card {
@@ -120,9 +124,10 @@
     min-width: 0;
     min-height: 64px;
     padding: 8px 10px;
-    border: 1px solid var(--side-line, rgba(151, 225, 210, .22));
+    border: 1px solid var(--theme-line, rgba(255, 255, 255, .12));
     border-radius: 11px;
-    background: rgba(8, 24, 29, .92);
+    background: rgba(255, 255, 255, .04);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
   }
 
   .mobile-metric-card > span {
@@ -149,7 +154,7 @@
     width: 0;
     height: 100%;
     border-radius: inherit;
-    background: var(--side-accent, #63ddc7);
+    background: var(--side-accent, var(--theme-accent, #8c71a3));
     transition: width .2s ease;
   }
 
@@ -198,6 +203,7 @@
   }
 
   .mobile-quota-strip {
+    box-sizing: border-box;
     width: 100%;
     min-height: 64px;
     padding: 8px 11px;
@@ -207,6 +213,9 @@
   .mobile-quota-strip > span {
     display: grid;
     gap: 2px;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 50%;
   }
 
   .mobile-quota-strip > span:last-child {
@@ -217,6 +226,14 @@
   .mobile-quota-strip small {
     color: var(--side-muted, #a5bbb8);
     font-size: 13px;
+  }
+
+  .mobile-quota-strip small,
+  .mobile-quota-strip b,
+  .mobile-quota-strip strong {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 
   #mobileQuotaValue {
@@ -236,8 +253,11 @@
     gap: 10px;
     padding: calc(10px + var(--safe-area-inset-top, env(safe-area-inset-top))) calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right))) calc(12px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom))) calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left)));
     overflow-y: auto;
-    color: #edf7f5;
-    background: #071116;
+    color: var(--side-text, #f7f2e8);
+    background:
+      radial-gradient(ellipse at -8% -10%, var(--theme-palette-a-soft, rgba(75, 31, 102, .32)), transparent 56%),
+      radial-gradient(ellipse at 108% 110%, var(--theme-palette-b-soft, rgba(23, 52, 77, .29)), transparent 60%),
+      #090c12;
     overscroll-behavior: contain;
   }
 
@@ -250,7 +270,10 @@
     align-items: center;
     min-height: 48px;
     padding: 4px 0;
-    background: #071116;
+    border-bottom: 1px solid var(--theme-line, rgba(255, 255, 255, .12));
+    background: var(--theme-surface-strong, rgba(9, 12, 18, .88));
+    backdrop-filter: blur(var(--theme-glass-blur, 20px));
+    -webkit-backdrop-filter: blur(var(--theme-glass-blur, 20px));
   }
 
   .mobile-detail-header > strong {
@@ -273,9 +296,9 @@
   }
 
   .mobile-activity-filters button.active {
-    border-color: var(--side-accent, #63ddc7);
+    border-color: var(--side-accent, var(--theme-accent, #8c71a3));
     color: #06110f;
-    background: var(--side-accent, #63ddc7);
+    background: var(--side-accent, var(--theme-accent, #8c71a3));
   }
 
   .mobile-activity-list {
@@ -288,9 +311,9 @@
 
   .mobile-activity-list > li {
     padding: 10px;
-    border: 1px solid var(--side-line, rgba(151, 225, 210, .22));
+    border: 1px solid var(--theme-line, rgba(255, 255, 255, .12));
     border-radius: 10px;
-    background: rgba(12, 29, 35, .9);
+    background: rgba(255, 255, 255, .04);
     font-size: 15px;
     line-height: 1.4;
   }
@@ -351,9 +374,9 @@
     gap: 8px;
     min-height: 52px;
     padding: 8px 10px;
-    border: 1px solid var(--side-line, rgba(151, 225, 210, .22));
+    border: 1px solid var(--theme-line, rgba(255, 255, 255, .12));
     border-radius: 10px;
-    background: rgba(12, 29, 35, .9);
+    background: rgba(255, 255, 255, .04);
   }
 
   .mobile-layout-row label {
@@ -376,14 +399,19 @@
     margin-top: auto;
   }
 
-/* Modern engines select this presentation with a native container query. The
- * semantic class is maintained from the same measured container width so
- * Chromium 101-era clients get the identical component contract. */
+/* Compact phone presentation is selected by native container space. */
 @container sideboard-view (max-width: 44rem) {
-  .mobile-overview { display: flex; }
-}
+  .mobile-overview {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 
-body:not(.eink-client) .sideboard-view.space-sideboard-compact .mobile-overview { display: flex; }
+  .mobile-quota-strip {
+    margin-top: clamp(0px, 2cqh, 16px);
+  }
+}
 
 /* Below this content width two full action labels and a quota identity no
  * longer form honest horizontal rows. Stack those rows based on available
@@ -417,34 +445,6 @@ body:not(.eink-client) .sideboard-view.space-sideboard-compact .mobile-overview 
   .mobile-quota-strip b {
     overflow-wrap: anywhere;
   }
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-overview-head,
-body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-quota-strip {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: stretch;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-overview-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  width: 100%;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-overview-actions button,
-body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-quota-strip > span {
-  min-width: 0;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-quota-strip > span:last-child {
-  justify-items: start;
-  text-align: left;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-quota-strip small,
-body:not(.eink-client) .sideboard-view.space-sideboard-micro .mobile-quota-strip b {
-  overflow-wrap: anywhere;
 }
 
 /* A detail panel is a modal document surface. Locking the document is a state

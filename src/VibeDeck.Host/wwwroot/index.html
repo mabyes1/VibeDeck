@@ -14,10 +14,10 @@
   <meta name="screen-orientation" content="any">
   <meta name="theme-color" content="#111820">
   <!-- Cache-bust: iOS freezes the first icon/title it saw for a host. -->
-  <link id="manifestLink" rel="manifest" href="/manifest.json?v=53">
+  <link id="manifestLink" rel="manifest" href="/manifest.json?v=54">
   <link rel="icon" type="image/svg+xml" href="/icons/vibedeck.svg?v=1" sizes="any">
   <title>VibeDeck</title>
-  <link rel="stylesheet" href="/index.css?v=140">
+  <link rel="stylesheet" href="/index.css?v=166">
   <style>
     /* Pairing is the recovery path: keep it usable even if an old iOS asset or
        a later boot request fails. JS only hides it after trust is confirmed. */
@@ -134,7 +134,7 @@
         <button id="displayMode" class="mode-button active" type="button">顯示器</button>
         <button id="setupMode" class="mode-button" type="button" hidden>裝置設定</button>
         <button id="sideboardMode" class="mode-button" type="button">資訊板</button>
-        <button id="quotaMode" class="mode-button" type="button">額度</button>
+        <button id="quotaMode" class="mode-button" type="button" hidden>額度</button>
         <button id="addDeckMode" class="mode-button add-deck-mode" type="button">＋ Add Deck</button>
       </div>
       <div class="utility-controls">
@@ -147,7 +147,6 @@
           </select>
         </label>
         <button id="einkModeToggle" type="button" aria-pressed="false" title="切換成電子紙版面（BOOX / 電子書）">電子書</button>
-        <button id="keepAwake" type="button">長亮 ON</button>
         <button id="fullscreen" type="button">全螢幕</button>
         <button id="refresh" type="button">重新連線</button>
         <button id="productUpdate" type="button" hidden>檢查更新</button>
@@ -170,6 +169,106 @@
         <strong data-i18n="ui.advancedDisplaySettingsTitle">顯示器與進階設定</strong>
         <span data-i18n="ui.advancedDisplaySettingsHint">只有需要調整串流、方向或虛擬螢幕時才需要。</span>
       </div>
+      <details class="panel appearance-theme-panel">
+        <summary data-i18n="ui.themeSettings">布景設定</summary>
+        <div class="appearance-theme-controls">
+          <div class="appearance-theme-intro">
+            <div>
+              <strong data-i18n="ui.themeBackgroundAndGlass">背景與玻璃</strong>
+              <span data-i18n="ui.themeBackgroundAndGlassHint">背景可以是純色、漸層或自己的圖片；介面卡片維持中性透明玻璃，不再被主題色染髒。</span>
+            </div>
+            <span id="appThemePreview" class="app-theme-preview" aria-hidden="true"></span>
+          </div>
+
+          <section class="appearance-theme-group appearance-background-group">
+            <strong data-i18n="ui.themeBackground">背景</strong>
+            <div class="appearance-theme-fields">
+              <label class="appearance-theme-select"><span data-i18n="ui.themeMode">模式</span>
+                <select id="appThemeBackgroundMode">
+                  <option value="gradient" data-i18n="ui.themeGradient">漸層</option>
+                  <option value="solid" data-i18n="ui.themeSolid">純色</option>
+                  <option value="image" data-i18n="ui.themeImage">圖片</option>
+                </select>
+              </label>
+              <label class="appearance-theme-select"><span data-i18n="ui.themeFit">填滿</span>
+                <select id="appThemeBackgroundFit">
+                  <option value="cover" data-i18n="ui.themeCover">填滿畫面</option>
+                  <option value="contain" data-i18n="ui.themeContain">完整顯示</option>
+                </select>
+              </label>
+              <label class="appearance-theme-select"><span data-i18n="ui.themePosition">位置</span>
+                <select id="appThemeBackgroundPosition">
+                  <option value="center" data-i18n="ui.themeCenter">置中</option>
+                  <option value="top" data-i18n="ui.themeTop">靠上</option>
+                  <option value="bottom" data-i18n="ui.themeBottom">靠下</option>
+                </select>
+              </label>
+            </div>
+            <div class="app-theme-background-file">
+              <label class="app-theme-upload-button" for="appThemeBackgroundUpload" data-i18n="ui.themeChooseBackgroundImage">選擇背景圖片</label>
+              <input id="appThemeBackgroundUpload" type="file" accept="image/*" hidden>
+              <button id="appThemeBackgroundClear" class="secondary" type="button" data-i18n="ui.themeClearImage">清除圖片</button>
+              <span id="appThemeBackgroundStatus" data-i18n="ui.themeNoCustomBackground">尚未選擇自訂背景</span>
+            </div>
+            <label class="app-theme-range">
+              <span><span data-i18n="ui.themeBackgroundDim">背景暗化</span> <b id="appThemeBackgroundDimValue">24%</b></span>
+              <input id="appThemeBackgroundDim" type="range" min="0" max="70" step="1" value="24">
+            </label>
+            <label class="app-theme-range">
+              <span><span data-i18n="ui.themeBackgroundBlur">背景模糊</span> <b id="appThemeBackgroundBlurValue">0px</b></span>
+              <input id="appThemeBackgroundBlur" type="range" min="0" max="30" step="1" value="0">
+            </label>
+          </section>
+
+          <section class="appearance-theme-group appearance-color-group">
+            <strong data-i18n="ui.themeColors">色彩</strong>
+            <div class="app-theme-colors" aria-label="全站背景調色板" data-i18n-attr="aria-label:ui.themeHostBackgroundPalette">
+            <label>
+              <span data-i18n="ui.themeColorA">色 A</span>
+              <input id="appThemeColorA" type="color" value="#4b1f66" aria-label="布景顏色 A" data-i18n-attr="aria-label:ui.themeColorALabel">
+            </label>
+            <label>
+              <span data-i18n="ui.themeColorB">色 B</span>
+              <input id="appThemeColorB" type="color" value="#17344d" aria-label="布景顏色 B" data-i18n-attr="aria-label:ui.themeColorBLabel">
+            </label>
+            </div>
+            <label class="app-theme-range">
+              <span><span data-i18n="ui.themeAngle">方向</span> <b id="appThemeAngleValue">132°</b></span>
+              <input id="appThemeAngle" type="range" min="0" max="360" step="1" value="132">
+            </label>
+            <label class="app-theme-range">
+              <span><span data-i18n="ui.themeIntensity">濃度</span> <b id="appThemeIntensityValue">72%</b></span>
+              <input id="appThemeIntensity" type="range" min="30" max="100" step="1" value="72">
+            </label>
+            <div class="app-theme-presets" aria-label="快速配色" data-i18n-attr="aria-label:ui.themeQuickPalette">
+              <button type="button" data-app-palette="nebula" title="紫藍" data-i18n-attr="title:ui.themePaletteNebula"><span style="--swatch-a:#4b1f66;--swatch-b:#17344d"></span></button>
+              <button type="button" data-app-palette="aurora" title="墨綠藍" data-i18n-attr="title:ui.themePaletteAurora"><span style="--swatch-a:#155d4a;--swatch-b:#173d57"></span></button>
+              <button type="button" data-app-palette="ember" title="暖橘紫" data-i18n-attr="title:ui.themePaletteEmber"><span style="--swatch-a:#6b3327;--swatch-b:#3d244f"></span></button>
+              <button type="button" data-app-palette="midnight" title="午夜藍" data-i18n-attr="title:ui.themePaletteMidnight"><span style="--swatch-a:#25265c;--swatch-b:#102f45"></span></button>
+            </div>
+          </section>
+
+          <section class="appearance-theme-group appearance-glass-group">
+            <strong data-i18n="ui.themeCardGlass">卡片玻璃</strong>
+            <label class="app-theme-range">
+              <span><span data-i18n="ui.themeGlassOpacity">透明白霧</span> <b id="appThemeGlassOpacityValue">7%</b></span>
+              <input id="appThemeGlassOpacity" type="range" min="2" max="20" step="1" value="7">
+            </label>
+            <label class="app-theme-range">
+              <span><span data-i18n="ui.themeGlassBlur">玻璃模糊</span> <b id="appThemeGlassBlurValue">20px</b></span>
+              <input id="appThemeGlassBlur" type="range" min="0" max="40" step="1" value="20">
+            </label>
+            <label class="app-theme-range">
+              <span><span data-i18n="ui.themeGlassBorder">玻璃邊線</span> <b id="appThemeGlassBorderValue">12%</b></span>
+              <input id="appThemeGlassBorder" type="range" min="4" max="30" step="1" value="12">
+            </label>
+          </section>
+
+          <div class="appearance-theme-actions">
+            <button id="appThemeReset" class="app-theme-reset secondary" type="button" data-i18n="ui.themeReset">重設布景</button>
+          </div>
+        </div>
+      </details>
       <details class="panel">
         <summary>虛擬螢幕安裝與修復</summary>
         <div class="controls">
@@ -217,11 +316,18 @@
               <option value="jpeg">穩定 JPEG</option>
             </select>
           </label>
+          <label class="field">延遲
+            <select id="streamLatency" aria-label="串流延遲模式">
+              <option value="20">極低延遲 · 20ms</option>
+              <option value="40" selected>普通 · 40ms</option>
+              <option value="80">穩定 · 80ms</option>
+            </select>
+          </label>
           <button id="applyStream" type="button">套用串流</button>
         </div>
       </details>
       <details id="turnSettingsPanel" class="panel" hidden>
-        <summary>遠端 WebRTC 與 Cloudflare TURN</summary>
+        <summary data-i18n="ui.turnSettings">遠端 WebRTC 與 Cloudflare TURN</summary>
         <div class="controls turn-settings-controls">
           <label class="field">TURN Key ID
             <input id="turnKeyId" type="text" autocomplete="off" spellcheck="false" placeholder="Cloudflare TURN Key ID">
@@ -321,6 +427,7 @@
           <span id="streamCapabilityState" class="stream-capability-state"></span>
           <span id="wakeState" class="wake-state"></span>
           <span id="appState" class="app-state"></span>
+          <button id="installVibeDeck" class="install-vibedeck" type="button" hidden data-i18n="secureEndpoint.installApp">安裝 VibeDeck</button>
           <span id="deviceState" class="device-state"></span>
         </div>
         <details class="connect-links">
@@ -439,7 +546,7 @@
         aria-label="輸入到遠端 Windows"></textarea>
     </section>
     <section id="sideboardView" class="app-view sideboard-view">
-      <div id="sideboardShell" class="sideboard-shell skin-command">
+      <div id="sideboardShell" class="sideboard-shell">
         <section id="dashboardEditBar" class="dashboard-edit-bar" hidden>
           <div id="dashboardSelectionControls" class="dashboard-selection-controls" hidden></div>
           <div class="dashboard-edit-copy">
@@ -462,19 +569,13 @@
             <strong id="sideHeadline">資訊板</strong>
             <span id="sideSummary">等待電腦資訊。</span>
           </div>
-          <div class="dashboard-view-controls">
-            <div class="dashboard-mode-switch" role="group" aria-label="切換資訊頁面">
-              <button type="button" data-dashboard-mode="sideboard" aria-pressed="true">資訊板</button>
-              <button type="button" data-dashboard-mode="quota" aria-pressed="false">額度</button>
+          <div class="sideboard-top-controls">
+            <div class="dashboard-view-controls">
+              <span class="eink-connection-state connecting" data-eink-connection-state role="status">CONNECTING</span>
+              <button id="dashboardExitViewer" class="dashboard-exit-viewer" type="button" aria-label="Exit fullscreen">EXIT</button>
+              <button id="launchDeckWindow" type="button" hidden data-i18n="ui.launchDeck">在虛擬螢幕顯示資訊板</button>
+              <button id="dashboardEditToggle" class="dashboard-edit-toggle" type="button" aria-pressed="false">編輯版面</button>
             </div>
-            <span class="eink-connection-state connecting" data-eink-connection-state role="status">正在連線</span>
-            <button id="launchDeckWindow" type="button" hidden data-i18n="ui.launchDeck">在虛擬螢幕顯示資訊板</button>
-            <button id="dashboardEditToggle" class="dashboard-edit-toggle" type="button" aria-pressed="false">編輯版面</button>
-          </div>
-          <div class="skin-picker" aria-label="Sideboard skin">
-            <button class="active" data-side-skin="command" type="button">命令</button>
-            <button data-side-skin="dial" type="button">儀表</button>
-            <button data-side-skin="focus" type="button">專注</button>
           </div>
         </div>
 
@@ -482,7 +583,7 @@
           <div class="mobile-overview-head">
             <div>
               <strong>資訊總覽</strong>
-              <span id="mobileConnectionState">正在連線</span>
+              <span id="mobileConnectionState">CONNECTING</span>
             </div>
             <div class="mobile-overview-actions">
               <button id="mobileFullscreen" type="button">全螢幕</button>
@@ -685,18 +786,16 @@
           </div>
           <ul id="activityFeedList" class="activity-feed-list"></ul>
         </section>
-        <section class="side-panel quota-mini-card" data-dashboard-key="quota-mini" data-dashboard-title="AI 額度">
-          <div class="quota-mini-head">
-            <strong>AI 額度</strong>
+        <section class="quota-sideboard-slot" data-dashboard-key="quota-mini" data-dashboard-title="AI 額度">
+          <div id="quotaSideboardCard" class="quota-sideboard-card-host"></div>
+          <div class="quota-mini-card quota-mini-compat">
             <span id="quotaMiniState">等待來源</span>
-          </div>
-          <select id="quotaMiniSource" aria-label="切換額度來源" disabled></select>
-          <div class="quota-mini-value-row">
+            <select id="quotaMiniSource" aria-label="切換額度來源" disabled></select>
             <strong id="quotaMiniValue">--</strong>
             <span id="quotaMiniReset">尚無額度來源</span>
+            <div id="quotaMiniCredits" hidden></div>
+            <span id="quotaMiniBar"></span>
           </div>
-          <div id="quotaMiniCredits" class="quota-mini-credit" hidden></div>
-          <div class="quota-mini-bar" aria-hidden="true"><span id="quotaMiniBar"></span></div>
         </section>
         <div id="customCardsGrid" class="custom-cards-grid" aria-live="polite"></div>
         </section>
@@ -814,11 +913,7 @@
             <div id="quotaTabs" class="quota-tabs" role="tablist" aria-label="Quota provider tabs"></div>
           </div>
           <div class="dashboard-view-controls">
-            <div class="dashboard-mode-switch" role="group" aria-label="切換資訊頁面">
-              <button type="button" data-dashboard-mode="sideboard" aria-pressed="false">資訊板</button>
-              <button type="button" data-dashboard-mode="quota" aria-pressed="true">額度</button>
-            </div>
-            <span class="eink-connection-state connecting" data-eink-connection-state role="status">正在連線</span>
+            <span class="eink-connection-state connecting" data-eink-connection-state role="status">CONNECTING</span>
           </div>
           <span id="quotaUpdated" class="quota-status">--</span>
         </div>
@@ -848,7 +943,7 @@
           <span>Deck folder</span>
           <code id="customDeckFolderPath">C:\ProgramData\VibeDeck\Decks</code>
         </div>
-        <p class="custom-deck-security-note">Deck 資料夾會作為 Web assets 提供給裝置瀏覽器。不要把密碼、Token、憑證或其他 secrets 放進 Deck；V1 不提供 Host Bridge 或敏感系統能力。</p>
+        <p class="custom-deck-security-note">Static Deck 會在 <code>sandbox="allow-scripts"</code> 的隔離 iframe 中執行，因此不是 VibeDeck 主頁的同源腳本，也不能直接讀取受保護的 Host API。需要 Host 資料時，請使用文件中的 read-only Deck Bridge；不要把密碼、Token、憑證或其他 secrets 放進 Deck。</p>
         <div class="custom-deck-help-actions">
           <button id="customDeckOpenFolder" type="button">Open Deck Folder</button>
           <button id="customDeckOpenExample" class="secondary" type="button">View Coding Pet</button>
@@ -861,6 +956,8 @@
         class="custom-deck-frame"
         title="Custom Deck"
         sandbox="allow-scripts"
+        allow="fullscreen"
+        allowfullscreen
         referrerpolicy="no-referrer"
         hidden></iframe>
     </section>
@@ -881,6 +978,6 @@
 
   <button id="exitViewer" class="exit-viewer" type="button" aria-label="Exit viewer">×</button>
 
-  <script type="module" src="/index.js?v=147"></script>
+  <script type="module" src="/index.js?v=174"></script>
 </body>
 </html>

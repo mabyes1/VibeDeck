@@ -33,36 +33,48 @@
   min-width: 0;
   min-height: 0;
   padding: var(--metric-card-padding);
-  border: 1px solid rgba(255,255,255,.09);
-  border-radius: 8px;
-  background: rgba(255,255,255,.03);
+  border: 1px solid var(--side-glass-line);
+  border-radius: 12px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .052), rgba(255, 255, 255, .006)),
+    var(--side-glass-bg);
   overflow: auto;
   overscroll-behavior: contain;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .055),
+    0 10px 28px rgba(0, 0, 0, .10);
+  backdrop-filter: blur(var(--side-glass-blur)) saturate(118%);
+  -webkit-backdrop-filter: blur(var(--side-glass-blur)) saturate(118%);
   transition: transform .2s cubic-bezier(.4, 0, .2, 1), box-shadow .2s ease, border-color .2s ease;
 }
 
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) .metric-card {
+  --metric-value-size: clamp(18px, min(3.7cqw, 6.2cqh), 32px);
+  --metric-sub-size: clamp(9px, min(1.35cqw, 2.4cqh), 12px);
+}
+
 .metric-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(143,209,255,.22);
-  box-shadow: 0 6px 20px rgba(0,0,0,.32);
+  transform: translateY(-1px);
+  border-color: var(--side-glass-line-hover);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .075),
+    0 14px 34px rgba(0, 0, 0, .17);
 }
 
 body.pc-console.mode-sideboard .metric-card {
-  border-color: rgba(255, 255, 255, .095);
-  border-radius: 10px;
+  border-color: var(--side-glass-line);
+  border-radius: 12px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .014)),
-    rgba(10, 17, 22, .72);
+    linear-gradient(145deg, rgba(255, 255, 255, .052), rgba(255, 255, 255, .006)),
+    var(--side-glass-bg);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .03),
-    0 7px 20px rgba(0, 0, 0, .10);
+    inset 0 1px 0 rgba(255, 255, 255, .055),
+    0 10px 28px rgba(0, 0, 0, .10);
 }
 
 body.pc-console.mode-sideboard .metric-card:hover {
   transform: translateY(-1px);
-  border-color: rgba(143, 209, 255, .23);
+  border-color: var(--side-glass-line-hover);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .04),
     0 10px 24px rgba(0, 0, 0, .20);
@@ -94,7 +106,7 @@ body.pc-console.mode-sideboard .metric-card:hover {
   grid-column: 1 / -1;
   grid-row: 2;
   min-width: 0;
-  color: rgba(247,242,232,.68);
+  color: rgba(247, 242, 232, .68);
   font-size: var(--metric-sub-size);
   line-height: var(--metric-sub-line);
 }
@@ -106,7 +118,7 @@ body.pc-console.mode-sideboard .metric-card:hover {
   height: var(--metric-bar-height);
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(255,255,255,.1);
+  background: rgba(255, 255, 255, .1);
 }
 
 .mini-bar span {
@@ -122,50 +134,28 @@ body.deck-window.mode-sideboard .metric-value {
   line-height: 1.08;
 }
 
-/* Mid-sized Sideboard containers use a denser card composition regardless of
- * whether the surface is a tablet, a split desktop pane, or a custom screen. */
-@container sideboard-view (min-width: 44.01rem) and (max-width: 64rem) {
-  #systemSideboardPage.dashboard-grid .metric-card {
+/* Keep one-row metric cards legible when the Sideboard's own block size is
+ * short. Saved card geometry remains unchanged; only internal density moves. */
+@container sideboard-view (max-height: 30rem) {
+.metric-card {
     --metric-card-padding: 4px 6px;
     --metric-card-row-gap: 1px;
-    --metric-card-column-gap: 5px;
-    --metric-title-size: clamp(13px, 1.8cqi, 15px);
-    --metric-title-line: 1.15;
-    --metric-value-size: clamp(20px, 3cqi, 26px);
+    --metric-card-column-gap: 4px;
+    --metric-title-size: 11px;
+    --metric-title-line: 1;
+    --metric-value-size: 18px;
     --metric-value-line: 1;
-    --metric-sub-size: clamp(10px, 1.4cqi, 12px);
-    --metric-sub-line: 1.2;
+    --metric-sub-size: 9px;
+    --metric-sub-line: 1.05;
     --metric-bar-height: 3px;
-    grid-template-rows: auto auto var(--metric-bar-height);
-    align-content: stretch;
-    align-items: center;
-  }
-
-  #systemSideboardPage.dashboard-grid .metric-sub {
-    white-space: normal;
-    text-overflow: clip;
-  }
+    overflow: hidden;
 }
 
-body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid .metric-card {
-  --metric-card-padding: 4px 6px;
-  --metric-card-row-gap: 1px;
-  --metric-card-column-gap: 5px;
-  --metric-title-size: clamp(13px, 1.8vw, 15px);
-  --metric-title-line: 1.15;
-  --metric-value-size: clamp(20px, 3vw, 26px);
-  --metric-value-line: 1;
-  --metric-sub-size: clamp(10px, 1.4vw, 12px);
-  --metric-sub-line: 1.2;
-  --metric-bar-height: 3px;
-  grid-template-rows: auto auto var(--metric-bar-height);
-  align-content: stretch;
-  align-items: center;
+.metric-sub {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid .metric-sub {
-  white-space: normal;
-  text-overflow: clip;
 }
 
 body.eink-client #systemSideboardPage.dashboard-grid .metric-card {

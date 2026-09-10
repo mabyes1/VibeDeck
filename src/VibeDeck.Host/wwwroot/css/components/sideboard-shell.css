@@ -8,13 +8,29 @@
  */
 
 .sideboard-shell {
-  --side-accent: #f2b45f;
-  --side-accent-2: #7ed9e8;
+  --side-palette-a: var(--theme-palette-a, #4b1f66);
+  --side-palette-b: var(--theme-palette-b, #17344d);
+  --side-palette-a-soft: var(--theme-palette-a-soft, rgba(75, 31, 102, .32));
+  --side-palette-b-soft: var(--theme-palette-b-soft, rgba(23, 52, 77, .29));
+  --side-palette-a-faint: var(--theme-palette-a-faint, rgba(75, 31, 102, .10));
+  --side-palette-b-faint: var(--theme-palette-b-faint, rgba(23, 52, 77, .09));
+  --side-accent: var(--theme-accent, #8c71a3);
+  --side-accent-2: var(--theme-accent-2, #7b91a4);
+  --side-text: #f7f2e8;
+  --side-muted: rgba(247, 242, 232, .68);
   --side-good: #91dd98;
   --side-warn: #ffd27a;
-  --side-bg: #071015;
-  --side-panel: rgba(17, 25, 30, .88);
-  --side-line: rgba(255, 255, 255, .16);
+  --side-bg: transparent;
+  --side-panel: var(--theme-glass, rgba(255, 255, 255, .07));
+  --side-glass-bg: var(--theme-glass, rgba(255, 255, 255, .07));
+  --side-glass-bg-strong: var(--theme-glass, rgba(255, 255, 255, .07));
+  --side-glass-line: var(--theme-line, rgba(255, 255, 255, .10));
+  --side-glass-line-hover: rgba(255, 255, 255, .22);
+  --side-glass-shadow: 0 14px 38px rgba(0, 0, 0, .16);
+  --side-glass-blur: var(--theme-glass-blur, 20px);
+  --side-line: var(--side-glass-line);
+  --side-gradient-angle: var(--theme-gradient-angle, 132deg);
+  --grad-accent: linear-gradient(90deg, var(--side-accent) 0%, var(--side-accent-2) 100%);
   --side-title-size: clamp(16px, 3.4vw, 28px);
   --side-title-line: 1;
   --side-kicker-size: clamp(9px, 1.2vw, 11px);
@@ -25,11 +41,6 @@
   --side-summary-line: 1.25;
   --side-feed-size: clamp(10px, 1.45vw, 13px);
   --side-feed-line: 1.25;
-  --skin-image:
-    radial-gradient(circle at 58% 54%, rgba(255, 204, 86, .30) 0 2%, transparent 12%),
-    linear-gradient(158deg, transparent 45%, rgba(55, 204, 255, .34) 46% 47%, transparent 48%),
-    linear-gradient(23deg, transparent 58%, rgba(244, 86, 177, .26) 59% 60%, transparent 61%),
-    linear-gradient(135deg, #06111b 0%, #0b2634 52%, #071017 100%);
   position: relative;
   display: grid;
   grid-template-columns: minmax(190px, 1.05fr) minmax(260px, 1.38fr) minmax(190px, 1fr);
@@ -42,10 +53,11 @@
   overflow: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
-  color: #f7f2e8;
-  background: var(--side-bg);
-  border: 1px solid rgba(255,255,255,.18);
-  border-radius: 8px;
+  color: var(--side-text);
+  background: transparent;
+  border: 0;
+  border-radius: 16px;
+  box-shadow: none;
 }
 
 .sideboard-shell::before,
@@ -53,20 +65,15 @@
   content: "";
   position: absolute;
   inset: 0;
+  pointer-events: none;
 }
 
 .sideboard-shell::before {
-  background-image: var(--skin-image);
-  background-position: center;
-  background-size: cover;
-  opacity: .68;
-  transform: none;
+  display: none;
 }
 
 .sideboard-shell::after {
-  background:
-    linear-gradient(90deg, rgba(3,6,8,.76), rgba(3,6,8,.48) 44%, rgba(3,6,8,.74)),
-    radial-gradient(circle at 50% 42%, rgba(0,0,0,.08), rgba(0,0,0,.58) 72%);
+  display: none;
 }
 
 .sideboard-shell > * {
@@ -74,34 +81,25 @@
   z-index: 1;
 }
 
-.sideboard-shell.skin-dial {
-  --side-accent: #7ed9e8;
-  --side-accent-2: #f2b45f;
-  --side-bg: #061116;
-  --skin-image:
-    radial-gradient(circle at 80% 24%, rgba(236, 239, 203, .28) 0 4%, transparent 5%),
-    radial-gradient(circle at 18% 40%, transparent 0 16%, rgba(126, 217, 232, .30) 17% 18%, transparent 19% 28%, rgba(242, 180, 95, .16) 29% 30%, transparent 31%),
-    linear-gradient(145deg, #07181c 0%, #17343a 50%, #071116 100%);
-}
-
-.sideboard-shell.skin-focus {
-  --side-accent: #91dd98;
-  --side-accent-2: #e0d5aa;
-  --side-bg: #0c130e;
-  --side-panel: rgba(25, 36, 25, .88);
-  --skin-image:
-    radial-gradient(ellipse at 18% 38%, rgba(84, 208, 111, .30) 0 9%, transparent 28%),
-    radial-gradient(ellipse at 76% 62%, rgba(64, 177, 108, .20) 0 12%, transparent 31%),
-    linear-gradient(145deg, #061009 0%, #0c2518 48%, #07100b 100%);
-}
-
 .sideboard-top {
   grid-column: 1 / -1;
+  z-index: 2;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
   min-width: 0;
+}
+
+.sideboard-top-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  position: relative;
+  z-index: 100;
 }
 
 /* Sideboard frame + built-in dashboard typography. Component cards own their
@@ -129,28 +127,8 @@
 }
 
 .side-title span {
-  color: rgba(247,242,232,.68);
+  color: rgba(247, 242, 232, .68);
   font-size: clamp(10px, 1.5vw, 13px);
-}
-
-.skin-picker {
-  display: flex;
-  gap: 5px;
-}
-
-.skin-picker button {
-  min-width: 34px;
-  min-height: 30px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  background: rgba(255,255,255,.08);
-  color: rgba(247,242,232,.78);
-}
-
-.skin-picker button.active {
-  background: var(--side-accent);
-  color: #071015;
-  border-color: var(--side-accent);
 }
 
 .side-panel {
@@ -158,10 +136,16 @@
   min-width: 0;
   min-height: 0;
   padding: 8px;
-  border: 1px solid var(--side-line);
-  background: var(--side-panel);
+  border: 1px solid var(--side-glass-line);
+  border-radius: 12px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .008)),
+    var(--side-glass-bg-strong);
+  box-shadow: var(--side-glass-shadow), inset 0 1px 0 rgba(255, 255, 255, .055);
   overflow: auto;
   overscroll-behavior: contain;
+  backdrop-filter: blur(var(--side-glass-blur)) saturate(118%);
+  -webkit-backdrop-filter: blur(var(--side-glass-blur)) saturate(118%);
 }
 
 .side-load {
@@ -199,10 +183,13 @@
 .side-load-alert > span { color: var(--side-warn); }
 
 .side-kicker {
-  color: rgba(247,242,232,.68);
+  color: var(--side-accent-2);
   font-size: var(--side-kicker-size);
+  font-weight: 700;
   line-height: var(--side-kicker-line);
   text-transform: uppercase;
+  letter-spacing: .08em;
+  opacity: .9;
 }
 
 .side-big {
@@ -234,14 +221,14 @@
 
 .feed-list {
   display: grid;
-  gap: 4px;
+  gap: 5px;
   min-height: 0;
   margin: 0;
   padding: 0;
   list-style: none;
   overflow: auto;
   overscroll-behavior: contain;
-  color: rgba(247,242,232,.82);
+  color: rgba(247, 242, 232, .82);
   font-size: var(--side-feed-size);
   line-height: var(--side-feed-line);
 }
@@ -254,6 +241,7 @@
 
 .process-list li > span {
   min-width: 0;
+  font-weight: 500;
 }
 
 .process-list li > b {
@@ -266,8 +254,11 @@
 
 .feed-heading {
   color: var(--side-accent-2);
-  font-size: clamp(10px, 1.4vw, 12px);
+  font-size: clamp(10px, 1.3vw, 12px);
+  font-weight: 700;
+  letter-spacing: .08em;
   text-transform: uppercase;
+  opacity: .9;
 }
 
 .sideboard-subpage {
@@ -340,6 +331,21 @@ body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) main {
 body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) .sideboard-view.active {
   height: 100%;
   min-height: 0;
+  /* Read-mode layout is fully definite in both axes, so it can safely own a
+   * two-dimensional query container. Card density now follows the actual
+   * Sideboard box instead of a JS viewport-height classifier. */
+  container: sideboard-view / size;
+}
+
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) .sideboard-shell {
+  --side-title-size: clamp(16px, min(3.4cqw, 5.8cqh), 28px);
+  --side-kicker-size: clamp(9px, min(1.2cqw, 2.4cqh), 11px);
+  --side-big-size: clamp(34px, min(10.4cqw, 14cqh), 84px);
+  --side-summary-size: clamp(9px, min(1.5cqw, 2.6cqh), 13px);
+  --side-feed-size: clamp(10px, min(1.45cqw, 2.7cqh), 13px);
+  /* Safe-area padding remains real layout space, but it should look like part
+   * of the dashboard surface rather than a detached black footer. */
+  background: linear-gradient(180deg, rgba(255, 255, 255, .012), rgba(255, 255, 255, .006));
 }
 
 /* A finite read canvas has exactly one content scroller per card. Decorative
@@ -350,6 +356,53 @@ body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) .sideboard-shell
 
 body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) #systemSideboardPage.dashboard-grid {
   overflow: hidden;
+}
+
+/* A wide-but-short LCD surface keeps the persisted 12-column geometry, while
+ * the card internals respond to the actual Sideboard block size. This is a
+ * CSS container contract rather than a device class or a JS height threshold. */
+@container sideboard-view (max-height: 30rem) {
+.side-load {
+    --side-kicker-size: 9px;
+    --side-big-size: 34px;
+    --side-summary-size: 9px;
+    --side-summary-line: 1.12;
+    gap: 2px;
+    padding: 5px 7px;
+}
+
+.side-load-normal,
+.side-load-alert { gap: 2px; }
+
+.side-load-normal > strong,
+.side-load-alert > strong {
+    font-size: 16px;
+    line-height: 1.05;
+}
+
+.side-load-normal > span,
+.side-load-alert > span {
+    font-size: 10px;
+    line-height: 1.1;
+}
+
+.side-summary { gap: 1px; }
+
+.side-feed {
+    gap: 3px;
+    padding: 6px;
+}
+
+.feed-heading {
+    font-size: 9px;
+    line-height: 1.05;
+}
+
+.feed-list {
+    gap: 2px;
+    font-size: 10px;
+    line-height: 1.12;
+}
 }
 
 body.deck-window.mode-sideboard .side-title strong {
@@ -376,190 +429,47 @@ body.deck-window.mode-sideboard #systemSideboardPage.dashboard-grid {
   min-height: 0;
 }
 
-/* Desktop visual hierarchy. Keep the dashboard geometry untouched, but give
- * the canvas and its primary cards enough depth to read as product surfaces
- * instead of a collection of equally loud bordered boxes. */
-body.pc-console.mode-sideboard .sideboard-shell {
-  border-color: rgba(143, 209, 255, .14);
-  border-radius: 14px;
-  box-shadow:
-    0 18px 54px rgba(0, 0, 0, .28),
-    inset 0 1px 0 rgba(255, 255, 255, .035);
+/* LCD visual hierarchy. Keep dashboard geometry untouched, but render the
+ * same glass material on the PC console and trusted LCD viewers. E-Ink owns
+ * its intentionally flat black/white material further below. */
+body.mode-sideboard:not(.eink-client) .sideboard-shell {
+  border-color: transparent;
+  border-radius: 16px;
+  box-shadow: none;
 }
 
-body.pc-console.mode-sideboard:not(.dashboard-edit-mode) .side-panel {
-  border-color: rgba(255, 255, 255, .105);
-  border-radius: 10px;
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) .side-panel {
+  border-color: var(--side-glass-line);
+  border-radius: 12px;
   background:
-    linear-gradient(145deg, rgba(24, 34, 39, .88), rgba(11, 18, 23, .90)),
-    var(--side-panel);
+    linear-gradient(145deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .008)),
+    var(--side-glass-bg-strong);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .035),
+    inset 0 1px 0 rgba(255, 255, 255, .055),
+    var(--side-glass-shadow);
+}
+
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) [data-dashboard-key="system-load"] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .05),
     0 8px 24px rgba(0, 0, 0, .12);
 }
 
-body.pc-console.mode-sideboard:not(.dashboard-edit-mode) [data-dashboard-key="system-load"] {
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) [data-dashboard-key="activity-feed"] {
   box-shadow:
-    inset 3px 0 0 rgba(242, 180, 95, .82),
-    inset 0 1px 0 rgba(255, 255, 255, .035),
+    inset 0 1px 0 rgba(255, 255, 255, .05),
     0 8px 24px rgba(0, 0, 0, .12);
 }
 
-body.pc-console.mode-sideboard:not(.dashboard-edit-mode) [data-dashboard-key="activity-feed"] {
+body.mode-sideboard:not(.dashboard-edit-mode):not(.eink-client) [data-dashboard-key="quota-mini"] {
   box-shadow:
-    inset 3px 0 0 rgba(126, 217, 232, .72),
-    inset 0 1px 0 rgba(255, 255, 255, .035),
-    0 8px 24px rgba(0, 0, 0, .12);
-}
-
-body.pc-console.mode-sideboard:not(.dashboard-edit-mode) [data-dashboard-key="quota-mini"] {
-  box-shadow:
-    inset 3px 0 0 rgba(242, 180, 95, .68),
-    inset 0 1px 0 rgba(255, 255, 255, .035),
+    inset 0 1px 0 rgba(255, 255, 255, .05),
     0 8px 24px rgba(0, 0, 0, .12);
 }
 
 body.pc-console.mode-sideboard #systemSideboardPage.dashboard-grid,
 body.deck-window.mode-sideboard #systemSideboardPage.dashboard-grid {
   overflow: auto;
-}
-
-/* Mid-sized Sideboards share one density contract whether they are a tablet,
- * a split PC window, or an unusual external display. */
-@container sideboard-view (min-width: 44.01rem) and (max-width: 64rem) {
-  .sideboard-shell {
-    --side-kicker-size: 14px;
-    --side-kicker-line: 1.1;
-    --side-summary-size: 14px;
-    --side-summary-line: 1.2;
-    --side-feed-size: 14px;
-    --side-feed-line: 1.2;
-    min-height: 0;
-    grid-template-rows: auto minmax(0, 1fr);
-    align-self: stretch;
-    padding: var(--viewer-surface-padding, calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)))
-      calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right, 0px)))
-      calc(10px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))
-      calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left, 0px))));
-  }
-
-  .sideboard-shell.dashboard-editing {
-    grid-template-rows: auto auto minmax(0, 1fr);
-  }
-
-  .sideboard-top {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-  }
-
-  #systemSideboardPage.dashboard-grid {
-    gap: 5px;
-    width: 100%;
-    min-height: 0;
-    align-self: stretch;
-  }
-
-  #systemSideboardPage.dashboard-grid > [data-dashboard-key] {
-    padding: 5px 6px;
-    border-radius: 5px;
-  }
-
-  #systemSideboardPage.dashboard-grid .side-load {
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    align-content: center;
-    gap: 3px;
-  }
-
-  #sideLoadStatus,
-  #sideLoadAlertTitle {
-    font-size: clamp(17px, 2.2cqi, 22px);
-    line-height: 1.05;
-  }
-
-  #systemSideboardPage.dashboard-grid .side-feed {
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    gap: 3px;
-  }
-
-  #systemSideboardPage.dashboard-grid .feed-list {
-    gap: 2px;
-    min-height: 0;
-  }
-
-  #systemSideboardPage.dashboard-grid .feed-list li {
-    min-width: 0;
-    padding: 1px 0;
-  }
-}
-
-/* ResizeObserver mirrors the same measured-container state for Chromium builds
- * predating native container queries. Keep this capability fallback semantic:
- * it is based on Sideboard space, never a device or orientation label. */
-body:not(.eink-client) .sideboard-view.space-sideboard-mid .sideboard-shell {
-  --side-kicker-size: 14px;
-  --side-kicker-line: 1.1;
-  --side-summary-size: 14px;
-  --side-summary-line: 1.2;
-  --side-feed-size: 14px;
-  --side-feed-line: 1.2;
-  min-height: 0;
-  grid-template-rows: auto minmax(0, 1fr);
-  align-self: stretch;
-  padding: var(--viewer-surface-padding, calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)))
-    calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right, 0px)))
-    calc(10px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))
-    calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left, 0px))));
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid .sideboard-shell.dashboard-editing {
-  grid-template-rows: auto auto minmax(0, 1fr);
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid .sideboard-top {
-  grid-template-columns: minmax(0, 1fr) auto auto;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid {
-  gap: 5px;
-  width: 100%;
-  min-height: 0;
-  align-self: stretch;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid > [data-dashboard-key] {
-  padding: 5px 6px;
-  border-radius: 5px;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid .side-load {
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  align-content: center;
-  gap: 3px;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid :is(#sideLoadStatus, #sideLoadAlertTitle) {
-  font-size: clamp(17px, 2.2vw, 22px);
-  line-height: 1.05;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid .side-feed {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 3px;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid .feed-list {
-  gap: 2px;
-  min-height: 0;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid #systemSideboardPage.dashboard-grid .feed-list li {
-  min-width: 0;
-  padding: 1px 0;
-}
-
-body.pc-console.mode-sideboard:not(.dashboard-edit-mode) .skin-picker {
-  display: none;
 }
 
 /* Content breakpoint: the compact overview replaces spatial editing only when
@@ -588,32 +498,6 @@ body.pc-console.mode-sideboard:not(.dashboard-edit-mode) .skin-picker {
   }
 }
 
-body:not(.eink-client) .sideboard-view.space-sideboard-compact :is(
-  .sideboard-top,
-  #dashboardEditBar,
-  #systemSideboardPage.dashboard-grid,
-  #customSideboardPage
-) {
-  display: none;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-compact .sideboard-shell {
-  --viewer-surface-padding: 0;
-  display: block;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: repeat(4, auto);
-  height: auto;
-  min-height: 0;
-  padding: 0;
-  overflow: visible;
-  scrollbar-gutter: auto;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-compact .sideboard-shell::before {
-  opacity: .42;
-  transform: none;
-}
-
 /* The E-Ink read surface starts at one viewport but may grow when translated
  * text or an unusual aspect ratio needs more room. The document remains the
  * single reachable scroller. */
@@ -632,9 +516,13 @@ body.eink-client.mode-sideboard:not(.dashboard-edit-mode) .sideboard-shell {
 
 body.ios-client.remote-client:not(.eink-client).dashboard-viewer.mode-sideboard .sideboard-shell {
   padding-top: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
-  padding-right: calc(10px + var(--safe-area-inset-right, env(safe-area-inset-right, 0px)));
-  padding-bottom: calc(8px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
-  padding-left: calc(10px + var(--safe-area-inset-left, env(safe-area-inset-left, 0px)));
+  padding-right: calc(10px + var(--sideboard-content-inset-right, var(--safe-area-inset-right, env(safe-area-inset-right, 0px))));
+  /* The Sideboard is a read-only canvas. Painting the Home Indicator safe area
+   * as outer padding only creates a detached black footer on iOS; no control
+   * lives there that needs a protected hit target. Let the dashboard surface
+   * reach the physical bottom edge instead. */
+  padding-bottom: 0;
+  padding-left: calc(10px + var(--sideboard-content-inset-left, var(--safe-area-inset-left, env(safe-area-inset-left, 0px))));
 }
 
 @container sideboard-view (max-width: 44rem) {
@@ -697,10 +585,6 @@ body.eink-client .sideboard-top {
   min-height: 0;
   padding: 2px 0 8px;
   border-bottom: 2px solid #24241f;
-}
-
-body.eink-client .skin-picker {
-  display: none;
 }
 
 body.eink-client .side-load,

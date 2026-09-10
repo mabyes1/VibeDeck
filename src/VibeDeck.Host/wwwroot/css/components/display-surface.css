@@ -25,12 +25,14 @@
   max-width: calc(100% - 20px);
   max-height: calc(100% - 20px);
   padding: 7px;
-  border: 1px solid rgba(143, 209, 255, .24);
+  border: 1px solid var(--theme-line-strong);
   border-radius: 12px;
-  background: rgba(8, 14, 20, .84);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, .38);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background:
+    linear-gradient(110deg, var(--theme-palette-a-faint), transparent 48%, var(--theme-palette-b-faint)),
+    var(--theme-glass-strong);
+  box-shadow: var(--theme-shadow);
+  backdrop-filter: blur(22px) saturate(118%);
+  -webkit-backdrop-filter: blur(22px) saturate(118%);
 }
 
 .display-toolbar:not(.is-collapsed) {
@@ -43,8 +45,8 @@
 .display-toolbar.is-collapsed {
   gap: 0;
   padding: 3px;
-  background: rgba(8, 14, 20, .28);
-  border-color: rgba(143, 209, 255, .12);
+  background: var(--theme-glass);
+  border-color: var(--theme-line);
   box-shadow: 0 4px 14px rgba(0, 0, 0, .18);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -64,8 +66,8 @@
   min-width: 36px;
   padding: 0;
   border-radius: 999px;
-  border: 1px solid rgba(143, 209, 255, .22);
-  background: rgba(19, 29, 39, .42);
+  border: 1px solid var(--theme-line-strong);
+  background: rgba(255, 255, 255, .045);
   color: rgba(232, 241, 248, .78);
   font-size: 18px;
   line-height: 1;
@@ -78,8 +80,8 @@
   height: 32px;
   min-width: 32px;
   min-height: 32px;
-  background: rgba(19, 29, 39, .22);
-  border-color: rgba(143, 209, 255, .14);
+  background: rgba(255, 255, 255, .028);
+  border-color: var(--theme-line);
   color: rgba(232, 241, 248, .55);
   opacity: .72;
 }
@@ -129,8 +131,8 @@
   max-width: 420px;
   min-height: 38px;
   color: var(--text);
-  background: rgba(19, 29, 39, .96);
-  border-color: rgba(143, 209, 255, .25);
+  background: var(--theme-glass-strong);
+  border-color: var(--theme-line-strong);
 }
 
 .display-source-kind {
@@ -488,14 +490,14 @@ body.mode-display .screen-media {
   object-fit: contain;
 }
 
-html.phone-force-landscape body.force-landscape.viewer-fullscreen.mode-display {
+html.mobile-force-landscape body.force-landscape.viewer-fullscreen.mode-display {
   width: var(--viewer-width, 100vh);
   height: var(--viewer-height, 100vw);
   overflow: hidden;
   grid-template-rows: 1fr;
 }
 
-html.phone-force-landscape body.force-landscape.viewer-fullscreen.mode-display main {
+html.mobile-force-landscape body.force-landscape.viewer-fullscreen.mode-display main {
   width: 100%;
   height: 100%;
   padding: 0;
@@ -503,14 +505,14 @@ html.phone-force-landscape body.force-landscape.viewer-fullscreen.mode-display m
 }
 
 /* Logical landscape box after CSS rotate; matches the viewer variable geometry. */
-html.phone-force-landscape body.force-landscape.viewer-fullscreen.mode-display .screen-media {
+html.mobile-force-landscape body.force-landscape.viewer-fullscreen.mode-display .screen-media {
   position: fixed;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
 }
 
-html.phone-force-landscape body.force-landscape.viewer-fullscreen.mode-display .display-toolbar {
+html.mobile-force-landscape body.force-landscape.viewer-fullscreen.mode-display .display-toolbar {
   position: fixed;
   top: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
   left: 50%;

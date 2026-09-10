@@ -5,9 +5,9 @@
   "description": "把手機變成 PC 副螢幕、資訊板與 AI 額度看板。",
   "lang": "zh-Hant",
   "dir": "ltr",
-  "start_url": "/index.html?source=pwa&v=52",
+  "start_url": "/index.html?source=pwa&v=54",
   "scope": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "display_override": ["fullscreen", "standalone", "browser"],
   "orientation": "any",
   "background_color": "#f2f0e8",
@@ -26,7 +26,7 @@
     {
       "name": "資訊板",
       "short_name": "資訊板",
-      "url": "/index.html?mode=sideboard&source=pwa&v=52",
+      "url": "/index.html?mode=sideboard&source=pwa&v=54",
       "icons": [
         {
           "src": "/icons/vibedeck.svg?v=1",
@@ -38,7 +38,7 @@
     {
       "name": "AI 額度",
       "short_name": "額度",
-      "url": "/index.html?mode=quota&source=pwa&v=52",
+      "url": "/index.html?mode=quota&source=pwa&v=54",
       "icons": [
         {
           "src": "/icons/vibedeck.svg?v=1",
@@ -50,7 +50,7 @@
     {
       "name": "顯示器",
       "short_name": "顯示器",
-      "url": "/index.html?mode=display&source=pwa&v=52",
+      "url": "/index.html?mode=display&source=pwa&v=54",
       "icons": [
         {
           "src": "/icons/vibedeck.svg?v=1",

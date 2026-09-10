@@ -22,6 +22,7 @@ export function normalizeDeckCatalog(payload = {}) {
       name: readField(item, "Name", "name", ""),
       entry: readField(item, "Entry", "entry", ""),
       icon: readField(item, "Icon", "icon", ""),
+      type: readField(item, "Type", "type", "static"),
       url: readField(item, "Url", "url", ""),
     })).filter(item => item.id && item.name && item.url) : [],
     issues: Array.isArray(rawIssues) ? rawIssues.map(item => ({
@@ -29,6 +30,25 @@ export function normalizeDeckCatalog(payload = {}) {
       message: readField(item, "Message", "message", ""),
     })).filter(item => item.folder || item.message) : [],
   };
+}
+
+export function deckSandbox(type, url, hostOrigin = "") {
+  if (type !== "embed") return type === "proxy" ? "allow-scripts allow-forms" : "allow-scripts";
+  try {
+    const targetOrigin = new URL(url, hostOrigin || "http://localhost").origin;
+    if (hostOrigin && targetOrigin === hostOrigin) return "allow-scripts allow-forms";
+  } catch {}
+  return "allow-scripts allow-forms allow-same-origin";
+}
+
+export function isDeckDataPath(value, hostOrigin = "http://localhost") {
+  try {
+    const url = new URL(String(value || ""), hostOrigin);
+    const expectedOrigin = new URL(hostOrigin).origin;
+    return url.origin === expectedOrigin && url.pathname.startsWith("/api/deck-data/");
+  } catch {
+    return false;
+  }
 }
 
 export function createCustomDeckController({
@@ -46,11 +66,77 @@ export function createCustomDeckController({
   navigate,
   getActiveMode,
   isLocalRequest,
+  exitViewer,
+  toggleViewer,
+  getEnvironment,
   shouldPoll = () => true,
 }) {
   let catalog = { rootPath: "", decks: [], issues: [] };
   let pollTimer = null;
   let refreshing = false;
+
+  function syncEnvironment() {
+    if (!frame || frame.hidden || !frame.contentWindow) return;
+    let environment = {};
+    try {
+      environment = getEnvironment?.() || {};
+    } catch {}
+    try {
+      frame.contentWindow.postMessage({
+        type: "vibedeck:deck-environment",
+        environment,
+      }, "*");
+    } catch {}
+  }
+
+  async function handleDeckMessage(event) {
+    if (!frame || event.source !== frame.contentWindow) return;
+    const message = event.data;
+    if (!message || typeof message !== "object") return;
+
+    if (message.type === "vibedeck:deck-command" && message.action === "exit-viewer") {
+      await exitViewer?.();
+      return;
+    }
+    if (message.type === "vibedeck:deck-command" && message.action === "toggle-viewer") {
+      await toggleViewer?.();
+      return;
+    }
+
+    if (message.type !== "vibedeck:deck-request") return;
+    const requestId = String(message.requestId || "").trim();
+    if (!requestId || message.action !== "get-json") return;
+
+    const path = String(message.path || "");
+    const reply = payload => {
+      try {
+        event.source?.postMessage({
+          type: "vibedeck:deck-response",
+          requestId,
+          ...payload,
+        }, "*");
+      } catch {}
+    };
+
+    if (!isDeckDataPath(path, window.location.origin)) {
+      reply({ ok: false, error: "Deck bridge only permits GET /api/deck-data/*." });
+      return;
+    }
+
+    try {
+      const data = await fetchJsonOrThrow(path);
+      reply({ ok: true, data });
+    } catch (error) {
+      reply({
+        ok: false,
+        error: error?.message || "Deck data request failed.",
+        status: error?.status || 0,
+      });
+    }
+  }
+
+  window.addEventListener("message", handleDeckMessage);
+  frame?.addEventListener("load", syncEnvironment);
 
   const findDeck = id => catalog.decks.find(deck => deck.id === id) || null;
 
@@ -138,11 +224,13 @@ export function createCustomDeckController({
     if (frame) {
       frame.hidden = false;
       frame.title = activeDeck.name;
+      frame.setAttribute("sandbox", deckSandbox(activeDeck.type, activeDeck.url, window.location.origin));
       if (frame.dataset.deckUrl !== activeDeck.url) {
         frame.src = activeDeck.url;
         frame.dataset.deckId = activeDeck.id;
         frame.dataset.deckUrl = activeDeck.url;
       }
+      syncEnvironment();
     }
     setStatus("");
   }
@@ -209,6 +297,7 @@ export function createCustomDeckController({
   return {
     activate,
     refresh,
+    syncEnvironment,
     getCatalog: () => catalog,
     startPolling(intervalMs = 5000) {
       if (pollTimer) return;
@@ -220,6 +309,12 @@ export function createCustomDeckController({
     stopPolling() {
       if (!pollTimer) return;
       clearInterval(pollTimer);
+      pollTimer = null;
+    },
+    destroy() {
+      window.removeEventListener("message", handleDeckMessage);
+      frame?.removeEventListener("load", syncEnvironment);
+      if (pollTimer) clearInterval(pollTimer);
       pollTimer = null;
     },
   };

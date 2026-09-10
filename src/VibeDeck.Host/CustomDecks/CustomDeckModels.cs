@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace VibeDeck.Host.CustomDecks
 {
@@ -9,6 +10,10 @@ namespace VibeDeck.Host.CustomDecks
         public string Entry { get; set; } = string.Empty;
 
         public string Icon { get; set; } = string.Empty;
+
+        public string Type { get; set; } = string.Empty;
+
+        public string Url { get; set; } = string.Empty;
     }
 
     public sealed class CustomDeckDescriptor
@@ -22,6 +27,11 @@ namespace VibeDeck.Host.CustomDecks
         public string Icon { get; set; } = string.Empty;
 
         public string Url { get; set; } = string.Empty;
+
+        public string Type { get; set; } = "static";
+
+        [JsonIgnore]
+        public string ProxyTargetUrl { get; set; } = string.Empty;
     }
 
     public sealed class CustomDeckIssue

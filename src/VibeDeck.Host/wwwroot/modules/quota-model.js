@@ -1,5 +1,5 @@
 import { sortQuotaAccountsByRecentUse } from "./quota-account-navigation.js?v=1";
-import { extractQuotaEmail, extractQuotaTier } from "./quota-formatters.js?v=51";
+import { extractQuotaEmail, extractQuotaTier } from "./quota-formatters.js?v=52";
 
 const QUOTA_FAMILY_ORDER = ["agy", "codex", "claude-code"];
 const QUOTA_FAMILY_LABELS = {
@@ -30,15 +30,20 @@ export function providerContains(provider = {}, text = "") {
 
 export function quotaDataFingerprint(snapshot) {
   const providers = snapshot?.Providers || snapshot?.providers || [];
-  return JSON.stringify(providers.map(provider => ({
-    id: provider.Id || provider.id || "",
-    family: provider.Family || provider.family || "",
-    accountId: provider.AccountId || provider.accountId || "",
-    state: provider.State || provider.state || "",
-    observedAt: provider.ObservedAt || provider.observedAt || "",
-    primary: provider.Primary || provider.primary || null,
-    secondary: provider.Secondary || provider.secondary || null
-  })).sort((left, right) => `${left.family}:${left.accountId}:${left.id}`.localeCompare(`${right.family}:${right.accountId}:${right.id}`)));
+  const canonicalize = value => {
+    if (Array.isArray(value)) return value.map(canonicalize);
+    if (!value || typeof value !== "object") return value;
+    return Object.fromEntries(Object.keys(value).sort().map(key => [key, canonicalize(value[key])]));
+  };
+  const sorted = [...providers].sort((left, right) => {
+    const key = provider => [
+      provider.Family || provider.family || "",
+      provider.AccountId || provider.accountId || "",
+      provider.Id || provider.id || "",
+    ].join(":");
+    return key(left).localeCompare(key(right));
+  });
+  return JSON.stringify(canonicalize(sorted));
 }
 
 export function buildQuotaTabs(providers = []) {

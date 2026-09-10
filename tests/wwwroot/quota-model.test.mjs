@@ -41,6 +41,16 @@ test("AGY providers group by account identity and preserve provider rows", () =>
   assert.equal(accounts[0].tier, "FREE");
 });
 
+test("AGY status detail is not mistaken for an account tier", () => {
+  const [account] = groupAgyAccounts([{
+    Family: "agy",
+    AccountId: "agy-missing-token",
+    Detail: "AGY is installed, but VibeDeck has no AGY account token yet.",
+  }]);
+
+  assert.equal(account.tier, "PRO");
+});
+
 test("single-provider accounts sort most recently observed first", () => {
   const accounts = groupSingleProviderAccounts([
     { Family: "codex", AccountId: "older", ObservedAt: "2026-08-01T00:00:00Z" },

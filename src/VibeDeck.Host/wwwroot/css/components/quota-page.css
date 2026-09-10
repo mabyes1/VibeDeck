@@ -29,11 +29,11 @@ body.mode-quota main {
 }
 
 .quota-shell {
-  --quota-accent: #70d98b;
-  --quota-blue: #66c5e8;
-  --quota-ink: #eff7f1;
-  --quota-muted: rgba(239,247,241,.62);
-  --quota-panel: rgba(14, 22, 23, .76);
+  --quota-accent: var(--theme-accent);
+  --quota-blue: var(--theme-accent-2);
+  --quota-ink: var(--text);
+  --quota-muted: var(--muted);
+  --quota-panel: var(--theme-glass);
   --quota-top-gap: 10px;
   --quota-title-size: clamp(18px, 3.6vw, 28px);
   --quota-meta-size: clamp(10px, 1.45vw, 13px);
@@ -62,12 +62,9 @@ body.mode-quota main {
   padding: 12px;
   overflow: visible;
   color: var(--quota-ink);
-  background:
-    radial-gradient(circle at 62% 52%, rgba(77, 207, 255, .16), transparent 28%),
-    linear-gradient(135deg, rgba(6, 12, 15, .96), rgba(20, 27, 25, .96));
-  background-blend-mode: multiply;
-  border: 1px solid rgba(255,255,255,.14);
-  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--theme-panel-radius, 14px);
 }
 
 .quota-top {
@@ -115,10 +112,10 @@ body.mode-quota main {
 .quota-tab {
   min-height: var(--quota-tab-min-height);
   padding: var(--quota-tab-padding);
-  border: 1px solid rgba(255,255,255,.12);
+  border: 1px solid var(--theme-line);
   border-radius: 999px;
-  background: rgba(255,255,255,.055);
-  color: rgba(239,247,241,.72);
+  background: var(--theme-control);
+  color: var(--muted);
   font-size: 12px;
   font-weight: 800;
   line-height: 1;
@@ -126,8 +123,8 @@ body.mode-quota main {
 }
 
 .quota-tab.active {
-  border-color: rgba(112,217,139,.48);
-  background: rgba(112,217,139,.2);
+  border-color: var(--theme-accent-line);
+  background: linear-gradient(180deg, var(--theme-accent-soft), var(--theme-control));
   color: var(--quota-ink);
 }
 
@@ -135,9 +132,12 @@ body.mode-quota main {
 .quota-help:empty { display: none; }
 
 .quota-help-block {
-  border: 1px solid rgba(112, 217, 139, .22);
-  border-radius: 8px;
-  background: rgba(8, 14, 16, .72);
+  border: 1px solid var(--theme-line);
+  border-radius: var(--theme-surface-radius, 12px);
+  background: var(--theme-surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035);
+  backdrop-filter: blur(var(--theme-glass-blur)) saturate(112%);
+  -webkit-backdrop-filter: blur(var(--theme-glass-blur)) saturate(112%);
   color: var(--quota-muted);
   font-size: clamp(11px, 1.5vw, 13px);
   line-height: 1.45;
@@ -185,9 +185,9 @@ body.eink-client.mode-quota .quota-eink-account-manager > summary::-webkit-detai
 .quota-help-summary-hint {
   flex: 0 0 auto;
   padding: 2px 7px;
-  border: 1px solid rgba(112, 217, 139, .35);
+  border: 1px solid var(--theme-accent-line);
   border-radius: 999px;
-  background: rgba(112, 217, 139, .12);
+  background: var(--theme-accent-soft);
   color: var(--quota-accent);
   font-size: 10px;
   font-weight: 800;
@@ -302,11 +302,12 @@ body.eink-client .quota-help-summary::after { transition: none; }
   height: auto;
   align-self: start;
   padding: var(--quota-account-padding);
-  border: 1px solid rgba(255,255,255,.12);
-  background:
-    linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.025)),
-    var(--quota-panel);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+  border: 1px solid var(--theme-line);
+  border-radius: var(--theme-surface-radius, 12px);
+  background: var(--theme-surface);
+  box-shadow: var(--theme-surface-shadow);
+  backdrop-filter: blur(var(--theme-glass-blur)) saturate(116%);
+  -webkit-backdrop-filter: blur(var(--theme-glass-blur)) saturate(116%);
   overflow: visible;
 }
 
@@ -352,7 +353,7 @@ body:not(.eink-client) .quota-toolbox > button[data-quota-action$="-delete"]:hov
 .quota-pill {
   padding: 3px 8px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #2f9cea, #176ed4);
+  background: var(--grad-accent);
   color: #fff;
   font-size: 11px;
   font-weight: 800;
@@ -388,7 +389,7 @@ body:not(.eink-client) .quota-toolbox > button[data-quota-action$="-delete"]:hov
 }
 
 .quota-provider-title {
-  color: rgba(239,247,241,.9);
+  color: var(--text);
   font-size: var(--quota-provider-title-size);
   font-weight: 800;
 }
@@ -402,7 +403,7 @@ body:not(.eink-client) .quota-toolbox > button[data-quota-action$="-delete"]:hov
 }
 
 .quota-window span {
-  color: rgba(239,247,241,.72);
+  color: var(--muted);
   font-size: var(--quota-window-label-size);
   font-weight: 700;
 }
@@ -441,7 +442,7 @@ body:not(.eink-client) .quota-toolbox > button[data-quota-action$="-delete"]:hov
   display: flex;
   gap: 8px;
   align-items: center;
-  color: rgba(239,247,241,.84);
+  color: var(--text);
   font-size: var(--quota-credit-size);
   line-height: var(--quota-credit-line);
   font-weight: 800;
@@ -459,7 +460,7 @@ body:not(.eink-client) .quota-toolbox > button[data-quota-action$="-delete"]:hov
 .quota-time {
   padding: 5px 10px;
   border-radius: 999px;
-  background: rgba(255,255,255,.075);
+  background: var(--theme-control);
   color: var(--quota-muted);
   font-size: clamp(10px, 1.35vw, 12px);
   white-space: nowrap;
@@ -471,9 +472,9 @@ body:not(.eink-client) .quota-toolbox > button[data-quota-action$="-delete"]:hov
   flex-wrap: wrap;
   gap: 4px;
   padding: 4px;
-  border: 1px solid rgba(255,255,255,.12);
+  border: 1px solid var(--theme-line);
   border-radius: 999px;
-  background: rgba(255,255,255,.06);
+  background: var(--theme-control);
 }
 
 .quota-toolbox > button {
@@ -513,9 +514,9 @@ body:not(.eink-client) .quota-toolbox > button {
   min-width: 40px;
   min-height: 40px;
   padding: 0 8px;
-  border: 1px solid rgba(255,255,255,.16);
+  border: 1px solid var(--theme-line);
   border-radius: 999px;
-  background: rgba(255,255,255,.06);
+  background: var(--theme-control);
   color: var(--quota-ink);
   cursor: pointer;
   list-style: none;
@@ -532,10 +533,12 @@ body:not(.eink-client) .quota-toolbox > button {
   z-index: 80;
   min-width: 170px;
   padding: 6px;
-  border: 1px solid rgba(255,255,255,.18);
-  border-radius: 8px;
-  background: #111a1d;
-  box-shadow: 0 12px 30px rgba(0,0,0,.42);
+  border: 1px solid var(--theme-line-strong);
+  border-radius: var(--theme-surface-radius, 12px);
+  background: var(--theme-surface-strong);
+  box-shadow: var(--theme-surface-shadow);
+  backdrop-filter: blur(var(--theme-glass-blur)) saturate(116%);
+  -webkit-backdrop-filter: blur(var(--theme-glass-blur)) saturate(116%);
 }
 
 .quota-more-actions > div button {
@@ -543,9 +546,9 @@ body:not(.eink-client) .quota-toolbox > button {
   min-width: 0;
   min-height: 34px;
   padding: 7px 10px;
-  border: 1px solid rgba(255,255,255,.16);
-  border-radius: 6px;
-  background: rgba(255,255,255,.05);
+  border: 1px solid var(--theme-line);
+  border-radius: 8px;
+  background: var(--theme-control);
   color: var(--quota-ink);
   text-align: left;
   white-space: normal;
@@ -570,9 +573,10 @@ body:not(.eink-client) .quota-toolbox > button {
   gap: 5px 8px;
   min-width: 0;
   padding: 8px 10px;
-  border: 1px solid rgba(255,255,255,.1);
-  background: rgba(255,255,255,.045);
-  color: rgba(239,247,241,.78);
+  border: 1px solid var(--theme-line);
+  border-radius: 10px;
+  background: var(--theme-surface);
+  color: var(--muted);
 }
 
 .quota-local-card strong,
@@ -657,31 +661,24 @@ body.pc-console.mode-quota .quota-shell {
   min-height: 100%;
   gap: 14px;
   padding: 16px;
-  border-color: rgba(143, 209, 255, .13);
-  border-radius: 14px;
-  box-shadow:
-    0 18px 54px rgba(0, 0, 0, .28),
-    inset 0 1px 0 rgba(255, 255, 255, .03);
+  border: 0;
+  border-radius: var(--theme-panel-radius, 14px);
+  box-shadow: none;
 }
 
 body.pc-console.mode-quota .quota-tab { font-size: 13px; }
 
 body.pc-console.mode-quota .quota-tab.active {
-  border-color: rgba(112, 217, 139, .42);
-  background: linear-gradient(180deg, rgba(112, 217, 139, .20), rgba(112, 217, 139, .11));
+  border-color: var(--theme-accent-line);
+  background: linear-gradient(180deg, var(--theme-accent-soft), rgba(255, 255, 255, .035));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035);
 }
 
 body.pc-console.mode-quota .quota-account-card {
-  border-color: rgba(255, 255, 255, .105);
-  border-radius: 12px;
-  background:
-    radial-gradient(circle at 84% 18%, rgba(112, 217, 139, .055), transparent 32%),
-    linear-gradient(145deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .018)),
-    var(--quota-panel);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .05),
-    0 10px 30px rgba(0, 0, 0, .14);
+  border-color: var(--theme-line);
+  border-radius: var(--theme-surface-radius, 12px);
+  background: var(--theme-surface);
+  box-shadow: var(--theme-surface-shadow);
 }
 
 body.pc-console.mode-quota .quota-page-button { width: 32px; min-height: 32px; }
@@ -695,15 +692,15 @@ body.pc-console.mode-quota .quota-window small { font-size: 12px; }
 
 .quota-codex-switcher {
   padding: 0;
-  border: 0;
-  background: transparent;
 }
 
 .quota-account-manager {
-  border: 1px solid rgba(255, 255, 255, .11);
-  border-radius: 10px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .018));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025);
+  border: 1px solid var(--theme-line);
+  border-radius: var(--theme-surface-radius, 12px);
+  background: var(--theme-surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035);
+  backdrop-filter: blur(var(--theme-glass-blur)) saturate(112%);
+  -webkit-backdrop-filter: blur(var(--theme-glass-blur)) saturate(112%);
 }
 
 .quota-account-manager > summary {
@@ -727,6 +724,145 @@ body.pc-console.mode-quota .quota-window small { font-size: 12px; }
 .quota-account-manager[open] > summary::after { content: "−"; }
 
 .quota-account-manager .quota-codex-switch-row { padding: 10px; }
+
+.quota-card-toolbar {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+  margin-top: calc(-1 * var(--quota-account-gap));
+}
+
+.quota-card-account-manager {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.quota-card-account-manager > summary,
+.quota-account-manager-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 5px 9px;
+  border: 1px solid var(--theme-line);
+  border-radius: 8px;
+  background: var(--theme-control);
+  font-size: 12px;
+  user-select: none;
+}
+
+.quota-account-manager-trigger span { font-size: 15px; line-height: 1; }
+
+.quota-card-account-manager > summary::after { content: "⋯"; }
+.quota-card-account-manager[open] > summary { border-bottom: 1px solid var(--theme-accent-line); }
+.quota-card-account-manager[open] > summary::after { content: "×"; }
+
+.quota-account-manager-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 80;
+  display: grid;
+  gap: 6px;
+  width: min(17.5rem, calc(100vw - 32px));
+  max-height: min(26rem, calc(var(--viewer-height, 100vh) - 8rem));
+  padding: 6px;
+  border: 1px solid var(--theme-line-strong);
+  border-radius: 9px;
+  background: rgba(12, 18, 27, .99);
+  box-shadow: 0 20px 54px rgba(0, 0, 0, .56);
+  overflow: auto;
+  backdrop-filter: blur(max(28px, calc(var(--theme-glass-blur) * 2.2))) saturate(115%) brightness(.32);
+  -webkit-backdrop-filter: blur(max(28px, calc(var(--theme-glass-blur) * 2.2))) saturate(115%) brightness(.32);
+}
+
+.quota-account-manager-panel .quota-codex-switch-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  padding: 0;
+}
+
+.quota-account-manager-panel .quota-codex-select {
+  min-height: 38px;
+  margin: 2px;
+  border-color: var(--theme-line);
+  background: rgba(255, 255, 255, .045);
+}
+
+.quota-account-manager-panel .quota-command-list {
+  justify-self: stretch;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+body:not(.eink-client) .quota-account-manager-panel .quota-command-list > button {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  aspect-ratio: auto;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--quota-ink);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-align: left;
+  white-space: normal;
+}
+
+body:not(.eink-client) .quota-account-manager-panel .quota-command-list > button:hover,
+body:not(.eink-client) .quota-account-manager-panel .quota-command-list > button:focus-visible {
+  background: rgba(255, 255, 255, .085);
+}
+
+body:not(.eink-client) .quota-account-manager-panel .quota-command-list > button:disabled {
+  cursor: default;
+  opacity: .38;
+}
+
+body:not(.eink-client) .quota-account-manager-panel .quota-command-list > button[data-quota-action$="-delete"] {
+  min-height: 45px;
+  margin-top: 5px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, .10);
+  border-radius: 0 0 7px 7px;
+  background: transparent;
+  color: #f1a0a0;
+}
+
+body:not(.eink-client) .quota-account-manager-panel .quota-command-list > button[data-quota-action$="-delete"]:hover,
+body:not(.eink-client) .quota-account-manager-panel .quota-command-list > button[data-quota-action$="-delete"]:focus-visible {
+  border-top-color: rgba(255, 133, 133, .18);
+  background: rgba(112, 37, 45, .16);
+  color: #ffd0d0;
+}
+
+@container quota-view (max-width: 30rem) {
+  .quota-account-manager-panel {
+    position: fixed;
+    inset: auto 16px calc(16px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom))) 16px;
+    width: auto;
+    max-height: min(70dvh, 32rem);
+  }
+}
 
 /* A wide quota container can use the extra inline space regardless of device. */
 @container quota-view (min-width: 42rem) {
@@ -905,9 +1041,9 @@ body.mode-quota .quota-help { display: none; }
   min-width: 0;
   min-height: 34px;
   padding: 6px 10px;
-  border: 1px solid rgba(255,255,255,.2);
+  border: 1px solid var(--theme-line);
   border-radius: 8px;
-  background: rgba(0,0,0,.22);
+  background: var(--theme-control);
   color: inherit;
   font: inherit;
   font-size: 14px;
@@ -1296,7 +1432,8 @@ body.eink-client.mode-quota .quota-eink-overview-footer .quota-toolbox > button 
    Lift the fixed viewer exit control above that action on E-Ink layouts so
    the two independent controls never compete for the same touch target. */
 body.eink-client.mode-quota:is(.dashboard-viewer, .viewer-fullscreen) .exit-viewer {
-  bottom: calc(76px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)));
+  top: calc(10px + var(--safe-area-inset-top, env(safe-area-inset-top)));
+  bottom: auto;
 }
 
 body.eink-client.mode-quota .quota-eink-account-manager {
@@ -1353,4 +1490,215 @@ body.eink-client.mode-quota .quota-eink-account-controls .quota-toolbox > button
     white-space: normal;
     overflow-wrap: anywhere;
   }
+}
+
+/* Full quota card embedded in the movable Sideboard slot. The persisted grid
+ * item remains quota-mini; only its presentation is upgraded. */
+.quota-sideboard-slot {
+  --quota-accent: var(--theme-accent);
+  --quota-blue: var(--theme-accent-2);
+  --quota-ink: var(--text);
+  --quota-muted: var(--muted);
+  --quota-account-gap: 4px;
+  --quota-account-padding: 7px;
+  --quota-email-size: clamp(12px, 1.35vw, 16px);
+  --quota-pair-gap: 12px;
+  --quota-provider-gap: 4px;
+  --quota-provider-title-size: 12px;
+  --quota-window-gap: 3px 7px;
+  --quota-window-label-size: 10px;
+  --quota-window-value-size: clamp(13px, 1.6vw, 18px);
+  --quota-credit-size: 13px;
+  --quota-credit-line: 1.1;
+  --quota-footer-gap: 7px;
+  --quota-footer-padding-top: 5px;
+  container: quota-sideboard-card / inline-size;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.quota-sideboard-card-host {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.quota-sideboard-account-card {
+  width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+  align-self: stretch;
+  align-content: start;
+}
+
+.quota-sideboard-account-card .quota-account-head {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 7px;
+}
+
+.quota-sideboard-account-card .quota-check { display: none; }
+
+.quota-sideboard-account-card .quota-card-toolbar {
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.quota-sideboard-family-select {
+  min-width: 8rem;
+  max-width: min(18rem, 55%);
+  min-height: 30px;
+  padding: 4px 28px 4px 8px;
+  border: 1px solid var(--theme-line);
+  border-radius: 7px;
+  background: rgba(7, 9, 14, .6);
+  color: var(--quota-ink);
+  font-size: 11px;
+  font-weight: 800;
+  color-scheme: dark;
+}
+
+.quota-codex-select { color-scheme: dark; }
+
+.quota-sideboard-family-select option,
+.quota-codex-select option {
+  background: #111923;
+  color: #eef4fb;
+}
+
+.quota-sideboard-family-select option:disabled,
+.quota-codex-select option:disabled {
+  color: #74808e;
+}
+
+.quota-sideboard-account-card .quota-pair { min-height: 0; }
+
+.quota-sideboard-account-card .quota-provider {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto auto;
+}
+
+.quota-sideboard-account-card .quota-provider-title { grid-column: 1 / -1; }
+.quota-sideboard-account-card .quota-bar { height: 4px; }
+
+.quota-sideboard-account-card .quota-window small,
+.quota-sideboard-account-card .quota-source-detail,
+.quota-sideboard-account-card .quota-footer,
+.quota-sideboard-account-card .quota-action-status {
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.quota-sideboard-account-card .quota-footer { display: none; }
+
+.quota-sideboard-account-card .quota-time {
+  padding: 3px 7px;
+  font-size: 10px;
+}
+
+.quota-sideboard-account-card .quota-action-status:empty { display: none; }
+
+.quota-account-manager-dialog .quota-account-manager-panel {
+  position: static;
+  inset: auto;
+  width: auto;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.quota-sideboard-empty {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  color: var(--quota-muted);
+}
+
+.quota-sideboard-empty strong {
+  color: var(--quota-ink);
+  font-size: 16px;
+}
+
+.quota-mini-compat { display: none; }
+
+body.eink-client .quota-sideboard-card-host { display: none; }
+body.eink-client .quota-sideboard-slot > .quota-mini-compat {
+  display: grid;
+  width: 100%;
+  height: 100%;
+}
+
+@container quota-sideboard-card (max-width: 36rem) {
+  .quota-sideboard-account-card .quota-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .quota-sideboard-family-select { max-width: 48%; }
+}
+
+@container sideboard-view (max-height: 30rem) {
+.quota-sideboard-slot {
+    --quota-account-gap: 2px;
+    --quota-account-padding: 2px 5px;
+    --quota-email-size: 10px;
+    --quota-pair-gap: 5px;
+    --quota-provider-gap: 2px;
+    --quota-provider-title-size: 9px;
+    --quota-window-gap: 2px 4px;
+    --quota-window-label-size: 8px;
+    --quota-window-value-size: 12px;
+    --quota-credit-size: 9px;
+    --quota-footer-gap: 3px;
+    --quota-footer-padding-top: 2px;
+}
+
+.quota-sideboard-account-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
+    align-items: center;
+}
+
+.quota-sideboard-account-card > .quota-account-head {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.quota-sideboard-account-card > .quota-card-toolbar {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.quota-sideboard-account-card > :is(.quota-pair, .quota-source-detail, .quota-credit-row, .quota-footer, .quota-action-status) {
+    grid-column: 1 / -1;
+}
+
+.quota-sideboard-account-card .quota-account-head { gap: 4px; }
+.quota-sideboard-account-card .quota-card-toolbar { gap: 4px; }
+
+.quota-sideboard-family-select {
+    min-height: 24px;
+    padding: 2px 22px 2px 6px;
+    font-size: 9px;
+}
+
+.quota-sideboard-account-card .quota-window small,
+.quota-sideboard-account-card .quota-source-detail,
+.quota-sideboard-account-card .quota-action-status,
+.quota-sideboard-account-card .quota-time {
+    font-size: 8px;
+    line-height: 1.05;
+}
+
+.quota-sideboard-account-card .quota-time { padding: 2px 5px; }
 }

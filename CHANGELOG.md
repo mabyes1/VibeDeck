@@ -2,6 +2,111 @@
 
 本檔記錄每個可發佈版本的使用者可見變更、修正與產品化調整；後續改版須在打包前補入對應版本。
 
+## 0.1.60 - 2026-09-10 - 本機安全與產品邊界修正
+
+- 本機 WebSocket 不再只憑回送位址放行；外站來源、跨站瀏覽器請求與不透明來源均會拒絕，既有配對裝置與單次票證維持可用。
+- Windows 安裝與更新會收緊 ProgramData 權限，僅保留 SYSTEM、管理員與登入使用者，並檢查整棵資料目錄。
+- 從公用 Host 移除私人 Stock Watch／三竹行情後端與專用測試；個人 Custom Deck 不再被當成產品內建功能。
+
+## 0.1.57 - 2026-08-27 - 多語系與展示收尾
+
+- 補齊布景設定的繁體中文、English、日文 i18n，包含背景、玻璃、配色、圖片與重設等完整控制項；遠端 WebRTC / Cloudflare TURN 設定標題也不再在英文或日文介面殘留中文。
+- 改善翻譯後較長的工具列文字在窄畫面上的排列，避免靠右對齊造成前端控制項被裁到不可操作。
+- 補齊 Custom HTML Deck 的說明翻譯，並保留本次 Product Hunt / Showcase 使用的真實產品素材與固定展示稿，方便後續作品集與產品展示直接重用。
+
+## 0.1.56 - 2026-08-21 - 虛擬螢幕串流自動恢復
+
+- H.264 串流失敗會記錄 Session、顯示器、編碼器、ICE／連線狀態、根例外與 FFmpeg 錯誤尾端，保留可追查的真正原因。
+- 已死亡的 WebRTC 連線不再只做 ICE restart；平板會完整重建最多兩次 Session，仍失敗則自動切換 JPEG 備援，不再永久卡在「正在連線」。
+
+## 0.1.55 - 2026-08-21 - 實體平板資訊板啟動修正
+
+- 資訊板版面會等到遠端平板的信任憑證恢復完成後才載入，避免 Host 重啟後第一次 403 把畫面變成空白。
+- 未載入或零張可見卡片的版面不再自動儲存；儲存被拒絕後也不再形成每秒重試迴圈。
+
+## 0.1.54 - 2026-08-21 - 資訊板刷新修正
+
+- 修正 Android 原生下拉選單在選取後持續保留焦點，導致資訊板額度 snapshot 被誤判為仍在互動、後續刷新永久跳過；下拉選單焦點不再充當刷新鎖。
+- 額度管理次級卡片開啟時仍會保護操作中的 DOM，關閉後立即補做最後一次被延後的 render，不必等待下一輪背景刷新或手動重新整理。
+
+## 0.1.53 - 2026-08-19 - 統一私人入口
+
+- `vibedeck.pp.ua` 升級為正式的人類入口；每個瀏覽器會記住自己最後連接的 VibeDeck Host，之後只需輸入根網域即可回到專屬安全網址，不必記憶 `vd-<installation-id>`。
+- PC 配對 QR Code 改先經過 `vibedeck.pp.ua/to/<installation-id>`，由 shared entry 記住 Host 後再導向該電腦；無相機裝置輸入一次性 8 位碼也寫入同一份 Host 地址記錄。
+- shared entry 只保存非機密 installation ID，不保存 Device Token、不授予任何配對權限；新裝置仍須走既有 PC 明確允許流程。
+- 連線碼註冊不再誤把「地址 routing」綁到 installation ownership registry；既有舊 Tunnel 只要仍是 `vd-*.vibedeck.pp.ua` 且 Host 在線即可正常建立連線碼，授權仍完全由 Host 的配對狀態決定。
+- Android／Chrome 裝置配對完成且瀏覽器提供原生 PWA install prompt 時，設定區會直接顯示「安裝 VibeDeck」按鈕；使用者不必再猜應該從哪個瀏覽器選單建立全螢幕 App。iOS 仍使用 Safari「分享 → 加入主畫面」。
+- 區網 HTTPS `5443` 保留為 Cloudflare 不可用時的 fallback，但不再是正常使用者需要記住或操作的主要入口。
+
+## 0.1.52 - 2026-08-19 - 串流延遲模式
+
+- 畫質與流暢度設定新增「極低延遲 20ms」、「普通 40ms」與「穩定 80ms」三段模式；切換後會重新協商 WebRTC 並套用對應接收緩衝上限。
+- 預設改為普通 40ms；極低延遲優先即時操作並允許偶發掉幀，穩定模式則保留原本的網路抖動容錯。
+
+## 0.1.51 - 2026-08-19 - WebRTC 低延遲修正
+
+- 修正 WebRTC H.264 的同一份 RTCP NACK 同時被結構化回呼與原始 SRTCP 回呼重複處理，避免重複計數、重傳風暴與接收端 jitter buffer 膨脹。
+- 延長相同 RTP 封包的重傳冷卻時間，避免修復封包尚未抵達前又被連續重送。
+- 協商 Chrome 的 WebRTC playout-delay RTP extension，將互動串流接收緩衝上限設為 80ms，避免網路抖動時累積數百毫秒延遲。
+
+## 0.1.50 - 2026-08-19 - 螢幕來源精確配對
+
+- 修正將 Win32 螢幕列舉順序誤當成 FFmpeg DXGI `output_idx`，導致選擇延伸螢幕、主螢幕或 VibeDeck 虛擬螢幕時實際串流另一張畫面；現在以 `DISPLAYx` 精確匹配 DXGI adapter/output。
+- 找不到 DXGI identity 或螢幕位於非預設 GPU adapter 時改走 bitmap fallback，不再猜測 output 0 而洩漏或串錯其他螢幕。
+
+## 0.1.49 - 2026-08-19 - Direct Embed Deck
+
+- Custom Deck 新增 `embed` 類型，直接以 iframe 載入已允許 VibeDeck `frame-ancestors` 的 HTTP／HTTPS 網站，不再由 Host 改寫頁面、登入 Cookie 或站內請求。
+- Embed Deck 使用 `allow-scripts allow-forms allow-same-origin`；若目標與 VibeDeck 本身同源，會自動移除 `allow-same-origin`，避免嵌入內容取得主介面權限。
+
+## 0.1.48 - 2026-08-19 - Proxy Deck 登入修正
+
+- 修正 sandbox iframe 不穩定攜帶 proxy session Cookie，導致內網站台登入成功後跳轉時遺失上游 Cookie、又回到登入頁；proxy session 改綁定已配對裝置身分，本機則使用穩定連線身分。
+
+## 0.1.47 - 2026-08-19 - 內網 Proxy Deck
+
+- Custom Deck 新增 `proxy` 類型，可把內網 HTTP／HTTPS 網頁完整保留在 Deck iframe 中；Host 代送表單、Cookie、資源請求及 WebSocket，並改寫站內路徑，繞過上游 `X-Frame-Options` 對直接嵌入的限制。
+- Proxy Deck 僅接受 localhost、loopback 與私有網段 IP，避免 VibeDeck Host 成為任意外網代理；iframe 仍維持隔離沙箱，不開放讀取 VibeDeck 主頁與已驗證 API。
+
+## 0.1.46 - 2026-08-19 - 額度入口整併
+
+- 暫時隱藏獨立 AI 額度頁的頂層與資訊頁切換入口；日常額度檢視與帳號管理統一從資訊板完整額度卡進入，原頁面實作保留以便後續除錯或恢復。
+
+## 0.1.45 - 2026-08-19 - 次級卡片互動穩定性
+
+- 修正資訊板每 15 秒連線健康刷新會重建額度 DOM，導致來源下拉選單與管理帳號次級卡片自行收合；系統 CPU、RAM、GPU、天氣等即時更新維持不變，額度區僅在資料變更且沒有操作進行時重繪。
+- 將次級卡片的互動鎖納入共用 Dialog 行為，額度頁與 Sidebar 共用同一判斷；修正原生下拉選項在深色介面出現白底白字。
+
+## 0.1.44 - 2026-08-19 - 資訊板額度與次級卡片
+
+- 重整額度帳號操作：額度卡只保留「管理帳號」入口，Codex、AGY 與 Claude 的更新、切換、重新授權與刪除集中到共用次級卡片；各尺寸都在畫面中央開啟並以全頁模糊背景隔離內容，後續功能可沿用同一套 Dialog 行為。
+- 資訊板的額度槽改用完整共用額度卡，保留帳號與來源切換；平板 8×2 卡槽採緊湊排版，管理操作由中央次級卡片承接，不受 Dashboard Grid 裁切。
+
+## 0.1.43 - 2026-08-19 - 額度帳號管理
+
+- 額度卡只保留「管理帳號」入口，Codex、AGY 與 Claude 的更新、切換、重新授權與刪除集中到同一個次級操作區。
+
+## 0.1.42 - 2026-08-18 - 編輯畫布
+
+- 修正資訊板進入編輯模式後，活動通知等長內容參與 Grid 列高計算，導致整張編輯畫布被撐成數千像素長頁；編輯畫布現在維持受視窗限制的工作區，長內容留在各卡片內捲動。
+- 更新前端樣式快取版本，並加入 1855×761、短視窗、平板與 E-Ink 編輯模式回歸，防止長通知再次拉長整個版面。
+
+## 0.1.41 - 2026-08-18 - 琉璃統一
+
+- 將全站 Appearance 的真實來源從各瀏覽器 `localStorage` 搬到 Host：布景設定與背景圖片統一持久化於 `%ProgramData%\VibeDeck\appearance`，手機、平板、Deck Window 共用同一套背景、色盤與玻璃參數；舊瀏覽器設定會在首次升級時安全遷移，E-Ink 維持獨立紙面視覺。
+- 收斂 LCD 介面的材質規則：資訊板、AI 額度、Setup、配對、裝置管理、登入 Gate 與確認視窗改用同一組 neutral glass tokens；移除額度頁、手機 compact UI 與管理介面殘留的舊深綠／硬編碼 surface，語意色僅保留於狀態與操作提示。
+- 修正 Android PWA 全螢幕與 VibeDeck viewer 各自維護狀態造成的退出按鈕消失；`display-mode: fullscreen` 現在會被視為已安裝 PWA，啟動後進入一致的 viewer 狀態，右上角退出按鈕固定於最高 UI layer 並提高可辨識度。
+- 移除歷史裝置與瀏覽器分支：刪除 44–64rem 平板中間壓縮版、Chrome 101 `ResizeObserver` compatibility path、無效 `space-*`／viewport classes、舊 tablet Dashboard profiles 與過時行動 UA 判斷；手機以 compact container layout、平板使用正常 Dashboard、E-Ink 保持明確獨立模式。
+- 補強架構與視覺回歸：新增 Host Appearance 持久化、PWA fullscreen、裝置分類與全站 glass contract，並驗證 P024 Chrome 119 的 container query、backdrop-filter、fullscreen、Host 背景同步與額度卡片材質。
+
+## 0.1.40 - 2026-08-17 - 自定義
+
+- 將資訊板原本各自維護的固定 Skin 收斂為全站共用布景系統；背景、強調色與玻璃介面改由共用 `--theme-*` tokens 驅動，資訊板、額度、顯示器控制列與設定頁不再各養一套顏色。
+- 裝置設定新增「布景設定」：可自由選擇兩個顏色、漸層方向與濃度，並提供純色、漸層與自訂圖片三種背景模式；自訂圖片會在瀏覽器端縮放並轉成 WebP 後保存，可調整填滿方式、位置、暗化與背景模糊。
+- 卡片材質改為與主題色解耦的中性透明玻璃，並提供透明白霧、玻璃模糊與邊線強度調整；Custom Deck 的 Host 外殼同步移除固定墨綠染色，iframe 內容仍維持完全獨立。
+- 資訊板移除「命令／儀表／專注」固定皮膚與自身背景層，改直接透出全站背景；E-Ink 保留既有高對比黑白呈現，不套用彩色布景與玻璃效果。
+- 新增 App Theme 單元與 Playwright 回歸，涵蓋 palette tokens、背景模式、玻璃參數、自訂背景圖片壓縮／套用／清除，以及電子紙排除規則。
+
 ## 0.1.39 - 2026-08-13
 
 - 新增既有安裝專用的 `-FastLocal` 增量 Setup：比對完整 publish cache 與 `C:\Program Files\VibeDeck`，只封裝變更檔案及完整 Web UI，不再為本機迭代重包未變更的 .NET runtime、cloudflared 或獨立通知 Companion；純前端修改可再加 `-WebOnly` 完全跳過 `dotnet publish`，正式 Release Setup 維持完整乾淨打包。

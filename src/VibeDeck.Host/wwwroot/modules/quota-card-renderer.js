@@ -6,14 +6,15 @@ import {
   normalizeTierLabel,
   renderQuotaWindow,
   summarizeQuotaWindow,
-} from "./quota-formatters.js?v=51";
-import { getProviderFamily, providerContains } from "./quota-model.js?v=1";
+} from "./quota-formatters.js?v=52";
+import { getProviderFamily, providerContains } from "./quota-model.js?v=2";
 import {
   buildQuotaTimestampState,
   formatCodexCreditBalance,
   formatQuotaProviderDetail,
   formatQuotaStateLabel,
 } from "./quota-presentation.js?v=2";
+import { wireSecondaryCardDialog } from "./secondary-card-dialog.js?v=2";
 
 export function buildQuotaSwitcherHtml(index, total, tabId) {
   if (total < 2) return `<span class="quota-account-switcher"></span>`;
@@ -82,6 +83,68 @@ export function createQuotaCardRenderer({
     element.textContent = state.text;
   }
 
+  function renderAccountManager(family) {
+    const commonStart = `
+      <div class="quota-card-toolbar">
+        <button class="quota-account-manager-trigger" type="button" data-secondary-card-trigger>${escapeHtml(tLegacy("管理帳號"))}<span aria-hidden="true">⋯</span></button>
+        <dialog class="secondary-card-dialog quota-account-manager-dialog" aria-label="${escapeHtml(tLegacy("管理帳號"))}">
+          <section class="secondary-card-surface">
+            <header class="secondary-card-header">
+              <strong>${escapeHtml(tLegacy("管理帳號"))}</strong>
+              <button type="button" data-secondary-card-close aria-label="${escapeHtml(tLegacy("關閉"))}">×</button>
+            </header>
+            <div class="secondary-card-content quota-account-manager-panel">
+    `;
+    const commonEnd = `</div></section></dialog></div>`;
+    if (family === "codex") {
+      return `${commonStart}<div data-codex-account-manager></div>${commonEnd}`;
+    }
+    const buttons = family === "agy" ? `
+      <button type="button" data-quota-action="refresh">↻ ${escapeHtml(tLegacy("更新"))}</button>
+      <button type="button" data-quota-action="agy-cli">▶ ${escapeHtml(t("ui.agyCliOpen"))}</button>
+      <button type="button" data-quota-action="agy-oauth">＋ ${escapeHtml(t("ui.agyAddQuotaAccount"))}</button>
+      <button class="is-danger" type="button" data-quota-action="agy-delete">⌫ ${escapeHtml(tLegacy("刪除"))}</button>
+    ` : family === "claude-code" ? `
+      <button type="button" data-quota-action="refresh">↻ ${escapeHtml(tLegacy("更新"))}</button>
+      <button class="is-danger" type="button" data-quota-action="claude-delete">⌫ ${escapeHtml(tLegacy("刪除"))}</button>
+    ` : `<button type="button" data-quota-action="refresh">↻ ${escapeHtml(tLegacy("更新"))}</button>`;
+    return `${commonStart}<div class="quota-toolbox quota-command-list">${buttons}</div>${commonEnd}`;
+  }
+
+  function mountCodexAccountManager(card) {
+    const host = card.querySelector("[data-codex-account-manager]");
+    if (host) host.replaceChildren(codexAccountManager.render({ embedded: true, statusCard: card }));
+  }
+
+  function wireAccountManager(card) {
+    const dialog = card.querySelector(".quota-account-manager-dialog");
+    if (dialog) {
+      wireSecondaryCardDialog(card);
+      return;
+    }
+    const manager = card.querySelector(".quota-eink-account-manager");
+    if (!manager) return;
+    let listening = false;
+    const closeFromPointer = event => {
+      if (!manager.contains(event.target)) manager.open = false;
+    };
+    const closeFromKey = event => {
+      if (event.key === "Escape") manager.open = false;
+    };
+    const syncListeners = () => {
+      if (manager.open && !listening) {
+        listening = true;
+        document.addEventListener("pointerdown", closeFromPointer);
+        document.addEventListener("keydown", closeFromKey);
+      } else if (!manager.open && listening) {
+        listening = false;
+        document.removeEventListener("pointerdown", closeFromPointer);
+        document.removeEventListener("keydown", closeFromKey);
+      }
+    };
+    manager.addEventListener("toggle", syncListeners);
+  }
+
   function renderAgyAccountCard(account, snapshot, pageInfo) {
     const providers = account.providers || [];
     const card = document.createElement("article");
@@ -112,6 +175,7 @@ export function createQuotaCardRenderer({
         ${buildQuotaSwitcherHtml(pageInfo?.index || 0, pageInfo?.total || 1, pageInfo?.tabId || "agy")}
         <span class="quota-pill"></span>
       </div>
+      ${renderAccountManager("agy")}
       <div class="quota-pair">
         ${renderProvider("Claude", claude)}
         ${renderProvider("Gemini", gemini)}
@@ -120,25 +184,15 @@ export function createQuotaCardRenderer({
       <div class="quota-footer">
         <span class="quota-time"></span>
         <span></span>
-        <div class="quota-toolbox" aria-label="${escapeHtml(tLegacy("額度操作"))}">
-          <button type="button" title="${escapeHtml(tLegacy("更新額度"))}" data-quota-action="refresh">↻ ${escapeHtml(tLegacy("更新"))}</button>
-          <button class="is-danger" type="button" title="${escapeHtml(t("ui.agyRemoveAccount"))}" data-quota-action="agy-delete">⌫ ${escapeHtml(tLegacy("刪除"))}</button>
-          <details class="quota-more-actions">
-            <summary title="${escapeHtml(t("ui.moreActions"))}" aria-label="${escapeHtml(t("ui.moreActions"))}">⋯</summary>
-            <div>
-              <button type="button" title="${t("ui.agyCliOpenTitle")}" data-quota-action="agy-cli">▶ ${t("ui.agyCliOpen")}</button>
-              <button type="button" title="${t("ui.agyAddQuotaAccountTitle")}" data-quota-action="agy-oauth">＋ ${t("ui.agyAddQuotaAccount")}</button>
-            </div>
-          </details>
-        </div>
       </div>
-      <div class="quota-action-status" aria-live="polite"></div>
+      <div class="quota-action-status" role="status" aria-live="polite"></div>
     `;
     card.querySelector(".quota-account-email").textContent = email;
     card.querySelector(".quota-pill").textContent = normalizeTierLabel(tier);
     card.querySelector(".quota-time").textContent = updatedText;
     actions.applyCardStatus(card);
     wireSwitcher(card);
+    wireAccountManager(card);
     actions.wireToolbox(card);
     return card;
   }
@@ -176,6 +230,7 @@ export function createQuotaCardRenderer({
         ${buildQuotaSwitcherHtml(pageInfo?.index || 0, pageInfo?.total || 1, pageInfo?.tabId || family)}
         <span class="quota-pill"></span>
       </div>
+      ${renderAccountManager(family)}
       <div class="quota-pair single">
         ${renderProvider(provider.Label || provider.label || label, provider)}
       </div>
@@ -184,20 +239,8 @@ export function createQuotaCardRenderer({
       <div class="quota-footer">
         <span class="quota-time"></span>
         <span></span>
-        <div class="quota-toolbox" aria-label="${escapeHtml(tLegacy("額度操作"))}">
-          <button type="button" title="${escapeHtml(tLegacy("更新額度"))}" data-quota-action="refresh">↻ ${escapeHtml(tLegacy("更新"))}</button>
-          ${family === "codex" ? `<button class="is-danger" type="button" title="${escapeHtml(t("ui.codexCacheDelete"))}" data-quota-action="codex-delete">⌫ ${escapeHtml(tLegacy("刪除"))}</button>
-          ${!isActive ? `<details class="quota-more-actions">
-            <summary title="${escapeHtml(t("ui.moreActions"))}" aria-label="${escapeHtml(t("ui.moreActions"))}">⋯</summary>
-            <div>
-              <button type="button" title="${escapeHtml(t("ui.codexQuotaReauthTitle"))}" data-quota-action="codex-quota-reauth">${escapeHtml(t("ui.codexQuotaReauth"))}</button>
-            </div>
-          </details>` : ""}` : family === "claude-code"
-            ? `<button class="is-danger" type="button" title="${escapeHtml(tLegacy("從 VibeDeck 移除帳號"))}" data-quota-action="claude-delete">⌫ ${escapeHtml(tLegacy("刪除"))}</button>`
-            : ""}
-        </div>
       </div>
-      <div class="quota-action-status" aria-live="polite"></div>
+      <div class="quota-action-status" role="status" aria-live="polite"></div>
     `;
     card.querySelector(".quota-account-email").textContent = label;
     const tier = provider.AccountTier || provider.accountTier;
@@ -205,8 +248,10 @@ export function createQuotaCardRenderer({
       ? normalizeTierLabel(tier)
       : formatQuotaStateLabel(state, tLegacy);
     applyTimestamp(card, [provider], snapshot);
+    if (family === "codex") mountCodexAccountManager(card);
     actions.applyCardStatus(card);
     wireSwitcher(card);
+    wireAccountManager(card);
     actions.wireToolbox(card);
     return card;
   }
@@ -238,16 +283,11 @@ export function createQuotaCardRenderer({
       ${creditBalance ? `<div class="quota-credit-row quota-eink-credit"><span>${escapeHtml(tLegacy("剩餘 ChatGPT Credits："))}</span><strong>${escapeHtml(creditBalance)}</strong></div>` : ""}
       <div class="quota-eink-overview-footer">
         <span class="quota-time"></span>
-        <div class="quota-toolbox" aria-label="額度操作">
-          <button type="button" title="${escapeHtml(tLegacy("更新額度"))}" data-quota-action="refresh">↻ ${escapeHtml(tLegacy("更新"))}</button>
-          <button class="is-danger" type="button" title="${escapeHtml(t("ui.codexCacheDelete"))}" data-quota-action="codex-delete">⌫ ${escapeHtml(tLegacy("刪除"))}</button>
-          ${!isActive ? `<button type="button" title="${escapeHtml(t("ui.codexQuotaReauthTitle"))}" data-quota-action="codex-quota-reauth">↻ ${escapeHtml(t("ui.codexQuotaReauthShort"))}</button>` : ""}
-        </div>
       </div>
       <details class="quota-eink-account-manager">
         <summary></summary>
       </details>
-      <div class="quota-action-status" aria-live="polite"></div>
+      <div class="quota-action-status" role="status" aria-live="polite"></div>
     `;
 
     card.querySelector(".quota-account-email").textContent = label;
@@ -257,11 +297,12 @@ export function createQuotaCardRenderer({
       : formatQuotaStateLabel(state, tLegacy);
     applyTimestamp(card, [provider], snapshot);
     const manager = card.querySelector(".quota-eink-account-manager");
-    manager.querySelector("summary").textContent = t("ui.codexAccountSwitcher");
+    manager.querySelector("summary").textContent = tLegacy("管理帳號");
     manager.append(codexAccountManager.render({ embedded: true, statusCard: card }));
     if (isActive) card.classList.add("quota-eink-active-account");
     actions.applyCardStatus(card);
     wireSwitcher(card);
+    wireAccountManager(card);
     actions.wireToolbox(card);
     return card;
   }

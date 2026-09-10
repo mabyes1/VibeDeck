@@ -9,31 +9,38 @@ async function css(path) {
 }
 
 test("compact Sideboard is selected by container space instead of a device selector", async () => {
-  const [phone, shell, compatibility] = await Promise.all([
+  const [phone, shell] = await Promise.all([
     css("30-phone-dashboard.css"),
     css("components/sideboard-shell.css"),
-    readFile(new URL("../../src/VibeDeck.Host/wwwroot/modules/responsive-space.js", import.meta.url), "utf8"),
   ]);
 
   assert.match(shell, /container:\s*sideboard-view\s*\/\s*inline-size/);
   assert.match(shell, /\.sideboard-shell\s*\{[\s\S]*min-width:\s*0/);
   assert.match(phone, /@container\s+sideboard-view\s*\(max-width:\s*44rem\)/);
+  assert.match(phone, /\.mobile-overview\s*\{[\s\S]*display:\s*flex[\s\S]*flex-direction:\s*column/);
+  assert.doesNotMatch(phone, /\.mobile-overview\s*\{[^}]*min-height:\s*100cqh/);
+  assert.doesNotMatch(phone, /\.mobile-overview\s*\{[^}]*max-height:\s*100cqh/);
+  assert.match(phone, /\.mobile-quota-strip\s*\{\s*margin-top:\s*clamp\(0px,\s*2cqh,\s*16px\)/);
+  assert.doesNotMatch(phone, /\.mobile-quota-strip\s*\{\s*margin-top:\s*auto/);
+  assert.doesNotMatch(phone, /grid-template-rows:\s*auto\s+auto\s+auto\s+minmax\(108px,\s*1fr\)\s+auto/);
   assert.match(phone, /@container\s+sideboard-view\s*\(max-width:\s*18rem\)[\s\S]*\.mobile-overview-actions[\s\S]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
   assert.match(shell, /@container sideboard-view[^}]*[\s\S]*\.sideboard-shell\s*\{[^}]*scrollbar-gutter:\s*auto/);
-  assert.match(phone, /space-sideboard-compact[^}]*\.mobile-overview\s*\{\s*display:\s*flex/);
-  assert.match(shell, /space-sideboard-mid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+auto\s+auto/);
-  assert.match(compatibility, /ResizeObserver/);
-  assert.match(compatibility, /sideboardSpaceClasses/);
+  assert.match(phone, /\.mobile-overview-section,[\s\S]*var\(--theme-glass/);
+  assert.doesNotMatch(phone, /background:\s*rgba\(11,\s*27,\s*32,\s*\.88\)/);
+  assert.doesNotMatch(phone, /linear-gradient\(145deg,\s*rgba\(14,\s*34,\s*40/);
+  assert.doesNotMatch(phone + shell, /space-sideboard-(?:micro|compact|mid|wide)/);
   assert.doesNotMatch(phone, /@media\s*\(max-width:\s*1100px\)/);
-  assert.doesNotMatch(phone, /phone-client|tablet-client|viewport-(?:portrait|landscape)/);
+  assert.doesNotMatch(phone, /(?:phone|mobile|tablet)-client|viewport-(?:portrait|landscape)/);
 });
 
-test("dashboard editor is one content-sized scrolling workspace", async () => {
+test("dashboard editor is one bounded scrolling workspace", async () => {
   const editor = await css("components/dashboard-editor.css");
 
   assert.match(editor, /body\.dashboard-edit-mode\s*\{[\s\S]*overflow-y:\s*auto/);
-  assert.match(editor, /min-height:\s*calc\(var\(--viewer-height,\s*100vh\)\s*-\s*var\(--dashboard-editor-chrome/);
-  assert.doesNotMatch(editor, /min-height:\s*(?:820|720|520)px/);
+  assert.match(editor, /height:\s*max\(12rem,\s*calc\(var\(--viewer-height,\s*100vh\)\s*-\s*var\(--dashboard-editor-chrome/);
+  assert.match(editor, /grid-template-rows:\s*repeat\(var\(--dashboard-row-count,\s*6\),\s*minmax\(0,\s*1fr\)\)/);
+  assert.doesNotMatch(editor, /minmax\(min-content,\s*1fr\)/);
+  assert.doesNotMatch(editor, /(?:min-)?height:\s*(?:820|720|520)px/);
   assert.doesNotMatch(editor, /dashboard-edit-mode[^,{]*(?:tablet-client|eink-client|viewport-(?:portrait|landscape))/);
   assert.doesNotMatch(editor, /!important/);
 });
@@ -46,12 +53,89 @@ test("dashboard row geometry comes from the persisted layout model", async () =>
   ]);
 
   assert.match(shell, /repeat\(var\(--dashboard-row-count,\s*6\)/);
+  assert.match(shell, /\.sideboard-shell\s*\{[\s\S]*display:\s*grid/);
+  assert.match(shell, /grid-template-rows:\s*repeat\(var\(--dashboard-row-count,\s*6\),\s*minmax\(0,\s*1fr\)\)/);
+  assert.doesNotMatch(shell, /grid-template-rows:\s*repeat\(var\(--dashboard-row-count,\s*6\),\s*minmax\(90px/);
+  assert.doesNotMatch(shell, /#systemSideboardPage\.dashboard-grid\s*\{[^}]*min-height:\s*520px/);
   assert.match(editor, /repeat\(var\(--dashboard-row-count,\s*6\)/);
   assert.match(controller, /grid\.style\.setProperty\("--dashboard-row-count",\s*String\(maxRows\(\)\)\)/);
   assert.match(controller, /node\.hidden\s*=\s*!visible/);
   assert.doesNotMatch(controller, /dashboard-card-hidden/);
   assert.doesNotMatch(shell, /viewport-portrait\s+#systemSideboardPage\.dashboard-grid/);
   assert.doesNotMatch(controller, /isTabletClient|tablet-(?:portrait|landscape)/);
+});
+
+test("short LCD dashboards use a two-axis CSS container without changing saved geometry", async () => {
+  const [shell, metrics, activity, cards, quota, controller] = await Promise.all([
+    css("components/sideboard-shell.css"),
+    css("components/metric-card.css"),
+    css("components/activity-feed.css"),
+    css("components/custom-cards.css"),
+    css("components/quota-page.css"),
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/modules/dashboard-layout.js", import.meta.url), "utf8"),
+  ]);
+
+  assert.doesNotMatch(shell, /container:\s*dashboard-read-grid\s*\/\s*size/);
+  assert.match(shell, /\.sideboard-view\.active\s*\{[\s\S]*container:\s*sideboard-view\s*\/\s*size/);
+  for (const owner of [shell, metrics, activity, cards, quota]) {
+    assert.match(owner, /@container\s+sideboard-view\s*\(max-height:\s*30rem\)/);
+    assert.doesNotMatch(owner, /dashboard-short-canvas/);
+  }
+  assert.match(shell, /min\(3\.4cqw,\s*5\.8cqh\)/);
+  assert.match(metrics, /min\(3\.7cqw,\s*6\.2cqh\)/);
+  assert.match(cards, /min\(4cqw,\s*7cqh\)/);
+  assert.match(metrics, /--metric-value-size:\s*18px/);
+  assert.match(activity, /\.activity-feed-text\s*\{[\s\S]*font-size:\s*10px/);
+  assert.match(cards, /\.custom-status-value,[\s\S]*font-size:\s*18px/);
+  assert.match(quota, /--quota-window-value-size:\s*12px/);
+  assert.doesNotMatch(controller, /syncReadDensity|dashboard-short-canvas|height\s*<=\s*416/);
+});
+
+test("Device Lab keeps Android and iPhone viewer fullscreen on the same CSS path", async () => {
+  const index = await readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8");
+  assert.match(index, /const useBrowserFullscreen = !skipFullscreenApi && !isDevicePreview\(\) && !isIos\(\) && !displayUsesCssRotation/);
+});
+
+test("dashboard fullscreen keeps viewer exit chrome hidden", async () => {
+  const [html, core, navigation, mobile, index] = await Promise.all([
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.html", import.meta.url), "utf8"),
+    css("10-core.css"),
+    css("components/dashboard-navigation.css"),
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/modules/mobile-overview.js", import.meta.url), "utf8"),
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8"),
+  ]);
+  assert.match(html, /data-eink-connection-state[^>]*>CONNECTING<\/span>\s*<button id="dashboardExitViewer"/);
+  assert.match(navigation, /\.dashboard-exit-viewer\s*\{[^}]*display:\s*none/);
+  assert.doesNotMatch(navigation, /body\.dashboard-viewer\.remote-client:not\(\.eink-client\) \.dashboard-exit-viewer/);
+  assert.doesNotMatch(core, /dashboard-viewer\.mode-sideboard[^}]*padding-top:\s*42px/);
+  assert.doesNotMatch(core, /dashboard-viewer\.mode-sideboard[^}]*\.exit-viewer[^}]*left:\s*50%/);
+  assert.match(mobile, /classList\.contains\("dashboard-viewer"\)[\s\S]*byId\("exitViewer"\)\?\.click/);
+  assert.match(index, /dashboardExitViewer\?\.addEventListener\("click",\s*exitLandscapeViewer\)/);
+});
+
+test("iPhone landscape Sideboard content uses only the physical notch side", async () => {
+  const [index, shell] = await Promise.all([
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8"),
+    css("components/sideboard-shell.css"),
+  ]);
+  assert.match(index, /function syncSideboardContentSafeArea\(width, height\)/);
+  assert.match(index, /angle === 90[\s\S]*--sideboard-content-inset-left[\s\S]*--sideboard-content-inset-right", "0px"/);
+  assert.match(index, /angle === 270[\s\S]*--sideboard-content-inset-left", "0px"[\s\S]*--sideboard-content-inset-right/);
+  assert.match(shell, /--sideboard-content-inset-right/);
+  assert.match(shell, /--sideboard-content-inset-left/);
+});
+
+test("remote dashboard waits for trusted layout data and never retries an invalid empty board", async () => {
+  const [controller, index] = await Promise.all([
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/modules/dashboard-layout.js", import.meta.url), "utf8"),
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(controller, /if \(!layoutLoaded\) return false/);
+  assert.match(controller, /if \(!layoutLoaded \|\| !items\.some\(item => item\.visible\)\)/);
+  assert.match(controller, /if \(saveSucceeded && \(autoSaveQueued \|\| layoutSignature\(\) !== lastSavedSignature\)\)/);
+  assert.doesNotMatch(controller, /\n\s*load\(\);\s*\n\s*return \{/);
+  assert.match(index, /await dashboardLayoutController\?\.loadIfNeeded\?\.\(\)/);
 });
 
 test("ordinary PC content scrolls instead of being clipped", async () => {
@@ -75,7 +159,7 @@ test("application shell geometry is remote-capability and container driven", asy
   assert.match(index, /"linux-desktop"/);
   assert.match(index, /MOBILE_DEVICE_PREVIEW_KINDS\.has\(devicePreviewKind\)/);
   assert.match(core, /@container\s+app-header\s*\(max-width:\s*48rem\)/);
-  assert.doesNotMatch(core, /body\.phone-client|body\.tablet-client|viewport-(?:portrait|landscape)/);
+  assert.doesNotMatch(core, /body\.(?:phone|mobile|tablet)-client|viewport-(?:portrait|landscape)/);
   assert.doesNotMatch(core, /@media\s*\((?:max|min)-(?:width|height)/);
 });
 
@@ -86,9 +170,9 @@ test("logical landscape chrome consumes one authoritative state class", async ()
     css("components/sideboard-shell.css"),
     css("components/quota-page.css"),
   ]);
-  assert.match(core, /html\.phone-force-landscape body\.force-landscape\s*\{/);
+  assert.match(core, /html\.mobile-force-landscape body\.force-landscape\s*\{/);
   for (const owner of [controls, shell, quota]) {
-    assert.doesNotMatch(owner, /html\.phone-force-landscape body\.force-landscape/);
+    assert.doesNotMatch(owner, /html\.mobile-force-landscape body\.force-landscape/);
   }
 });
 
@@ -113,6 +197,37 @@ test("quota identity text can break at arbitrary narrow widths", async () => {
   assert.match(mini, /\.quota-mini-card\s*\{[^}]*overflow:\s*auto/);
   assert.match(mini, /\.quota-mini-credit\s*\{[^}]*overflow-wrap:\s*anywhere/);
   assert.doesNotMatch(mini, /\.quota-mini-credit\s*\{[^}]*text-overflow:\s*ellipsis/);
+  assert.equal((mini.match(/body\.eink-client \.quota-mini-card\s*\{/g) || []).length, 1);
+});
+
+test("LCD product surfaces share the Host-owned neutral glass material", async () => {
+  const [tokens, core, shell, activity, mini, quota, setup, pairing] = await Promise.all([
+    css("00-base-tokens.css"),
+    css("10-core.css"),
+    css("components/sideboard-shell.css"),
+    css("components/activity-feed.css"),
+    css("components/quota-mini-card.css"),
+    css("components/quota-page.css"),
+    css("components/setup-diagnostics.css"),
+    css("components/pairing-setup.css"),
+  ]);
+
+  assert.match(tokens, /--theme-surface:[\s\S]*var\(--theme-glass\)/);
+  assert.match(tokens, /--theme-surface-strong:[\s\S]*var\(--theme-glass-strong\)/);
+  assert.match(quota, /\.quota-shell\s*\{[\s\S]*background:\s*transparent/);
+  assert.match(quota, /\.quota-account-card\s*\{[\s\S]*background:\s*var\(--theme-surface\)/);
+  assert.doesNotMatch(quota, /\.quota-codex-switcher\s*\{[^}]*background:/);
+  assert.doesNotMatch(quota, /\.quota-codex-switcher\s*\{[^}]*border:/);
+  assert.doesNotMatch(quota, /radial-gradient\(circle at 62% 52%,\s*rgba\(77,\s*207,\s*255/);
+  assert.match(setup, /\.setup-panels \.panel\s*\{[\s\S]*background:\s*var\(--theme-surface\)/);
+  assert.match(pairing, /\.connect-panel\s*\{[\s\S]*background:\s*var\(--theme-surface\)/);
+  assert.match(core, /body\.viewer-immersive \.exit-viewer/);
+  assert.match(core, /\.exit-viewer\s*\{[\s\S]*z-index:\s*5000/);
+  assert.match(shell, /body\.mode-sideboard:not\(\.dashboard-edit-mode\):not\(\.eink-client\) \.side-panel/);
+  assert.match(activity, /body\.mode-sideboard:not\(\.eink-client\) \.activity-feed-item\s*\{[\s\S]*linear-gradient/);
+  assert.match(mini, /body\.mode-sideboard:not\(\.eink-client\) \.quota-mini-bar span\s*\{[\s\S]*var\(--grad-accent\)/);
+  assert.doesNotMatch(activity, /body\.pc-console\.mode-sideboard \.activity-feed-item\s*\{/);
+  assert.doesNotMatch(mini, /body\.pc-console\.mode-sideboard \.quota-mini-bar/);
 });
 
 test("Custom Cards management responds to its own container", async () => {
@@ -120,7 +235,7 @@ test("Custom Cards management responds to its own container", async () => {
   assert.match(cards, /container:\s*custom-cards\s*\/\s*inline-size/);
   assert.match(cards, /repeat\(auto-fit,\s*minmax\(min\(12rem,\s*100%\),\s*1fr\)\)/);
   assert.match(cards, /@container\s+custom-cards\s*\(max-width:\s*42rem\)/);
-  assert.doesNotMatch(cards, /phone-client|viewport-(?:portrait|landscape)/);
+  assert.doesNotMatch(cards, /(?:phone|mobile)-client|viewport-(?:portrait|landscape)/);
   assert.doesNotMatch(cards, /\.custom-card\s*\{[^}]*overflow:\s*hidden/);
 });
 
@@ -147,7 +262,7 @@ test("pairing layout follows its panel instead of a phone identity", async () =>
   assert.match(pairing, /repeat\(auto-fit,\s*minmax\(min\(100%,\s*16rem\),\s*1fr\)\)/);
   assert.match(pairing, /@container\s+pairing-panel\s*\(max-width:\s*48rem\)/);
   assert.match(pairing, /@container\s+pairing-panel\s*\(max-width:\s*30rem\)/);
-  assert.doesNotMatch(pairing, /phone-client\.mode-setup/);
+  assert.doesNotMatch(pairing, /(?:phone|mobile)-client\.mode-setup/);
   assert.doesNotMatch(pairing, /new-device-panel-content\s*\{[^}]*overflow:\s*hidden/);
   assert.doesNotMatch(pairing, /#newDeviceConnectPanel\s*>\s*summary\s*\{[^}]*height:/);
 });
@@ -173,15 +288,23 @@ test("component owners do not fork layout for a tablet identity", async () => {
   for (const owner of owners) assert.doesNotMatch(owner, /tablet-client/);
 });
 
-test("quota account management uses one DOM contract instead of device variants", async () => {
-  const [quota, manager] = await Promise.all([
+test("quota account management uses one shared secondary-dialog contract instead of device variants", async () => {
+  const [quota, manager, renderer, secondaryDialog, primitives] = await Promise.all([
     css("components/quota-page.css"),
     readFile(new URL("../../src/VibeDeck.Host/wwwroot/modules/quota-codex-account-manager.js", import.meta.url), "utf8"),
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/modules/quota-card-renderer.js", import.meta.url), "utf8"),
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/modules/secondary-card-dialog.js", import.meta.url), "utf8"),
+    css("components/shared-primitives.css"),
   ]);
   assert.match(manager, /manager\.className\s*=\s*"quota-account-manager"/);
+  assert.match(renderer, /secondary-card-dialog/);
+  assert.match(renderer, /wireSecondaryCardDialog/);
+  assert.match(secondaryDialog, /showModal/);
+  assert.match(secondaryDialog, /hasActiveSecondaryCardInteraction/);
+  assert.match(primitives, /\.secondary-card-dialog::backdrop/);
   assert.doesNotMatch(manager, /compactMobile|compactDesktop|isMobileClient/);
   assert.doesNotMatch(quota, /quota-(?:mobile|desktop)-account-manager|is-compact-(?:mobile|desktop)/);
-  assert.doesNotMatch(quota, /body\.phone-client|viewport-(?:portrait|landscape)/);
+  assert.doesNotMatch(quota, /body\.(?:phone|mobile)-client|viewport-(?:portrait|landscape)/);
 });
 
 test("component owners avoid cascade-force important declarations", async () => {
@@ -213,5 +336,53 @@ test("custom Deck help responds to its viewport container", async () => {
   assert.match(deck, /\.custom-deck-view\s*\{[^}]*height:\s*auto;[^}]*align-self:\s*stretch/);
   assert.match(deck, /container:\s*custom-deck-view\s*\/\s*size/);
   assert.match(deck, /@container\s+custom-deck-view\s*\(max-width:\s*48rem\)/);
-  assert.doesNotMatch(deck, /phone-client|viewport-(?:portrait|landscape)|!important/);
+  assert.doesNotMatch(deck, /(?:phone|mobile)-client|viewport-(?:portrait|landscape)|!important/);
+});
+
+test("immersive dashboard chrome has no redundant mode switch and uses text-only connection states", async () => {
+  const [html, js, navigation] = await Promise.all([
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.html", import.meta.url), "utf8"),
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8"),
+    css("components/dashboard-navigation.css"),
+  ]);
+
+  assert.doesNotMatch(html, /class="dashboard-mode-switch"/);
+  assert.match(html, /data-eink-connection-state[^>]*>CONNECTING</);
+  assert.match(js, /CONNECTED/);
+  assert.match(js, /CONNECTING/);
+  assert.match(js, /DISCONNECTED/);
+  assert.doesNotMatch(navigation, /\.dashboard-mode-switch/);
+  assert.match(navigation, /\.eink-connection-state[\s\S]*border:\s*0;/);
+  assert.match(navigation, /\.eink-connection-state[\s\S]*background:\s*transparent;/);
+});
+
+test("fullscreen exit is chrome-free and uses Back/Escape/double-tap viewer contracts", async () => {
+  const [js, core, customDeck] = await Promise.all([
+    readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8"),
+    css("10-core.css"),
+    css("components/custom-deck.css"),
+  ]);
+
+  assert.match(js, /const isDeckMode = activeMode === "deck" \|\| activeMode\.startsWith\("deck:"\)/);
+  assert.match(js, /classList\.toggle\("dashboard-viewer", !isDisplayMode && !isDeckMode\)/);
+  assert.match(js, /classList\.toggle\("deck-viewer", isDeckMode\)/);
+  assert.match(js, /classList\.remove\("deck-viewer"\)/);
+  assert.match(js, /history\.pushState\([\s\S]*__vibeDeckViewer/);
+  assert.match(js, /window\.addEventListener\("popstate"/);
+  assert.match(js, /event\.key === "Escape" && isViewerActive\(\)/);
+  assert.match(js, /querySelector\("main"\)\?\.addEventListener\("dblclick"/);
+  assert.match(js, /if \(activeMode === "display"\) return;/);
+  assert.match(js, /if \(isViewerActive\(\)\) exitLandscapeViewer\(\);[\s\S]*else enterLandscapeViewer\(\);/);
+  assert.match(js, /toggleViewer:[\s\S]*enterLandscapeViewer\(\{ skipFullscreenApi: true \}\)/);
+  assert.match(js, /viewerActive: isViewerActive\(\)/);
+  assert.doesNotMatch(js, /viewerTwoFingerGesture|event\.touches\.length !== 2/);
+  assert.match(core, /body\.viewer-fullscreen:not\(\.mode-display\) \.exit-viewer[\s\S]*display:\s*none/);
+  assert.match(core, /body\.viewer-fullscreen\.mode-display \.exit-viewer[\s\S]*display:\s*grid/);
+  assert.doesNotMatch(customDeck, /custom-deck-exit-rail-width/);
+});
+
+test("keep-awake fallback media is moved outside fullscreen-hidden header", async () => {
+  const js = await readFile(new URL("../../src/VibeDeck.Host/wwwroot/index.js", import.meta.url), "utf8");
+  assert.match(js, /const keepAwakeVideo = document\.getElementById\("keepAwakeVideo"\)/);
+  assert.match(js, /document\.body\.appendChild\(keepAwakeVideo\)/);
 });

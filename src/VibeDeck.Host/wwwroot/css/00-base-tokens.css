@@ -8,20 +8,56 @@
       --surface: #17212c;
       --surface-2: #1d2a36;
       --surface-3: #223040;
-      --line: rgba(143, 209, 255, .16);
+      --theme-palette-a: #4b1f66;
+      --theme-palette-b: #17344d;
+      --theme-palette-a-soft: rgba(75, 31, 102, .32);
+      --theme-palette-b-soft: rgba(23, 52, 77, .29);
+      --theme-palette-a-faint: rgba(75, 31, 102, .10);
+      --theme-palette-b-faint: rgba(23, 52, 77, .09);
+      --theme-accent: #8c71a3;
+      --theme-accent-2: #7b91a4;
+      --theme-accent-soft: rgba(140, 113, 163, .18);
+      --theme-accent-2-soft: rgba(123, 145, 164, .18);
+      --theme-accent-line: rgba(140, 113, 163, .30);
+      --theme-accent-2-line: rgba(123, 145, 164, .30);
+      --theme-gradient-angle: 132deg;
+      --theme-background-image: none;
+      --theme-background-fit: cover;
+      --theme-background-position: center;
+      --theme-background-blur: 0px;
+      --theme-background-dim: .24;
+      --theme-glass: rgba(255, 255, 255, .07);
+      --theme-glass-strong: rgba(8, 10, 15, .388);
+      --theme-glass-blur: 20px;
+      --theme-line: rgba(255, 255, 255, .12);
+      --theme-line-strong: rgba(255, 255, 255, .20);
+      --theme-shadow: 0 16px 44px rgba(0, 0, 0, .20);
+      --theme-surface:
+        linear-gradient(145deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .008)),
+        var(--theme-glass);
+      --theme-surface-strong:
+        linear-gradient(145deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .010)),
+        var(--theme-glass-strong);
+      --theme-control: rgba(255, 255, 255, .045);
+      --theme-control-hover: rgba(255, 255, 255, .085);
+      --theme-surface-radius: 12px;
+      --theme-panel-radius: 14px;
+      --theme-surface-shadow:
+        var(--theme-shadow),
+        inset 0 1px 0 rgba(255, 255, 255, .05);
+      --line: var(--theme-line);
       --text: #f5f7fb;
       --muted: #b9c4d0;
       --quiet: #7f91a5;
-      --green: #70d98b;
+      --green: var(--theme-accent);
       --yellow: #ffd27a;
-      --blue: #8fd1ff;
+      --blue: var(--theme-accent-2);
       /* JavaScript replaces these with visualViewport pixels. vh/vw keep old
          Chromium usable before that first measurement; dvh/dvw are an optional
          progressive enhancement, never the sole sizing contract. */
       --viewer-width: 100vw;
       --viewer-height: 100vh;
-      /* premium gradient tokens */
-      --grad-accent: linear-gradient(90deg, #8fd1ff 0%, #70d98b 100%);
+      --grad-accent: linear-gradient(90deg, var(--theme-accent-2) 0%, var(--theme-accent) 100%);
 }
 
 [hidden] { display: none !important; }

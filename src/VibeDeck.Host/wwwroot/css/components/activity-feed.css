@@ -37,12 +37,20 @@
   color: var(--side-muted);
   font: inherit;
   font-weight: 700;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.activity-feed-filters button:hover {
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
 }
 
 .activity-feed-filters button.active {
   border-color: var(--side-accent);
   background: var(--side-accent);
   color: #071015;
+  font-weight: 700;
 }
 
 .activity-feed-filter-select {
@@ -68,24 +76,31 @@
 
 .activity-feed-item {
   min-width: 0;
-  padding: 6px 8px;
-  border: 1px solid var(--side-line);
-  background: rgba(7, 16, 21, .46);
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, .06);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .025);
+  transition: all .15s ease;
 }
 
-body.pc-console.mode-sideboard .activity-feed-filters button {
-  border-radius: 7px;
+.activity-feed-item:hover {
+  border-color: rgba(255, 255, 255, .15);
+  background: rgba(255, 255, 255, .05);
 }
 
-body.pc-console.mode-sideboard .activity-feed-item {
-  border-color: rgba(255, 255, 255, .09);
-  border-radius: 7px;
-  background: linear-gradient(90deg, rgba(126, 217, 232, .035), rgba(7, 16, 21, .34) 42%);
+body.mode-sideboard:not(.eink-client) .activity-feed-filters button {
+  border-radius: 999px;
+}
+
+body.mode-sideboard:not(.eink-client) .activity-feed-item {
+  border-color: rgba(255, 255, 255, .075);
+  border-radius: 8px;
+  background: linear-gradient(100deg, var(--side-palette-b-faint), rgba(255, 255, 255, .012) 44%);
 }
 
 body.pc-console.mode-sideboard .activity-feed-item:hover {
-  border-color: rgba(126, 217, 232, .20);
-  background: linear-gradient(90deg, rgba(126, 217, 232, .07), rgba(7, 16, 21, .42) 46%);
+  border-color: var(--side-glass-line-hover);
+  background: linear-gradient(100deg, var(--side-palette-b-faint), rgba(255, 255, 255, .035) 48%);
 }
 
 .activity-feed-meta {
@@ -121,70 +136,39 @@ body.pc-console.mode-sideboard .activity-feed-item:hover {
   text-align: center;
 }
 
-/* Mid-sized Sideboard density follows component space, not a tablet flag. */
-@container sideboard-view (min-width: 44.01rem) and (max-width: 64rem) {
-  .activity-feed-card {
+@container sideboard-view (max-height: 30rem) {
+.activity-feed-card {
+    gap: 3px;
+    padding: 6px;
+}
+
+.activity-feed-head { gap: 4px; }
+.activity-feed-filters { gap: 3px; }
+
+.activity-feed-filters button {
+    min-height: 24px;
+    padding: 2px 6px;
+    font-size: 10px;
+}
+
+.activity-feed-list {
+    gap: 3px;
+    padding-right: 2px;
+}
+
+.activity-feed-item { padding: 4px 6px; }
+
+.activity-feed-meta {
     gap: 4px;
-  }
-
-  .activity-feed-filters button {
-    min-height: 30px;
-    padding: 2px 8px;
-    font-size: 13px;
-  }
-
-  .activity-feed-item {
-    padding: 4px 6px;
-  }
-
-  .activity-feed-meta {
-    font-size: 12px;
-    line-height: 1.15;
-  }
-
-  .activity-feed-text,
-  .activity-feed-empty {
-    font-size: 15px;
-    line-height: 1.22;
-  }
-
-  .activity-feed-text {
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
+    font-size: 9px;
+    line-height: 1.05;
 }
 
-body:not(.eink-client) .sideboard-view.space-sideboard-mid .activity-feed-card {
-  gap: 4px;
+.activity-feed-text {
+    margin-top: 1px;
+    font-size: 10px;
+    line-height: 1.12;
 }
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid .activity-feed-filters button {
-  min-height: 30px;
-  padding: 2px 8px;
-  font-size: 13px;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid .activity-feed-item {
-  padding: 4px 6px;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid .activity-feed-meta {
-  font-size: 12px;
-  line-height: 1.15;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid :is(.activity-feed-text, .activity-feed-empty) {
-  font-size: 15px;
-  line-height: 1.22;
-}
-
-body:not(.eink-client) .sideboard-view.space-sideboard-mid .activity-feed-text {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 
 /* E-ink uses explicit high-contrast controls and a select instead of the

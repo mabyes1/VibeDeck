@@ -9,6 +9,12 @@ certs/
 outputs/
 artifacts/
 workers/**/.wrangler/
+%SystemDrive%/
+
+# User-created Decks are runtime data under ProgramData/LocalAppData. Keep only
+# curated DeckExamples in source control.
+**/Decks/
+**/decks/
 
 # Driver build output
 driver/**/x64/

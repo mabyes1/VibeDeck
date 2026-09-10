@@ -12,7 +12,7 @@ import {
 import { createDisplayInputController } from "./modules/display-input.js?v=50";
 import { createCustomCardsController } from "./modules/custom-cards.js?v=55";
 import { createActivityFeedController } from "./modules/activity-feed.js?v=55";
-import { createDashboardLayoutController } from "./modules/dashboard-layout.js?v=64";
+import { createDashboardLayoutController } from "./modules/dashboard-layout.js?v=67";
 import { createQuotaController } from "./modules/quota-controller.js?v=52";
 import {
   createQuotaAccountNavigator,
@@ -22,38 +22,43 @@ import {
   groupAgyAccounts,
   groupSingleProviderAccounts,
   quotaDataFingerprint,
-} from "./modules/quota-model.js?v=1";
+} from "./modules/quota-model.js?v=2";
 import {
   buildQuotaHelpSpec,
   buildQuotaSummary,
   formatQuotaStateLabel,
 } from "./modules/quota-presentation.js?v=2";
 import { createQuotaSetupCardRenderer } from "./modules/quota-setup-cards.js?v=2";
-import { createCodexAccountManager } from "./modules/quota-codex-account-manager.js?v=1";
+import { createCodexAccountManager } from "./modules/quota-codex-account-manager.js?v=3";
 import { createQuotaActionController } from "./modules/quota-action-controller.js?v=3";
-import { createQuotaCardRenderer } from "./modules/quota-card-renderer.js?v=3";
+import { createQuotaCardRenderer } from "./modules/quota-card-renderer.js?v=7";
 import { createDiagnosticsController } from "./modules/diagnostics-controller.js?v=1";
 import { createDeviceManagementView } from "./modules/device-management-view.js?v=1";
 import { createDeviceActionsController } from "./modules/device-actions-controller.js?v=1";
-import { createPairingSessionController } from "./modules/pairing-session-controller.js?v=1";
+import { createPairingSessionController } from "./modules/pairing-session-controller.js?v=2";
 import { createProductUpdateController } from "./modules/product-update-controller.js?v=1";
-import { createDisplayInstallController } from "./modules/display-install-controller.js?v=1";
+import { createDisplayInstallController } from "./modules/display-install-controller.js?v=2";
 import { createTurnSettingsController } from "./modules/turn-settings-controller.js?v=1";
-import { createKeepAwakeController } from "./modules/keep-awake-controller.js?v=1";
-import { createDisplaySourceController } from "./modules/display-source-controller.js?v=1";
+import { createKeepAwakeController } from "./modules/keep-awake-controller.js?v=6";
+import { createDisplaySourceController } from "./modules/display-source-controller.js?v=2";
 import {
   chooseAutoDisplayMode,
   getAutoModeValue,
   readClientDisplayMetrics,
 } from "./modules/display-auto-mode.js?v=1";
 import { createHostAuthController } from "./modules/host-auth-controller.js?v=1";
-import { createCustomDeckController } from "./modules/custom-deck-controller.js?v=1";
-import { createQuotaMiniCardController } from "./modules/quota-mini-card.js?v=59";
+import { createCustomDeckController } from "./modules/custom-deck-controller.js?v=5";
+import { createQuotaMiniCardController } from "./modules/quota-mini-card.js?v=60";
+import { createQuotaSideboardCardController } from "./modules/quota-sideboard-card.js?v=3";
+import {
+  hasActiveSecondaryCardInteraction,
+  onSecondaryCardInteractionEnd,
+} from "./modules/secondary-card-dialog.js?v=3";
 import { createSideboardController } from "./modules/sideboard.js?v=51";
-import { createMobileOverviewController } from "./modules/mobile-overview.js?v=3";
-import { createResponsiveSpaceController } from "./modules/responsive-space.js?v=1";
+import { createAppThemeController } from "./modules/app-theme.js?v=3";
+import { createMobileOverviewController } from "./modules/mobile-overview.js?v=4";
 import { isFullscreenDisplayStreaming as isFullscreenDisplayStreamingPolicy } from "./modules/dashboard-background-policy.js?v=1";
-import { createStreamController } from "./modules/stream-controller.js?v=53";
+import { createStreamController } from "./modules/stream-controller.js?v=56";
 import { createStreamDebugOverlay } from "./modules/stream-debug-overlay.js?v=1";
 import { tuneVideoReceiver } from "./modules/stream-tuning.js?v=47";
 import { applyFeedbackState } from "./modules/feedback-state.js?v=1";
@@ -62,8 +67,8 @@ import {
   escapeHtml,
   formatQuotaWindowLabel,
   summarizeQuotaWindow,
-} from "./modules/quota-formatters.js?v=51";
-import { getIntlLocale, initLocale, onLocaleChange, t, tApi, tLegacy, translateText } from "./modules/i18n.js?v=4";
+} from "./modules/quota-formatters.js?v=52";
+import { getIntlLocale, initLocale, onLocaleChange, t, tApi, tLegacy, translateText } from "./modules/i18n.js?v=5";
 import {
   DEVICE_TOKEN_KEY,
   DEVICE_ID_KEY,
@@ -88,12 +93,11 @@ import {
   isIphoneUA,
   isMobileUA,
   shouldPreferWebRtcDisplay,
-} from "./modules/env-detect.js?v=2";
+} from "./modules/env-detect.js?v=3";
 import {
   EINK_PREF_KEY,
   readEinkQuery,
   readEinkCookie,
-  looksLikeBooxScreen,
   detectEinkHardware,
 } from "./modules/eink-detect.js?v=1";
 
@@ -141,10 +145,13 @@ import {
     const displayInstallDetail = document.getElementById("displayInstallDetail");
     const openSideboardFromEmpty = document.getElementById("openSideboardFromEmpty");
     const exitViewer = document.getElementById("exitViewer");
+    const dashboardExitViewer = document.getElementById("dashboardExitViewer");
+    const mobileFullscreen = document.getElementById("mobileFullscreen");
     const streamPreset = document.getElementById("streamPreset");
     const streamFps = document.getElementById("streamFps");
     const streamQuality = document.getElementById("streamQuality");
     const streamTransport = document.getElementById("streamTransport");
+    const streamLatency = document.getElementById("streamLatency");
     const applyStream = document.getElementById("applyStream");
     const turnSettingsPanel = document.getElementById("turnSettingsPanel");
     const turnKeyId = document.getElementById("turnKeyId");
@@ -212,6 +219,7 @@ import {
     const copyDiagnostics = document.getElementById("copyDiagnostics");
     const wakeState = document.getElementById("wakeState");
     const appState = document.getElementById("appState");
+    const installVibeDeck = document.getElementById("installVibeDeck");
     const deviceState = document.getElementById("deviceState");
     const displayView = document.getElementById("displayView");
     const sideboardView = document.getElementById("sideboardView");
@@ -227,6 +235,9 @@ import {
     const customDeckRefresh = document.getElementById("customDeckRefresh");
     let customDeckController = null;
     const sideboardShell = document.getElementById("sideboardShell");
+    const appThemeController = createAppThemeController({
+      requestJson: (...args) => fetchJsonOrThrow(...args),
+    });
     const systemSideboardPage = document.getElementById("systemSideboardPage");
     const customSideboardPage = document.getElementById("customSideboardPage");
     const sideboardPageTabs = document.getElementById("sideboardPageTabs");
@@ -317,6 +328,7 @@ import {
     const quotaMiniReset = document.getElementById("quotaMiniReset");
     const quotaMiniState = document.getElementById("quotaMiniState");
     const quotaMiniCredits = document.getElementById("quotaMiniCredits");
+    const quotaSideboardCard = document.getElementById("quotaSideboardCard");
     const quotaSummary = document.getElementById("quotaSummary");
     const quotaUpdated = document.getElementById("quotaUpdated");
     const quotaTabs = document.getElementById("quotaTabs");
@@ -327,7 +339,6 @@ import {
     const hostAuthPassword = document.getElementById("hostAuthPassword");
     const hostAuthSubmit = document.getElementById("hostAuthSubmit");
     const hostAuthError = document.getElementById("hostAuthError");
-    const responsiveSpaceController = createResponsiveSpaceController();
     const wsBase = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}`;
     let lastUrl = null;
     let inputSocket = null;
@@ -335,6 +346,8 @@ import {
     let streamDebugOverlay = null;
     let streamStats = null;
     let activeMode = "display";
+    let viewerHistoryToken = "";
+    let ignoreNextViewerPopstate = false;
     let dashboardConnectionState = "connecting";
     let sideboardTimer = null;
     let quotaTimer = null;
@@ -351,6 +364,8 @@ import {
     };
     let customCardsController = null;
     let quotaMiniController = null;
+    let quotaSideboardController = null;
+    let quotaRenderDeferred = false;
     let actionToken = "";
     let actionHeaderName = "X-VibeDeck-Action-Token";
     let hostVersionLabel = "";
@@ -415,6 +430,7 @@ import {
     const quotaAccountNavigator = createQuotaAccountNavigator();
     let quotaSwipeStartX = null;
     let installPromptEvent = null;
+    let appInstalledThisSession = false;
     let pendingApprovalTimer = null;
     let connectInfoTimer = null;
     let shouldDefaultToFirstDeviceSetup = false;
@@ -460,6 +476,82 @@ import {
       root.style.setProperty("--safe-area-inset-right", iphone && landscape ? "44px" : "0px");
       root.style.setProperty("--safe-area-inset-bottom", iphone ? (landscape ? "21px" : "34px") : "0px");
       root.style.setProperty("--safe-area-inset-left", iphone && landscape ? "44px" : "0px");
+    }
+
+    function readCustomDeckSafeArea() {
+      const root = document.documentElement;
+      const rootStyle = getComputedStyle(root);
+      const names = ["top", "right", "bottom", "left"];
+      const values = Object.fromEntries(names.map(name => {
+        const value = Number.parseFloat(rootStyle.getPropertyValue(`--safe-area-inset-${name}`));
+        return [name, Number.isFinite(value) ? value : null];
+      }));
+      if (names.every(name => values[name] != null)) return values;
+
+      const probe = document.createElement("div");
+      probe.setAttribute("aria-hidden", "true");
+      probe.style.cssText = [
+        "position:fixed",
+        "visibility:hidden",
+        "pointer-events:none",
+        "inset:0 auto auto 0",
+        "padding-top:env(safe-area-inset-top,0px)",
+        "padding-right:env(safe-area-inset-right,0px)",
+        "padding-bottom:env(safe-area-inset-bottom,0px)",
+        "padding-left:env(safe-area-inset-left,0px)",
+      ].join(";");
+      document.body.appendChild(probe);
+      const style = getComputedStyle(probe);
+      const safeArea = {
+        top: Number.parseFloat(style.paddingTop) || 0,
+        right: Number.parseFloat(style.paddingRight) || 0,
+        bottom: Number.parseFloat(style.paddingBottom) || 0,
+        left: Number.parseFloat(style.paddingLeft) || 0,
+      };
+      probe.remove();
+      return safeArea;
+    }
+
+    function getCustomDeckEnvironment() {
+      const viewport = window.visualViewport;
+      const rootStyle = getComputedStyle(document.documentElement);
+      return {
+        devicePreview: devicePreviewKind || "",
+        viewerActive: isViewerActive(),
+        safeArea: readCustomDeckSafeArea(),
+        viewport: {
+          innerWidth: window.innerWidth,
+          innerHeight: window.innerHeight,
+          visualWidth: viewport?.width || window.innerWidth,
+          visualHeight: viewport?.height || window.innerHeight,
+          viewerWidth: Number.parseFloat(rootStyle.getPropertyValue("--viewer-width")) || window.innerWidth,
+          viewerHeight: Number.parseFloat(rootStyle.getPropertyValue("--viewer-height")) || window.innerHeight,
+        },
+      };
+    }
+
+    function syncSideboardContentSafeArea(width, height) {
+      const root = document.documentElement;
+      root.style.removeProperty("--sideboard-content-inset-left");
+      root.style.removeProperty("--sideboard-content-inset-right");
+      if (!isIphone() || width <= height) return;
+
+      // iPhone's native safe-area rectangle is intentionally conservative in
+      // landscape and may reserve both horizontal sides. Sideboard content can
+      // use the opposite side while still keeping the background under the
+      // physical safe area. Safari's exposed landscape angle is opposite the
+      // physical notch side for this purpose: 90deg => notch on the left,
+      // 270deg => notch on the right. Device Lab draws its notch on the left.
+      let angle = isDevicePreview("iphone-xs") ? 90 : Number(window.screen?.orientation?.angle);
+      if (!Number.isFinite(angle)) angle = Number(window.orientation);
+      angle = ((angle % 360) + 360) % 360;
+      if (angle === 90) {
+        root.style.setProperty("--sideboard-content-inset-left", "var(--safe-area-inset-left, env(safe-area-inset-left, 0px))");
+        root.style.setProperty("--sideboard-content-inset-right", "0px");
+      } else if (angle === 270) {
+        root.style.setProperty("--sideboard-content-inset-left", "0px");
+        root.style.setProperty("--sideboard-content-inset-right", "var(--safe-area-inset-right, env(safe-area-inset-right, 0px))");
+      }
     }
 
     function isMobileClient() {
@@ -560,7 +652,7 @@ import {
       button.setAttribute("aria-pressed", on ? "true" : "false");
       button.textContent = tLegacy(on ? "電子書 ON" : "電子書");
       button.title = tLegacy(on
-        ? "目前是電子紙版面（資訊板優先、高對比）。再按可切回一般手機版。"
+        ? "目前是電子紙版面（資訊板優先、高對比）。再按可切回一般版面。"
         : "切換成電子紙版面（BOOX / 電子書）。也可在網址加 ?eink=1。");
     }
 
@@ -643,7 +735,7 @@ import {
       const preview = isDevicePreview();
       const previewLocal = isDevicePreviewTrust("local");
       const localConsole = Boolean(deviceLocalRequest) && (!preview || previewLocal);
-      const phoneClient = !localConsole && isMobileClient();
+      const mobileClient = !localConsole && isMobileClient();
       const ios = isIos();
       const eink = isEinkClient();
       const trusted = Boolean(deviceTrusted) || isDevicePreviewTrust("paired");
@@ -653,7 +745,7 @@ import {
       document.body.classList.toggle("eink-client", eink);
       const themeColor = document.querySelector('meta[name="theme-color"]');
       if (themeColor) themeColor.setAttribute("content", eink ? "#f2f0e8" : "#111820");
-      document.body.classList.toggle("phone-client", phoneClient);
+      document.body.classList.toggle("mobile-client", mobileClient);
       document.body.classList.toggle("remote-client", !localConsole);
       document.body.classList.toggle("ios-client", ios && !localConsole);
       document.body.classList.toggle("device-trusted", trusted && !localConsole);
@@ -662,12 +754,12 @@ import {
       if (publicEndpointPanel) publicEndpointPanel.hidden = !localConsole;
       if (turnSettingsPanel) turnSettingsPanel.hidden = !localConsole;
       const pairingRescue = document.getElementById("phonePairRescue");
-      if (pairingRescue) pairingRescue.hidden = !phoneClient || trusted;
+      if (pairingRescue) pairingRescue.hidden = !mobileClient || trusted;
       customCardsController?.syncAccess?.();
       applyForcedLandscape();
       updateIosHomeTip();
       updateEinkToggle();
-      // Phone/PC empty-state CTAs depend on client chrome classes.
+      // Remote-mobile / PC empty-state CTAs depend on client chrome classes.
       displaySources.syncEmptyActions();
     }
 
@@ -688,9 +780,9 @@ import {
       if (!trusted) {
         tip.innerHTML = tLegacy("HTTPS 就緒。回 PC 配對並掃 QR，成功後同一頁加入主畫面。");
       } else if (!isStandaloneApp()) {
-        tip.innerHTML = tLegacy("已配對。分享 → <strong>加入主畫面</strong>，打開後點 <strong>長亮 ON</strong>。");
+        tip.innerHTML = tLegacy("已配對。分享 → <strong>加入主畫面</strong>；開啟 VibeDeck 後會自動保持螢幕常亮。");
       } else {
-        tip.innerHTML = tLegacy("主畫面模式。用副螢幕時點 <strong>長亮 ON</strong>。");
+        tip.innerHTML = tLegacy("主畫面模式。開啟 VibeDeck 後會自動保持螢幕常亮。");
       }
     }
 
@@ -699,12 +791,12 @@ import {
       return orientation?.value === "landscape" &&
         !isDeckWindow() &&
         !deviceLocalRequest &&
-        (isMobileClient() || document.body.classList.contains("phone-client"));
+        isMobileClient();
     }
 
     function applyForcedLandscape() {
       if (!shouldForceLandscape()) {
-        document.documentElement.classList.remove("phone-force-landscape");
+        document.documentElement.classList.remove("mobile-force-landscape");
         document.body.classList.remove("force-landscape");
         return;
       }
@@ -713,7 +805,7 @@ import {
       const physicalHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
       const physicalPortrait = physicalHeight >= physicalWidth;
 
-      document.documentElement.classList.toggle("phone-force-landscape", physicalPortrait);
+      document.documentElement.classList.toggle("mobile-force-landscape", physicalPortrait);
       document.body.classList.toggle("force-landscape", physicalPortrait);
 
       // Browser may allow lock only after user gesture / fullscreen; best-effort.
@@ -799,8 +891,15 @@ import {
 
     function isStandaloneApp() {
       if (isDevicePreview()) return true;
-      return window.matchMedia("(display-mode: standalone)").matches ||
+      return window.matchMedia("(display-mode: fullscreen)").matches ||
+        window.matchMedia("(display-mode: standalone)").matches ||
         window.navigator.standalone === true;
+    }
+
+    function shouldAutoEnterInstalledViewer() {
+      if (isDevicePreview() || !deviceTrusted || !isStandaloneApp()) return false;
+      const initialMode = getInitialMode();
+      return initialMode !== "setup" && initialMode !== "deck" && !initialMode.startsWith("deck:");
     }
 
     function isDeckWindow() {
@@ -832,12 +931,12 @@ import {
         height = swapped;
       }
 
+      syncSideboardContentSafeArea(width, height);
+
       document.documentElement.style.setProperty("--viewer-width", `${width}px`);
       document.documentElement.style.setProperty("--viewer-height", `${height}px`);
-      document.body.classList.toggle("viewport-portrait", !forceLandscape && height >= width);
-      document.body.classList.toggle("viewport-landscape", forceLandscape || width > height);
       applyForcedLandscape();
-      responsiveSpaceController.refresh();
+      customDeckController?.syncEnvironment?.();
     }
 
     function describeClient() {
@@ -849,7 +948,7 @@ import {
         return;
       }
 
-      deviceState.textContent = "手機模式。";
+      deviceState.textContent = "行動裝置模式。";
     }
 
     function buildHttpsUrlFromCurrent() {
@@ -863,7 +962,7 @@ import {
       return `https://${host}:5443${path}${search}${hash}`;
     }
 
-    /** iPhone single path: never use HTTP for the app UI. */
+    /** Remote mobile clients use HTTPS for the app UI. */
     function enforceMobileHttpsPath() {
       if (!isMobileClient() || isLoopbackHost()) {
         document.body.classList.remove("mobile-http-blocked");
@@ -875,7 +974,7 @@ import {
         return false;
       }
 
-      // Every phone platform uses one origin and one onboarding path.
+      // Every mobile platform uses one origin and one onboarding path.
       document.body.classList.add("mobile-http-blocked");
       const httpsUrl = buildHttpsUrlFromCurrent();
       const openBtn = document.getElementById("mobileGateOpenHttps");
@@ -917,7 +1016,6 @@ import {
       sideboardView.classList.toggle("active", isSideboard);
       quotaView.classList.toggle("active", isQuota);
       customDeckView.classList.toggle("active", isDeck);
-      requestAnimationFrame(() => responsiveSpaceController.refresh());
       displayMode.classList.toggle("active", isDisplay);
       setupMode?.classList.toggle("active", isSetup);
       sideboardMode.classList.toggle("active", isSideboard);
@@ -978,16 +1076,6 @@ import {
     function shouldStartInViewer() {
       const value = new URLSearchParams(location.search).get("viewer");
       return value === "1" || value === "true";
-    }
-
-    function setSideSkin(skin) {
-      const nextSkin = ["command", "dial", "focus"].includes(skin) ? skin : "command";
-      sideboardShell.classList.remove("skin-command", "skin-dial", "skin-focus");
-      sideboardShell.classList.add(`skin-${nextSkin}`);
-      for (const button of document.querySelectorAll("[data-side-skin]")) {
-        button.classList.toggle("active", button.dataset.sideSkin === nextSkin);
-      }
-      localStorage.setItem("vibeDeckSideSkin", nextSkin);
     }
 
     function setBar(element, value) {
@@ -1464,7 +1552,11 @@ import {
         }
 
         applyClientChrome();
+        updateInstallState();
         syncDeviceStatusPolling();
+        if (deviceLocalRequest || deviceTrusted || hostAuthController.isAuthenticated()) {
+          await dashboardLayoutController?.loadIfNeeded?.();
+        }
         return result;
       } catch (error) {
         // A transient /api/devices/status failure must not drop a phone that is
@@ -1477,6 +1569,7 @@ import {
         setTrustState(error.message || t("pairingUx.trustStatusUnavailable"), deviceTrusted);
         if (!deviceTrusted) setPairingProgress(null, t("pairingUx.reconnecting"));
         applyClientChrome();
+        updateInstallState();
         syncDeviceStatusPolling();
         return null;
       }
@@ -1657,6 +1750,13 @@ import {
       navigate: setMode,
       getActiveMode: () => activeMode,
       isLocalRequest: () => deviceLocalRequest,
+      exitViewer: () => exitLandscapeViewer(),
+      toggleViewer: () => {
+        if (!isIos() && !isMobileClient()) return;
+        if (isViewerActive()) return exitLandscapeViewer();
+        return enterLandscapeViewer({ skipFullscreenApi: true });
+      },
+      getEnvironment: getCustomDeckEnvironment,
       shouldPoll: () => !isFullscreenDisplayStreaming(),
     });
 
@@ -1691,6 +1791,10 @@ import {
         credits: quotaMiniCredits,
       },
       fetchJsonOrThrow,
+      onSnapshot: snapshot => {
+        quotaSnapshotData = snapshot || {};
+        quotaSideboardController?.renderSnapshot(snapshot);
+      },
     });
 
     const sideboardController = createSideboardController({
@@ -1898,6 +2002,20 @@ import {
       codexAccountManager,
       changeAccount: changeQuotaAccount,
     });
+    quotaSideboardController = createQuotaSideboardCardController({
+      document,
+      host: quotaSideboardCard,
+      tLegacy,
+      buildViewState: buildQuotaViewState,
+      cards: quotaCards,
+      getActiveTab: () => quotaActiveTab,
+      setActiveTab: tabId => {
+        quotaActiveTab = tabId;
+        localStorage.setItem(QUOTA_TAB_STORAGE_KEY, quotaActiveTab);
+        if (activeMode === "quota") renderQuotaContent();
+      },
+      getAccountIndex: getQuotaAccountIndex,
+    });
     const diagnosticsController = createDiagnosticsController({
       document,
       navigator,
@@ -2022,10 +2140,10 @@ import {
       applyFeedbackState,
       fetchJsonOrThrow,
       isLocalRequest: () => deviceLocalRequest,
-      isPhoneClient: displaySources.isPhoneClient,
+      isRemoteMobileClient: displaySources.isRemoteMobileClient,
       syncEmptyActions: displaySources.syncEmptyActions,
       setAvailability: displaySources.setAvailability,
-      reloadDisplays: loadPhoneDisplay,
+      reloadDisplays: loadDisplays,
       hasVibeDeckDisplay: displaySources.hasVibeDeckDisplay,
       connectVideo,
     });
@@ -2045,13 +2163,15 @@ import {
       confirmAction,
       isLocalRequest: () => deviceLocalRequest,
     });
+    const keepAwakeVideo = document.getElementById("keepAwakeVideo");
+    if (keepAwakeVideo && keepAwakeVideo.parentElement !== document.body) {
+      document.body.appendChild(keepAwakeVideo);
+    }
     const keepAwakeController = createKeepAwakeController({
       document,
       window,
       navigator,
-      localStorage,
-      button: document.getElementById("keepAwake"),
-      video: document.getElementById("keepAwakeVideo"),
+      video: keepAwakeVideo,
       isIos,
       isMobileClient,
       setWakeState,
@@ -2082,6 +2202,15 @@ import {
     function renderQuotas(snapshot) {
       quotaSnapshotData = snapshot || {};
       quotaMiniController?.renderSnapshot(snapshot);
+      if (hasActiveSecondaryCardInteraction(quotaGrid, document)) {
+        if (!quotaRenderDeferred) {
+          quotaRenderDeferred = onSecondaryCardInteractionEnd(quotaGrid, () => {
+            quotaRenderDeferred = false;
+            renderQuotaContent();
+          });
+        }
+        return;
+      }
       renderQuotaContent();
     }
 
@@ -2127,7 +2256,6 @@ import {
         if (quotaActiveTab === "codex" && isEinkQuotaClient()) {
           quotaGrid.append(quotaCards.renderEinkCodexOverview(provider, snapshot, pageInfo));
         } else {
-          if (quotaActiveTab === "codex") quotaGrid.append(codexAccountManager.render());
           quotaGrid.append(quotaCards.renderSingleQuotaPage(provider, snapshot, pageInfo));
         }
       } else if (quotaActiveTab === "codex") {
@@ -2211,6 +2339,7 @@ import {
       if (total < 2) return;
       quotaAccountNavigator.move(tabId, accounts, delta);
       renderQuotaContent();
+      quotaSideboardController?.render();
     }
 
     function setStatus(text, online, detail = "") {
@@ -2222,13 +2351,18 @@ import {
     }
 
     function setDashboardConnectionState(state) {
-      dashboardConnectionState = state === "online" ? "online" : "connecting";
+      dashboardConnectionState = state === "online"
+        ? "online"
+        : state === "offline" || state === "disconnected"
+          ? "offline"
+          : "connecting";
       document.querySelectorAll("[data-eink-connection-state]").forEach(element => {
         const online = dashboardConnectionState === "online";
-        element.textContent = online ? "連線中" : "正在連線";
+        const offline = dashboardConnectionState === "offline";
+        element.textContent = online ? "CONNECTED" : offline ? "DISCONNECTED" : "CONNECTING";
         element.classList.toggle("online", online);
-        element.classList.toggle("connecting", !online);
-        element.classList.toggle("offline", !online);
+        element.classList.toggle("connecting", !online && !offline);
+        element.classList.toggle("offline", offline);
       });
     }
 
@@ -2276,34 +2410,67 @@ import {
     }
 
     function updateInstallState() {
-      // No fake install button: iOS must use Safari Share → Add to Home Screen.
-      // Android Chrome may still fire beforeinstallprompt; we only surface status text.
-      if (isStandaloneApp()) {
-        setAppState("App：已在主畫面。", true);
+      const canPromptInstall = Boolean(
+        installPromptEvent &&
+        deviceTrusted &&
+        !deviceLocalRequest &&
+        !isStandaloneApp() &&
+        !isIos()
+      );
+      if (installVibeDeck) installVibeDeck.hidden = !canPromptInstall;
+
+      if (isStandaloneApp() || appInstalledThisSession) {
+        setAppState(t("secureEndpoint.installInstalled"), true);
         return;
       }
 
       if (isIos()) {
         setAppState(
           location.protocol === "https:"
-            ? "App：Safari 分享 → 加入主畫面（不要用網頁假按鈕）。"
-            : "App：先改 HTTPS，再分享 → 加入主畫面。",
+            ? t("secureEndpoint.installIosHint")
+            : t("secureEndpoint.installHttpsRequired"),
           location.protocol === "https:"
         );
         return;
       }
 
-      if (installPromptEvent) {
-        setAppState("App：瀏覽器可安裝（用瀏覽器選單）。", true);
+      if (canPromptInstall) {
+        setAppState(t("secureEndpoint.installReady"), true);
         return;
       }
 
       if (!window.isSecureContext && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
-        setAppState("App：安裝提示需要 HTTPS。", false);
+        setAppState(t("secureEndpoint.installHttpsRequired"), false);
         return;
       }
 
-      setAppState("App：可用瀏覽器選單加入主畫面。", false);
+      setAppState(t("secureEndpoint.installMenuHint"), false);
+    }
+
+    async function requestVibeDeckInstall() {
+      const promptEvent = installPromptEvent;
+      if (!promptEvent || !installVibeDeck) {
+        updateInstallState();
+        return;
+      }
+
+      installPromptEvent = null;
+      installVibeDeck.disabled = true;
+      installVibeDeck.hidden = true;
+      try {
+        await promptEvent.prompt();
+        const choice = await promptEvent.userChoice;
+        setAppState(
+          choice?.outcome === "accepted"
+            ? t("secureEndpoint.installAccepted")
+            : t("secureEndpoint.installDismissed"),
+          choice?.outcome === "accepted"
+        );
+      } catch {
+        setAppState(t("secureEndpoint.installMenuHint"), false);
+      } finally {
+        installVibeDeck.disabled = false;
+      }
     }
 
     function resetStreamStats() {
@@ -2398,11 +2565,42 @@ import {
       return viewportPortrait !== streamPortrait ? "90" : "0";
     }
 
-    async function enterLandscapeViewer() {
+    function isViewerActive() {
+      return document.body.classList.contains("viewer-fullscreen") ||
+        document.body.classList.contains("dashboard-viewer") ||
+        document.body.classList.contains("deck-viewer") ||
+        document.body.classList.contains("viewer-immersive");
+    }
+
+    function armViewerHistory() {
+      if (viewerHistoryToken) return;
+      const token = `viewer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      try {
+        const previousState = history.state && typeof history.state === "object" ? history.state : {};
+        history.pushState({ ...previousState, __vibeDeckViewer: token }, "", location.href);
+        viewerHistoryToken = token;
+      } catch {
+        viewerHistoryToken = "";
+      }
+    }
+
+    function clearViewerHistory() {
+      if (!viewerHistoryToken) return;
+      const token = viewerHistoryToken;
+      viewerHistoryToken = "";
+      if (history.state?.__vibeDeckViewer !== token) return;
+      ignoreNextViewerPopstate = true;
+      history.back();
+    }
+
+    async function enterLandscapeViewer({ skipFullscreenApi = false } = {}) {
       updateViewportSize();
       const isDisplayMode = activeMode === "display";
+      const isDeckMode = activeMode === "deck" || activeMode.startsWith("deck:");
       document.body.classList.toggle("viewer-fullscreen", isDisplayMode);
-      document.body.classList.toggle("dashboard-viewer", !isDisplayMode);
+      document.body.classList.toggle("dashboard-viewer", !isDisplayMode && !isDeckMode);
+      document.body.classList.toggle("deck-viewer", isDeckMode);
+      if (!isDisplayMode && mobileFullscreen) mobileFullscreen.textContent = "EXIT";
       // E-ink / sideboard also need the immersive body class for 100dvh layout.
       if (!isDisplayMode) {
         document.body.classList.add("viewer-immersive");
@@ -2410,6 +2608,8 @@ import {
         document.body.classList.remove("viewer-immersive");
         suspendDashboardBackgroundWork();
       }
+      armViewerHistory();
+      customDeckController?.syncEnvironment?.();
       const mainContent = document.querySelector("main");
       mainContent?.scrollTo({ top: 0, left: 0 });
       window.scrollTo(0, 1);
@@ -2420,10 +2620,15 @@ import {
       }, 250);
 
       // iOS: no Fullscreen API — CSS viewer-fullscreen is the whole path.
-      // Android phone display: same CSS path. Real Fullscreen API + CSS
-      // force-landscape (rotate 90°) fight each other and break landscape layout.
-      // Keep the real Fullscreen API only for non-phone / non-display panels (e.g. BOOX sideboard).
-      const useBrowserFullscreen = !isIos() && !(isDisplayMode && isMobileClient());
+      // Android portrait display can use a CSS 90° rotation. In that one case
+      // the Fullscreen API and the transform fight over the viewport geometry.
+      // A tablet already held landscape does not need the transform, so allow
+      // real browser fullscreen there instead of leaving Chrome chrome visible.
+      const displayUsesCssRotation = isDisplayMode && document.body.classList.contains("force-landscape");
+      // Device Lab compares layout inside a fixed simulated viewport. Native
+      // fullscreen would let Android previews escape the iframe while iOS
+      // stays on the CSS path, making the two device previews incomparable.
+      const useBrowserFullscreen = !skipFullscreenApi && !isDevicePreview() && !isIos() && !displayUsesCssRotation;
       if (useBrowserFullscreen) {
         const root = document.documentElement;
         const candidates = [
@@ -2473,15 +2678,20 @@ import {
       }
     }
 
-    async function exitLandscapeViewer() {
+    async function exitLandscapeViewer({ fromHistory = false, skipFullscreenApi = false } = {}) {
       document.body.classList.remove("viewer-fullscreen");
       document.body.classList.remove("dashboard-viewer");
+      document.body.classList.remove("deck-viewer");
       document.body.classList.remove("viewer-immersive");
+      if (mobileFullscreen) mobileFullscreen.textContent = tLegacy("全螢幕");
       resumeDashboardBackgroundWork();
+      if (!fromHistory) clearViewerHistory();
+      else viewerHistoryToken = "";
+      customDeckController?.syncEnvironment?.();
       try {
-        if (document.exitFullscreen && (document.fullscreenElement || document.webkitFullscreenElement)) {
+        if (!skipFullscreenApi && document.exitFullscreen && (document.fullscreenElement || document.webkitFullscreenElement)) {
           await document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
+        } else if (!skipFullscreenApi && document.webkitExitFullscreen) {
           document.webkitExitFullscreen();
         }
       } catch {
@@ -2489,7 +2699,7 @@ import {
       applyRotation();
     }
 
-    async function loadPhoneDisplay() {
+    async function loadDisplays() {
       let displays;
       try {
         displays = await fetchJsonOrThrow("/api/displays");
@@ -2548,6 +2758,7 @@ import {
       localStorage.setItem("vibeDeckStreamFps", streamFps.value);
       localStorage.setItem("vibeDeckStreamQuality", streamQuality.value);
       localStorage.setItem("vibeDeckStreamTransport", streamTransport?.value || "auto");
+      localStorage.setItem("vibeDeckStreamLatency", streamLatency?.value || "40");
       connectVideo();
     }
 
@@ -2733,7 +2944,7 @@ import {
       driverState.textContent = result.Message;
       displaySources.resetSelectionName();
       setTimeout(async () => {
-        await loadPhoneDisplay();
+        await loadDisplays();
         connectVideo();
       }, 1200);
     }
@@ -2788,10 +2999,11 @@ import {
           fps: Number(streamFps.value),
           quality: Number(streamQuality.value),
           transportMode: streamTransport?.value || "auto",
+          playoutDelayMs: Number(streamLatency?.value) || 40,
           rotationIsAuto: rotation.value === "auto",
         }),
         canUseProtectedConnection,
-        loadPhoneDisplay,
+        loadDisplays,
         prefersWebRtcDisplay,
         isLoopbackHost,
         setStatus,
@@ -2858,6 +3070,7 @@ import {
     });
     applyStream.addEventListener("click", applyStreamSettings);
     streamTransport?.addEventListener("change", applyStreamSettings);
+    streamLatency?.addEventListener("change", applyStreamSettings);
     saveTurnSettings?.addEventListener("click", turnSettingsController.save);
     testTurnSettings?.addEventListener("click", turnSettingsController.test);
     clearTurnSettings?.addEventListener("click", turnSettingsController.clear);
@@ -2940,7 +3153,7 @@ import {
     });
     installVirtualDisplay?.addEventListener("click", () => {
       // Device setup / driver install is a local PC console task only.
-      if (!deviceLocalRequest || displaySources.isPhoneClient()) return;
+      if (!deviceLocalRequest || displaySources.isRemoteMobileClient()) return;
       setMode("setup");
     });
     setupInstallVirtualDisplay?.addEventListener("click", displayInstall.install);
@@ -3002,7 +3215,7 @@ import {
           await loadStreamCapabilities();
           await loadDeviceTrustStatus();
           await customDeckController?.refresh({ silent: true });
-          await loadPhoneDisplay();
+          await loadDisplays();
           connectVideo();
         })();
         await Promise.allSettled([
@@ -3031,26 +3244,16 @@ import {
     document.querySelectorAll("[data-dashboard-mode]").forEach(button => {
       button.addEventListener("click", () => setMode(button.dataset.dashboardMode));
     });
-    for (const button of document.querySelectorAll("[data-side-skin]")) {
-      button.addEventListener("click", () => setSideSkin(button.dataset.sideSkin));
-    }
-    const keepAwakeButton = document.getElementById("keepAwake");
-    if (keepAwakeButton) {
-      keepAwakeButton.addEventListener("click", keepAwakeController.toggle);
-    }
     fullscreen.addEventListener("click", enterLandscapeViewer);
     exitViewer.addEventListener("click", exitLandscapeViewer);
-    window.VibeDeckExitViewer = exitLandscapeViewer;
-    // Legacy alias for any old injected callers.
-    window.VibeDeckExitViewer = exitLandscapeViewer;
+    dashboardExitViewer?.addEventListener("click", exitLandscapeViewer);
     function onFullscreenChromeChange() {
       const inFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
       if (!inFs && !isIos()) {
-        // Keep CSS immersive for e-ink panel until user taps exit; only drop display
-        // stream chrome when the system fullscreen shell closes.
-        if (activeMode === "display") {
-          document.body.classList.remove("viewer-fullscreen");
-          resumeDashboardBackgroundWork();
+        // Native browser Escape / Back may close the fullscreen shell before our
+        // own history sentinel is popped. Finish the same viewer-exit contract.
+        if (activeMode === "display" && document.body.classList.contains("viewer-fullscreen")) {
+          exitLandscapeViewer({ skipFullscreenApi: true });
         }
       }
       updateViewportSize();
@@ -3058,6 +3261,16 @@ import {
     }
     document.addEventListener("fullscreenchange", onFullscreenChromeChange);
     document.addEventListener("webkitfullscreenchange", onFullscreenChromeChange);
+    window.addEventListener("popstate", () => {
+      if (ignoreNextViewerPopstate) {
+        ignoreNextViewerPopstate = false;
+        return;
+      }
+      if (!isViewerActive() || !viewerHistoryToken) return;
+      viewerHistoryToken = "";
+      exitLandscapeViewer({ fromHistory: true });
+    });
+
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible") {
         scheduleDashboardRefresh("sideboard", true);
@@ -3083,29 +3296,38 @@ import {
       keepAwakeController.handlePointerDown();
     }, { passive: true });
 
-    // Single taps drive PC mouse; double-tap toggles iPhone fullscreen viewer.
-    screen.addEventListener("dblclick", event => {
+    // Mobile viewer contract: double-tap content to enter or leave the viewer.
+    // Native Back/history remains available too (including iOS edge-swipe Back).
+    document.querySelector("main")?.addEventListener("dblclick", event => {
       if (!isIos() && !isMobileClient()) return;
+      // Display is an input surface: preserve native Windows double-click semantics.
+      // Its viewer has the one explicit top-right exit X instead.
+      if (activeMode === "display") return;
+      if (document.body.classList.contains("dashboard-edit-mode")) return;
+      if (event.target instanceof Element && event.target.closest("button, a, input, select, textarea, [contenteditable='true'], [role='button']")) return;
       event.preventDefault();
-      if (displayInputController?.isTouchGestureActive?.()) return;
-      toggleDisplayViewerFromScreen();
-    });
-    rtcScreen.addEventListener("dblclick", event => {
-      if (!isIos() && !isMobileClient()) return;
-      event.preventDefault();
-      if (displayInputController?.isTouchGestureActive?.()) return;
-      toggleDisplayViewerFromScreen();
+      if (isViewerActive()) exitLandscapeViewer();
+      else enterLandscapeViewer();
     });
     window.addEventListener("beforeinstallprompt", event => {
       event.preventDefault();
       installPromptEvent = event;
       updateInstallState();
     });
+    installVibeDeck?.addEventListener("click", () => {
+      requestVibeDeckInstall();
+    });
     window.addEventListener("appinstalled", () => {
       installPromptEvent = null;
+      appInstalledThisSession = true;
       updateInstallState();
     });
     document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && isViewerActive()) {
+        event.preventDefault();
+        exitLandscapeViewer();
+        return;
+      }
       if (activeMode !== "quota") return;
       if (event.key === "ArrowLeft") {
         changeQuotaAccount(quotaActiveTab, -1);
@@ -3129,7 +3351,7 @@ import {
         scheduleAutoDisplayMode(120);
       }, 120);
     });
-    window.addEventListener("offline", () => setDashboardConnectionState("connecting"));
+    window.addEventListener("offline", () => setDashboardConnectionState("offline"));
     window.addEventListener("online", () => {
       setDashboardConnectionState("connecting");
       scheduleDashboardRefresh(activeMode === "quota" ? "quota" : "sideboard", true);
@@ -3213,11 +3435,14 @@ import {
       streamFps.value = localStorage.getItem("vibeDeckStreamFps") || streamFps.value;
       streamQuality.value = localStorage.getItem("vibeDeckStreamQuality") || streamQuality.value;
       if (streamTransport) streamTransport.value = localStorage.getItem("vibeDeckStreamTransport") || "auto";
+      if (streamLatency) streamLatency.value = localStorage.getItem("vibeDeckStreamLatency") || "40";
       updateViewportSize();
       applyRotation();
       applyOrientation();
-      setSideSkin(localStorage.getItem("vibeDeckSideSkin") || "command");
       if (deckWindow) {
+        await dashboardLayoutController?.loadIfNeeded?.();
+        await appThemeController.loadFromHost().catch(() => {});
+        appThemeController.startPolling();
         document.title = "VibeDeck Deck";
         setMode(getInitialMode() === "quota" ? "quota" : "sideboard");
         connectDashboardEvents();
@@ -3239,12 +3464,16 @@ import {
       ensureActionToken().catch(() => {});
       await loadDeviceTrustStatus();
       applyClientChrome();
+      if (!isEinkClient() && (deviceLocalRequest || deviceTrusted)) {
+        await appThemeController.loadFromHost().catch(() => {});
+        appThemeController.startPolling();
+      }
       if (deviceLocalRequest || deviceTrusted) {
         await customDeckController?.refresh({ silent: true }).catch(() => {});
       }
       setMode(getInitialMode());
       customDeckController?.startPolling();
-      if (shouldStartInViewer() || (isIos() && deviceTrusted && getInitialMode() === "display" && isStandaloneApp())) {
+      if (shouldStartInViewer() || shouldAutoEnterInstalledViewer()) {
         setTimeout(() => enterLandscapeViewer(), 350);
       }
       connectDashboardEvents();
@@ -3279,7 +3508,7 @@ import {
       }
       if (!isEinkClient()) {
         loadStreamCapabilities();
-        loadPhoneDisplay().then(async () => {
+        loadDisplays().then(async () => {
           await applyAutoDisplayMode();
           await loadDisplayStatus();
         }).finally(() => {

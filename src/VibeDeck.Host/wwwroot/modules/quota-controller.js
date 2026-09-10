@@ -70,7 +70,7 @@ export function createQuotaController({
       onConnectionChange?.("online");
       return snapshot;
     } catch (error) {
-      onConnectionChange?.("connecting");
+      onConnectionChange?.("offline");
       const requiresTrust = isTrustRequiredError(error);
       if (quotaVisible) {
         elements.quotaSummary.textContent = requiresTrust

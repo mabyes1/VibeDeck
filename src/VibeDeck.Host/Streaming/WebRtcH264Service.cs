@@ -42,7 +42,8 @@ namespace VibeDeck.Host.Streaming
             int quality,
             CancellationToken cancellationToken = default,
             string trustedDeviceId = null,
-            int receiverMaxBitrateKbps = 0)
+            int receiverMaxBitrateKbps = 0,
+            int playoutDelayMs = H264PlayoutDelayExtension.DefaultMaximumDelayMs)
         {
             if (string.IsNullOrWhiteSpace(offerSdp))
             {
@@ -101,7 +102,8 @@ namespace VibeDeck.Host.Streaming
                 quality,
                 iceConfiguration.TurnAvailable ? "turn-ready" : "direct-stun",
                 trustedDeviceId,
-                receiverMaxBitrateKbps);
+                receiverMaxBitrateKbps,
+                playoutDelayMs);
             peer.onconnectionstatechange += state => OnConnectionStateChanged(session, state);
             peer.oniceconnectionstatechange += state =>
             {
@@ -126,6 +128,16 @@ namespace VibeDeck.Host.Streaming
                 throw new InvalidOperationException($"WebRTC offer rejected: {result}.");
             }
 
+            var playoutDelayExtensionId = 0;
+            if (H264PlayoutDelayExtension.TryGetOfferedId(offerSdp, out playoutDelayExtensionId))
+            {
+                // SIPSorcery 10.0.9 ignores Chrome's playout-delay extmap while
+                // parsing the offer. Register it on the sending track ourselves;
+                // AddToAnswer below completes the negotiation in the SDP answer.
+                track.HeaderExtensions[playoutDelayExtensionId] =
+                    new H264PlayoutDelayExtension(playoutDelayExtensionId, session.PlayoutDelayMs);
+            }
+
             RegisterReplacingDeviceSessions(session);
             try
             {
@@ -141,6 +153,13 @@ namespace VibeDeck.Host.Streaming
                 var answerSdp = peer.localDescription != null
                     ? peer.localDescription.sdp.ToString()
                     : answer.sdp;
+
+                if (playoutDelayExtensionId > 0)
+                {
+                    answerSdp = H264PlayoutDelayExtension.AddToAnswer(
+                        answerSdp,
+                        playoutDelayExtensionId);
+                }
 
                 return new WebRtcOfferAnswer
                 {
@@ -236,6 +255,7 @@ namespace VibeDeck.Host.Streaming
                     IceState = session.LastIceState,
                     TransportPlan = session.TransportPlan,
                     ReceiverMaxBitrateKbps = session.ReceiverMaxBitrateKbps,
+                    PlayoutDelayMs = session.PlayoutDelayMs,
                     Transport = session.Transport.GetSnapshot()
                 })
                 .ToArray();
@@ -265,6 +285,29 @@ namespace VibeDeck.Host.Streaming
             catch (Exception error)
             {
                 Console.Error.WriteLine($"[WebRTC] {session.Id} stream error: {error}");
+                var root = error;
+                while (root.InnerException != null)
+                {
+                    root = root.InnerException;
+                }
+                audit.RecordException(
+                    "stream",
+                    "h264-session",
+                    error,
+                    subject: session.DeviceName,
+                    details: new Dictionary<string, string>
+                    {
+                        ["stage"] = "stream-to-webrtc",
+                        ["session"] = session.Id.ToString("N"),
+                        ["encoder"] = h264.EncoderDescription,
+                        ["connection"] = session.LastConnectionState ?? "",
+                        ["ice"] = session.LastIceState ?? "",
+                        ["fps"] = session.Fps.ToString(),
+                        ["quality"] = session.Quality.ToString(),
+                        ["rootErrorType"] = root.GetType().Name,
+                        ["rootErrorMessage"] = root.Message,
+                        ["exception"] = error.ToString()
+                    });
                 CloseSession(session, "H.264 stream failed");
             }
         }
@@ -430,6 +473,7 @@ namespace VibeDeck.Host.Streaming
             public int Fps { get; }
             public int Quality { get; }
             public int ReceiverMaxBitrateKbps { get; }
+            public int PlayoutDelayMs { get; }
             public string TransportPlan { get; }
             public H264WebRtcTransport Transport { get; }
             public DateTimeOffset CreatedAt { get; } = DateTimeOffset.UtcNow;
@@ -448,7 +492,8 @@ namespace VibeDeck.Host.Streaming
                 int quality,
                 string transportPlan,
                 string trustedDeviceId = null,
-                int receiverMaxBitrateKbps = 0)
+                int receiverMaxBitrateKbps = 0,
+                int playoutDelayMs = H264PlayoutDelayExtension.DefaultMaximumDelayMs)
             {
                 Id = id;
                 Peer = peer;
@@ -458,6 +503,7 @@ namespace VibeDeck.Host.Streaming
                 ReceiverMaxBitrateKbps = receiverMaxBitrateKbps <= 0
                     ? 0
                     : Math.Max(500, Math.Min(10000, receiverMaxBitrateKbps));
+                PlayoutDelayMs = H264PlayoutDelayExtension.NormalizeMaximumDelayMs(playoutDelayMs);
                 TransportPlan = transportPlan ?? "direct-stun";
                 TrustedDeviceId = trustedDeviceId;
                 Transport = new H264WebRtcTransport(peer);
@@ -486,6 +532,7 @@ namespace VibeDeck.Host.Streaming
         public string IceState { get; set; }
         public string TransportPlan { get; set; }
         public int ReceiverMaxBitrateKbps { get; set; }
+        public int PlayoutDelayMs { get; set; }
         public H264TransportSnapshot Transport { get; set; }
     }
 }

@@ -58,7 +58,7 @@ namespace VibeDeck.Host.Display
 
         public ApplyDisplayModeResult Apply(int width, int height, int refreshRate)
         {
-            var display = FindPhoneDisplay();
+            var display = FindVibeDeckDisplay();
             if (display == null)
             {
                 return ApplyDisplayModeResult.Failed("VibeDeck virtual display was not found.");
@@ -90,7 +90,7 @@ namespace VibeDeck.Host.Display
             };
         }
 
-        private DisplayInfo FindPhoneDisplay()
+        private DisplayInfo FindVibeDeckDisplay()
         {
             foreach (var display in displays.GetDisplays())
             {

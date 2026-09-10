@@ -81,8 +81,8 @@ namespace VibeDeck.Host.Windows
 
         public DeckLaunchResult ReturnToPrimary()
         {
-            var phoneDisplay = displays.GetDisplays().FirstOrDefault(item => item.IsVibeDeckDisplay);
-            var handle = FindDeckWindowHandle(phoneDisplay);
+            var vibeDeckDisplay = displays.GetDisplays().FirstOrDefault(item => item.IsVibeDeckDisplay);
+            var handle = FindDeckWindowHandle(vibeDeckDisplay);
             if (handle == IntPtr.Zero)
             {
                 return DeckLaunchResult.Fail("找不到需要召回的 Deck 視窗。");

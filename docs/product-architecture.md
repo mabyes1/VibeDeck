@@ -58,7 +58,7 @@ The current phone app layer has two tracks:
 Host static web app
         |
         v
-manifest.json + service-worker.js
+manifest.json (online-only PWA; retired service worker only cleans up legacy installs)
         |
         v
 Phone home-screen app entry

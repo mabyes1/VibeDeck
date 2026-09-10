@@ -1,45 +1,34 @@
-export function buildKeepAwakeView({ desired, hasWakeLock, videoPlaying, ios, protocol }) {
-  if (!desired) {
-    return { text: "長亮：關", good: false, buttonText: "長亮 OFF", active: false };
-  }
+export function buildKeepAwakeView({ hasWakeLock, videoPlaying, ios, protocol }) {
   if (hasWakeLock || videoPlaying) {
-    return { text: "長亮：開", good: true, buttonText: "長亮 ON", active: true };
+    return { text: "長亮：開", good: true };
   }
   if (ios && protocol !== "https:") {
-    return { text: "長亮：需 HTTPS", good: false, buttonText: "長亮 ON", active: false };
+    return { text: "長亮：需 HTTPS", good: false };
   }
-  return { text: "長亮：點按鈕開啟", good: false, buttonText: "長亮 ON", active: false };
+  return { text: "長亮：等待互動", good: false };
 }
 
 export function createKeepAwakeController({
   document,
   window,
   navigator,
-  localStorage,
-  button,
   video,
   isIos,
   isMobileClient,
   setWakeState,
 }) {
   let wakeLock = null;
-  let desired = localStorage.getItem("vibeDeckKeepAwake") !== "0";
   let videoPlaying = false;
   let watchTimer = null;
 
   function updateCapability() {
     const view = buildKeepAwakeView({
-      desired,
       hasWakeLock: Boolean(wakeLock),
       videoPlaying,
       ios: isIos(),
       protocol: window.location.protocol,
     });
     setWakeState(view.text, view.good);
-    if (button) {
-      button.textContent = view.buttonText;
-      button.classList.toggle("active", view.active);
-    }
   }
 
   async function startVideo() {
@@ -70,7 +59,7 @@ export function createKeepAwakeController({
   }
 
   async function ensure() {
-    if (!desired || document.visibilityState === "hidden") {
+    if (document.visibilityState === "hidden") {
       updateCapability();
       return false;
     }
@@ -82,7 +71,7 @@ export function createKeepAwakeController({
           wakeLock = await navigator.wakeLock.request("screen");
           wakeLock.addEventListener("release", () => {
             wakeLock = null;
-            if (desired && document.visibilityState === "visible") {
+            if (document.visibilityState === "visible") {
               startVideo().finally(updateCapability);
             } else {
               updateCapability();
@@ -111,24 +100,14 @@ export function createKeepAwakeController({
     updateCapability();
   }
 
-  async function setDesired(enabled) {
-    desired = Boolean(enabled);
-    localStorage.setItem("vibeDeckKeepAwake", desired ? "1" : "0");
-    if (!desired) {
-      await release();
-      return;
-    }
-    await ensure();
-  }
-
   function isDesired() {
-    return desired;
+    return true;
   }
 
   function startWatch() {
     if (watchTimer) return;
     watchTimer = setInterval(() => {
-      if (!desired || document.visibilityState !== "visible" || wakeLock) return;
+      if (document.visibilityState !== "visible" || wakeLock) return;
       if (video && !video.paused) {
         videoPlaying = true;
         return;
@@ -139,7 +118,7 @@ export function createKeepAwakeController({
 
   async function handleVisibilityChange() {
     if (document.visibilityState === "visible") {
-      if (desired) await ensure();
+      await ensure();
       return true;
     }
     await release();
@@ -147,22 +126,16 @@ export function createKeepAwakeController({
   }
 
   function handlePointerDown() {
-    if (desired && (isIos() || isMobileClient())) ensure();
-  }
-
-  async function toggle() {
-    await setDesired(!desired);
+    if ((isIos() || isMobileClient()) && document.visibilityState !== "hidden") ensure();
   }
 
   return {
     updateCapability,
     ensure,
     release,
-    setDesired,
     isDesired,
     startWatch,
     handleVisibilityChange,
     handlePointerDown,
-    toggle,
   };
 }

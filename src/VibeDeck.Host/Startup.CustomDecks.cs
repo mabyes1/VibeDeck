@@ -1,5 +1,9 @@
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Net.Http;
+using System.Net.WebSockets;
+using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -16,10 +20,50 @@ namespace VibeDeck.Host
         {
             var decks = app.ApplicationServices.GetRequiredService<CustomDeckService>();
             _ = decks.Discover();
+            var deckFiles = new PhysicalFileProvider(decks.RootPath);
+
+            app.Use(async (context, next) =>
+            {
+                var path = context.Request.Path.Value ?? string.Empty;
+                var isDeckHtml = (HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method)) &&
+                    path.StartsWith("/decks/", StringComparison.OrdinalIgnoreCase) &&
+                    path.EndsWith(".html", StringComparison.OrdinalIgnoreCase);
+                if (!isDeckHtml)
+                {
+                    await next();
+                    return;
+                }
+
+                var relativePath = Uri.UnescapeDataString(path.Substring("/decks/".Length));
+                var file = deckFiles.GetFileInfo(relativePath);
+                if (!file.Exists || file.IsDirectory)
+                {
+                    await next();
+                    return;
+                }
+
+                string html;
+                using (var stream = file.CreateReadStream())
+                using (var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+                {
+                    html = await reader.ReadToEndAsync();
+                }
+                var bridged = CustomDeckViewerBridge.Inject(html);
+                context.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+                context.Response.Headers["Pragma"] = "no-cache";
+                context.Response.Headers["Expires"] = "0";
+                context.Response.Headers["X-Frame-Options"] = "SAMEORIGIN";
+                context.Response.Headers["Content-Security-Policy"] =
+                    "frame-ancestors 'self'; object-src 'none'; base-uri 'self'";
+                context.Response.ContentType = "text/html; charset=utf-8";
+                context.Response.ContentLength = Encoding.UTF8.GetByteCount(bridged);
+                if (!HttpMethods.IsHead(context.Request.Method))
+                    await context.Response.WriteAsync(bridged, Encoding.UTF8, context.RequestAborted);
+            });
 
             app.UseStaticFiles(new StaticFileOptions
             {
-                FileProvider = new PhysicalFileProvider(decks.RootPath),
+                FileProvider = deckFiles,
                 RequestPath = "/decks",
                 OnPrepareResponse = staticContext =>
                 {
@@ -45,6 +89,37 @@ namespace VibeDeck.Host
 
         private static void MapCustomDeckEndpoints(IEndpointRouteBuilder endpoints)
         {
+            endpoints.MapMethods("/deck-proxy/{deckId}/{**path}", new[] { "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS" }, async context =>
+            {
+                if (!await RequireTrustedDeviceAsync(context)) return;
+                var service = context.RequestServices.GetRequiredService<CustomDeckService>();
+                var deckId = context.Request.RouteValues["deckId"]?.ToString() ?? string.Empty;
+                var deck = service.Find(deckId);
+                if (deck == null || !string.Equals(deck.Type, "proxy", StringComparison.OrdinalIgnoreCase))
+                {
+                    context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    return;
+                }
+
+                try
+                {
+                    var proxy = context.RequestServices.GetRequiredService<CustomDeckProxyService>();
+                    await proxy.ProxyAsync(context, deck, context.Request.RouteValues["path"]?.ToString() ?? string.Empty);
+                }
+                catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+                {
+                }
+                catch (Exception ex) when (ex is HttpRequestException || ex is IOException || ex is InvalidDataException || ex is WebSocketException)
+                {
+                    if (!context.Response.HasStarted)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status502BadGateway;
+                        context.Response.ContentType = "text/plain; charset=utf-8";
+                        await context.Response.WriteAsync($"Proxy Deck upstream failed: {ex.Message}");
+                    }
+                }
+            });
+
             endpoints.MapGet("/api/decks", async context =>
             {
                 if (!await RequireTrustedDeviceAsync(context)) return;

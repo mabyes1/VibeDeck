@@ -86,29 +86,6 @@ async function openSurface(page, mode, scenario, { trust = "paired", viewer = sc
     const immersiveClass = mode === "display" ? "viewer-fullscreen" : "dashboard-viewer";
     await page.locator(`body.${immersiveClass}`).waitFor();
   }
-  if (scenario.legacyContainerQueries) {
-    await page.evaluate(() => {
-      const removeContainerRules = owner => {
-        const rules = owner.cssRules;
-        for (let index = rules.length - 1; index >= 0; index -= 1) {
-          const rule = rules[index];
-          if (rule.constructor?.name === "CSSContainerRule") {
-            owner.deleteRule(index);
-            continue;
-          }
-          if (rule.styleSheet) {
-            try { removeContainerRules(rule.styleSheet); } catch {}
-          }
-          if (rule.cssRules && typeof rule.deleteRule === "function") {
-            try { removeContainerRules(rule); } catch {}
-          }
-        }
-      };
-      for (const sheet of document.styleSheets) {
-        try { removeContainerRules(sheet); } catch {}
-      }
-    });
-  }
 }
 
 async function prepareSurface(page, mode) {
@@ -183,13 +160,13 @@ const auditConfig = {
   },
   editor: {
     root: "#sideboardView",
-    structural: ["main", "#sideboardView", "#sideboardShell", "#dashboardEditBar", "#systemSideboardPage"],
+    structural: ["main", "#sideboardView", "#sideboardShell", "#dashboardEditBar", "#systemSideboardPage", ".activity-feed-list"],
     siblings: ["#sideboardShell", "#dashboardEditBar", ".dashboard-edit-actions", "#systemSideboardPage"],
   },
   mobileDetail: {
     root: "#mobileDetailsPanel",
-    structural: ["main", "#sideboardView", "#sideboardShell", "#mobileOverview", "#mobileDetailsPanel"],
-    siblings: ["#mobileOverview", "#mobileDetailsPanel", ".mobile-detail-header", ".mobile-detail-metrics", ".mobile-detail-block"],
+    structural: ["#mobileDetailsPanel"],
+    siblings: [".mobile-detail-header", ".mobile-detail-metrics", ".mobile-detail-block"],
   },
   customManager: {
     root: "#customSideboardPage",
@@ -215,6 +192,12 @@ async function scrollReachableSurfaces(page, config) {
       const scope = selfContained ? rootElement : document;
       scope?.querySelectorAll(selector).forEach(element => elements.add(element));
     }
+    rootElement?.querySelectorAll("*").forEach(element => {
+      const style = getComputedStyle(element);
+      if (["auto", "scroll"].includes(style.overflowY) && element.scrollHeight > element.clientHeight + 2) {
+        elements.add(element);
+      }
+    });
     for (const element of elements) {
       if (!rendered(element)) continue;
       const style = getComputedStyle(element);
@@ -351,6 +334,52 @@ test.describe("Quota across continuous and unusual viewports", () => {
   }
 });
 
+test.describe("Quota account actions use one secondary manager", () => {
+  for (const scenario of [
+    { name: "pc", width: 1_000, height: 700 },
+    { name: "tablet", width: 911, height: 569, device: "asus-zenpad-p024", viewer: true },
+    { name: "phone", width: 375, height: 812, device: "iphone-xs" },
+  ]) {
+    test(scenario.name, async ({ page }) => {
+      await openSurface(page, "quota", scenario);
+      const trigger = page.locator(".quota-account-manager-trigger:visible").first();
+      await trigger.click();
+      const dialog = page.locator(".quota-account-manager-dialog[open]");
+      const panel = dialog.locator(".quota-account-manager-panel");
+      await panel.waitFor();
+      const geometry = await page.evaluate(() => {
+        const dialog = document.querySelector("#quotaGrid .quota-account-manager-dialog[open]");
+        const card = dialog?.closest(".quota-account-card");
+        const panel = dialog?.querySelector(".quota-account-manager-panel");
+        const rect = panel?.getBoundingClientRect();
+        const dialogRect = dialog?.getBoundingClientRect();
+        return {
+          standaloneManagers: document.querySelectorAll("#quotaGrid > .quota-codex-switcher").length,
+          exposedToolboxes: card?.querySelectorAll(":scope > .quota-footer .quota-toolbox").length || 0,
+          managerButtons: panel?.querySelectorAll("button").length || 0,
+          maxManagerButtonHeight: Math.max(0, ...Array.from(panel?.querySelectorAll("button") || [],
+            button => button.getBoundingClientRect().height)),
+          panelLeft: rect?.left ?? -1,
+          panelRight: rect?.right ?? -1,
+          dialogCenterDelta: dialogRect ? Math.abs((dialogRect.left + dialogRect.width / 2) - innerWidth / 2) : 999,
+          viewportWidth: innerWidth,
+          documentOverflowX: document.documentElement.scrollWidth > innerWidth + 1,
+        };
+      });
+      expect(geometry.standaloneManagers).toBe(0);
+      expect(geometry.exposedToolboxes).toBe(0);
+      expect(geometry.managerButtons).toBeGreaterThanOrEqual(3);
+      expect(geometry.maxManagerButtonHeight).toBeLessThanOrEqual(56);
+      expect(geometry.panelLeft).toBeGreaterThanOrEqual(0);
+      expect(geometry.panelRight).toBeLessThanOrEqual(geometry.viewportWidth + 1);
+      expect(geometry.dialogCenterDelta).toBeLessThanOrEqual(2);
+      expect(geometry.documentOverflowX).toBe(false);
+      await page.keyboard.press("Escape");
+      await expect(dialog).not.toBeVisible();
+    });
+  }
+});
+
 test.describe("Display controls follow available space", () => {
   for (const scenario of [...pcCases(), ...remoteDesktopCases(), ...browserDeviceCases()]) {
     test(scenario.name, async ({ page }) => {
@@ -388,6 +417,7 @@ test.describe("Custom Deck help uses its own viewport", () => {
 
 test.describe("Sideboard editing and management stay scrollable", () => {
   const cases = [
+    { name: "pc-wide-reference", width: 1_855, height: 761 },
     { name: "pc-mid", width: 760, height: 420 },
     { name: "pc-short", width: 1_600, height: 280 },
     { name: "asus-landscape", width: 911, height: 569, device: "asus-zenpad-p024", viewer: true },
@@ -400,6 +430,19 @@ test.describe("Sideboard editing and management stay scrollable", () => {
       await page.locator("#dashboardEditToggle").click();
       await page.locator("body.dashboard-edit-mode").waitFor();
       await expectHealthySurface(page, auditConfig.editor);
+
+      const geometry = await page.evaluate(() => {
+        const grid = document.querySelector("#systemSideboardPage.dashboard-grid");
+        const body = document.body;
+        return {
+          bodyHeight: body.scrollHeight,
+          gridHeight: grid.getBoundingClientRect().height,
+          viewportHeight: window.innerHeight,
+        };
+      });
+      const detail = JSON.stringify(geometry, null, 2);
+      expect(geometry.gridHeight, detail).toBeLessThanOrEqual(geometry.viewportHeight + 2);
+      expect(geometry.bodyHeight, detail).toBeLessThanOrEqual(geometry.viewportHeight * 2.5);
     });
 
   }
@@ -451,9 +494,7 @@ test.describe("Sideboard cards contain unbounded live content", () => {
     { name: "linux-wide-windowed", width: 1_804, height: 754, device: "linux-desktop", viewer: false },
     { name: "linux-wide-fullscreen", width: 1_804, height: 754, device: "linux-desktop", viewer: true },
     { name: "wide-shallow", width: 1_600, height: 400, viewer: true },
-    { name: "mid-landscape", width: 911, height: 569, device: "asus-zenpad-p024", viewer: true },
-    { name: "chrome101-mid-windowed", width: 911, height: 569, device: "asus-zenpad-p024", viewer: false, legacyContainerQueries: true },
-    { name: "chrome101-mid-fullscreen", width: 911, height: 569, device: "asus-zenpad-p024", viewer: true, legacyContainerQueries: true },
+    { name: "tablet-landscape", width: 911, height: 569, device: "asus-zenpad-p024", viewer: true },
   ]) {
     test(scenario.name, async ({ page }) => {
       await openSurface(page, "sideboard", scenario);
@@ -491,7 +532,6 @@ test.describe("Sideboard cards contain unbounded live content", () => {
           card: [card.clientHeight, card.scrollHeight, getComputedStyle(card).overflowY],
           list: [list.clientHeight, list.scrollHeight, getComputedStyle(list).overflowY],
           viewportHeight: window.innerHeight,
-          sideboardSpace: [...view.classList].filter(name => name.startsWith("space-sideboard-")),
           cardInsideGrid: cardRect.top >= gridRect.top - 1 && cardRect.bottom <= gridRect.bottom + 1,
           headingInsideCard: headingRect.top >= cardRect.top - 1 && headingRect.bottom <= cardRect.bottom + 1,
         };
@@ -502,12 +542,6 @@ test.describe("Sideboard cards contain unbounded live content", () => {
       expect(metrics.list[2], detail).toBe("auto");
       expect(metrics.list[0], detail).toBeGreaterThan(0);
       expect(metrics.list[1], detail).toBeGreaterThan(metrics.list[0] + 2);
-      const expectedSpace = metrics.viewWidth <= 44 * 16
-        ? "space-sideboard-compact"
-        : metrics.viewWidth <= 64 * 16
-          ? "space-sideboard-mid"
-          : "space-sideboard-wide";
-      expect(metrics.sideboardSpace, detail).toContain(expectedSpace);
       expect(metrics.main[1], detail).toBeLessThanOrEqual(metrics.main[0] + 2);
       expect(metrics.view[1], detail).toBeLessThanOrEqual(metrics.view[0] + 2);
       expect(metrics.shell[1], detail).toBeLessThanOrEqual(metrics.shell[0] + 6);
@@ -517,25 +551,43 @@ test.describe("Sideboard cards contain unbounded live content", () => {
   }
 });
 
-test("Chrome 101 compact fallback uses the mobile overview without container queries", async ({ page }) => {
-  await openSurface(page, "sideboard", {
-    name: "chrome101-compact",
-    width: 569,
-    height: 911,
-    device: "asus-zenpad-p024",
-    legacyContainerQueries: true,
+test("Expanded Sideboard quota slot renders the shared account card", async ({ page }) => {
+  await openSurface(page, "sideboard", { name: "expanded-quota", width: 911, height: 569, device: "asus-zenpad-p024", viewer: true });
+  const slot = page.locator('[data-dashboard-key="quota-mini"]');
+  await slot.locator(".quota-sideboard-account-card").waitFor();
+  await page.evaluate(() => {
+    const slot = document.querySelector('[data-dashboard-key="quota-mini"]');
+    slot.style.gridColumn = "1 / span 12";
+    slot.style.gridRow = "5 / span 2";
+    document.querySelector('[data-dashboard-key="weather-io"]')?.setAttribute("hidden", "");
+    document.querySelector('[data-dashboard-key="processes"]')?.setAttribute("hidden", "");
   });
-  const state = await page.evaluate(() => ({
-    classes: [...document.querySelector("#sideboardView").classList],
-    overview: getComputedStyle(document.querySelector("#mobileOverview")).display,
-    grid: getComputedStyle(document.querySelector("#systemSideboardPage")).display,
-    body: [document.body.clientHeight, document.body.scrollHeight],
-  }));
-  const detail = JSON.stringify(state, null, 2);
-  expect(state.classes, detail).toContain("space-sideboard-compact");
-  expect(state.overview, detail).toBe("flex");
-  expect(state.grid, detail).toBe("none");
-  expect(state.body[1], detail).toBeLessThanOrEqual(state.body[0] + 2);
+  const geometry = await slot.evaluate(element => {
+    const host = element.querySelector(".quota-sideboard-card-host");
+    const card = element.querySelector(".quota-sideboard-account-card");
+    return {
+      sharedCard: Boolean(card),
+      familySwitcher: Boolean(card?.querySelector(".quota-sideboard-family-select")),
+      hostOverflowX: host.scrollWidth > host.clientWidth + 1,
+      cardOverflowY: card.scrollHeight > element.clientHeight + 2,
+      slotHeight: element.clientHeight,
+      cardHeight: card.scrollHeight,
+    };
+  });
+  expect(geometry.sharedCard).toBe(true);
+  expect(geometry.familySwitcher).toBe(true);
+  expect(geometry.hostOverflowX).toBe(false);
+  expect(geometry.cardOverflowY, JSON.stringify(geometry)).toBe(false);
+  await slot.locator(".quota-account-manager-trigger").click();
+  const managerDialog = page.locator(".quota-account-manager-dialog[open]");
+  await expect(managerDialog).toBeVisible();
+  // The connection-health pulse refreshes Sideboard every 15 seconds. An open
+  // secondary card must survive that data refresh instead of being replaced.
+  await page.waitForTimeout(16_000);
+  await expect(managerDialog).toBeVisible();
+  if (process.env.VIBEDECK_CAPTURE_SIDEBAR_QUOTA === "1") {
+    await page.screenshot({ path: test.info().outputPath("expanded-sidebar-quota.png") });
+  }
 });
 
 test("ZenPad fullscreen stream is centered exactly once", async ({ page }) => {

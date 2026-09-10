@@ -144,7 +144,7 @@ The Host also serves the phone app shell:
 
 ```text
 GET /manifest.json
-GET /service-worker.js
+GET /service-worker.js   # retirement shim for legacy registered workers; new clients do not register it
 GET /offline.html
 GET /icons/vibedeck.svg
 GET /icons/maskable-512.png

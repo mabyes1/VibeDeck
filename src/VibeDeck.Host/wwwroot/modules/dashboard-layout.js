@@ -51,6 +51,7 @@ export function createDashboardLayoutController({
   let resizeTimer = 0;
   let selectedKey = "";
   let loadGeneration = 0;
+  let layoutLoaded = false;
 
   function getProfile() {
     const bounds = shell.getBoundingClientRect();
@@ -333,6 +334,10 @@ export function createDashboardLayoutController({
   }
 
   function apply() {
+    // Remote clients restore their device credential asynchronously. Do not
+    // turn the server-rendered cards into an empty board while the first
+    // authenticated layout request is still pending (or was rejected).
+    if (!layoutLoaded) return false;
     const addedMissingCards = addMissingCards();
     grid.style.setProperty("--dashboard-row-count", String(maxRows()));
     const nodes = new Map(cardNodes().map(node => [node.dataset.dashboardKey, node]));
@@ -385,6 +390,11 @@ export function createDashboardLayoutController({
   }
 
   function scheduleAutoSave(reason = "", force = false) {
+    if (!layoutLoaded) return;
+    if (!items.some(item => item.visible)) {
+      setStatus(tLegacy("資訊板至少要保留一張可見卡片。"), "error");
+      return;
+    }
     if (saving) {
       autoSaveQueued = true;
       return;
@@ -428,12 +438,14 @@ export function createDashboardLayoutController({
     const requestedProfile = getProfile();
     const generation = ++loadGeneration;
     profile = requestedProfile;
+    layoutLoaded = false;
     try {
       const result = await fetchJsonOrThrow(`/api/dashboard/layout?profile=${encodeURIComponent(requestedProfile)}`);
       if (generation !== loadGeneration || getProfile() !== requestedProfile) return;
       profile = requestedProfile;
       items = (result.items || result.Items || []).map(cloneItem);
       revision = Number(result.revision ?? result.Revision) || 0;
+      layoutLoaded = true;
       const addedMissingCards = apply();
       lastSavedSignature = addedMissingCards || revision === 0 ? "" : layoutSignature();
       if (addedMissingCards || revision === 0) {
@@ -446,6 +458,10 @@ export function createDashboardLayoutController({
 
   async function save(options = {}) {
     const automatic = options.automatic === true;
+    if (!layoutLoaded || !items.some(item => item.visible)) {
+      setStatus(tLegacy("資訊板至少要保留一張可見卡片。"), "error");
+      return;
+    }
     const targetProfile = profile;
     const currentSignature = layoutSignature();
     if (saving) {
@@ -462,6 +478,7 @@ export function createDashboardLayoutController({
 
     const payloadItems = items.map(cloneItem);
     const payloadSignature = layoutSignature(payloadItems);
+    let saveSucceeded = false;
     saving = true;
     if (!automatic) saveButton.disabled = true;
     try {
@@ -471,6 +488,7 @@ export function createDashboardLayoutController({
         body: JSON.stringify({ profile: targetProfile, items: payloadItems }),
       });
       revision = Number(result.revision ?? result.Revision) || revision;
+      saveSucceeded = true;
       if (profile === targetProfile && layoutSignature() === payloadSignature) {
         items = (result.items || result.Items || []).map(cloneItem);
         lastSavedSignature = layoutSignature();
@@ -488,9 +506,13 @@ export function createDashboardLayoutController({
     } finally {
       saving = false;
       if (!automatic) saveButton.disabled = false;
-      if (autoSaveQueued || layoutSignature() !== lastSavedSignature) {
+      if (saveSucceeded && (autoSaveQueued || layoutSignature() !== lastSavedSignature)) {
         autoSaveQueued = false;
         scheduleAutoSave(tLegacy("正在自動儲存最新調整…"), true);
+      } else if (!saveSucceeded) {
+        // A rejected payload must not become a sub-second retry loop. A later
+        // explicit edit or authenticated reload can try again with valid data.
+        autoSaveQueued = false;
       }
     }
   }
@@ -561,6 +583,7 @@ export function createDashboardLayoutController({
     apply();
   });
   document.addEventListener("dashboard:cards-changed", () => {
+    if (!layoutLoaded) return;
     const addedMissingCards = apply();
     if (addedMissingCards) scheduleAutoSave(tLegacy("正在保存新增卡片…"), true);
   });
@@ -572,7 +595,13 @@ export function createDashboardLayoutController({
       else apply();
     }, 180);
   });
-
-  load();
-  return { load, apply, save, setEditing, isEditing: () => editing };
+  return {
+    load,
+    loadIfNeeded: () => layoutLoaded ? Promise.resolve() : load(),
+    apply,
+    save,
+    setEditing,
+    isEditing: () => editing,
+    isLoaded: () => layoutLoaded,
+  };
 }

@@ -1,6 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { estimateReceiverMaxBitrateKbps } from "../../src/VibeDeck.Host/wwwroot/modules/stream-controller.js";
+import {
+  estimateReceiverMaxBitrateKbps,
+  normalizePlayoutDelayMs,
+} from "../../src/VibeDeck.Host/wwwroot/modules/stream-controller.js";
+
+test("playout delay accepts the three product modes and defaults to normal", () => {
+  assert.equal(normalizePlayoutDelayMs(20), 20);
+  assert.equal(normalizePlayoutDelayMs("40"), 40);
+  assert.equal(normalizePlayoutDelayMs(80), 80);
+  assert.equal(normalizePlayoutDelayMs(0), 40);
+  assert.equal(normalizePlayoutDelayMs(999), 40);
+});
 
 test("ZenPad-sized Android receiver starts below its measured path ceiling", () => {
   const result = estimateReceiverMaxBitrateKbps(
