@@ -81,6 +81,18 @@ namespace VibeDeck.Host.Tests
             Assert.False(LocalOriginGuard.IsCrossSite(null, "null", LocalNames()));
         }
 
+        [Fact]
+        public void DriveByWebSocketFromForeignSiteIsCrossSite()
+        {
+            // RequireTrustedDeviceAsync now uses IsTrustedLocalConsole, which rejects
+            // a browser page that opens ws://127.0.0.1:5000/ws/input or /ws/display
+            // from another origin. Loopback peer + local Host is not enough.
+            Assert.True(LocalOriginGuard.IsCrossSite(null, "https://evil.example", LocalNames()));
+            Assert.True(LocalOriginGuard.IsCrossSite("cross-site", "http://127.0.0.1:5000", LocalNames()));
+            Assert.False(LocalOriginGuard.IsCrossSite(null, "http://127.0.0.1:5000", LocalNames()));
+            Assert.False(LocalOriginGuard.IsCrossSite(null, "https://192.168.1.50:5443", LocalNames()));
+        }
+
         [Theory]
         [InlineData("localhost:5000", "localhost")]
         [InlineData("localhost", "localhost")]

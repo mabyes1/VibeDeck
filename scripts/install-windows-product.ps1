@@ -147,14 +147,23 @@ New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
 Copy-Item -Path (Join-Path $PayloadPath "*") -Destination $InstallDir -Recurse -Force
 
 $productData = Join-Path $env:ProgramData "VibeDeck"
-# The Host runs as the signed-in desktop user, not as this elevated installer.
-# Product state is shared under ProgramData, so every interactive user must be
-# able to update pairing, certificate, quota and dashboard files.
+# Match Setup's HardenDataDirectoryAcl (VibeDeck.iss): do NOT grant Users:Modify.
+# Product data holds CA keys, trusted-device store, and quota secrets. Only
+# SYSTEM / Administrators / the signed-in user (or INTERACTIVE as fallback)
+# may write. Granting BUILTIN\Users was a pre-0.1.31 defect that this script
+# used to reintroduce.
 New-Item -ItemType Directory -Path $productData -Force | Out-Null
-& icacls.exe $productData /grant '*S-1-5-32-545:(OI)(CI)M' /T /C | Out-Null
+$userSid = ([System.Security.Principal.WindowsIdentity]::GetCurrent()).User.Value
+$userGrant = if ($userSid) { "*{0}:(OI)(CI)M" -f $userSid } else { "*S-1-5-4:(OI)(CI)M" }
+& icacls.exe $productData /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" $userGrant | Out-Null
 if ($LASTEXITCODE -ne 0) {
-    throw "Could not grant signed-in users modify access to $productData."
+    throw "Could not harden ACLs on $productData."
 }
+& icacls.exe $productData /remove:g *S-1-5-32-545 /remove:g *S-1-1-0 /remove:g *S-1-5-11 | Out-Null
+if ($userSid) {
+    & icacls.exe $productData /remove:g *S-1-5-4 | Out-Null
+}
+& icacls.exe "$productData\*" /reset /T /C /Q | Out-Null
 
 $iconPath = Join-Path $InstallDir "vibedeck.ico"
 $hostExe = Join-Path $InstallDir $hostExeName
