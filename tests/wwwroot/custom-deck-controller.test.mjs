@@ -45,7 +45,7 @@ test("same-origin embed does not receive allow-same-origin", () => {
 
 test("static Deck bridge only accepts same-host deck-data paths", () => {
   const origin = "https://192.168.0.17:5443";
-  assert.equal(isDeckDataPath("/api/deck-data/stock-quotes", origin), true);
+  assert.equal(isDeckDataPath("/api/deck-data/example", origin), true);
   assert.equal(isDeckDataPath("/api/deck-data/foo?x=1", origin), true);
   assert.equal(isDeckDataPath("/api/quotas", origin), false);
   assert.equal(isDeckDataPath("https://example.com/api/deck-data/foo", origin), false);

@@ -93,7 +93,7 @@ async function loadDeckCatalog(preferredDeckId = "") {
   }
 
   const requested = String(preferredDeckId || "").trim();
-  const fallback = deckCatalog.find(deck => deck.id === "stock-watch")?.id || deckCatalog[0]?.id || "";
+  const fallback = deckCatalog[0]?.id || "";
   deckSelect.value = deckCatalog.some(deck => deck.id === requested) ? requested : fallback;
   deckSelect.disabled = deckCatalog.length === 0;
 }

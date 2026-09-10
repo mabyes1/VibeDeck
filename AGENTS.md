@@ -17,6 +17,7 @@ Read this before diagnosing, running, packaging, or installing the project.
 - Do not register Host as a Windows Service. Session 0 cannot enumerate or capture the user's virtual display.
 - Do not restore a portable ZIP as a product release. It bypasses installation, updates, autostart, and product-state guarantees.
 - Do not treat the notification companion as a second Host just because it shares managed code internally.
+- Do not compile a personal Custom Deck backend into the Host. Stock Watch, Mitake DDE, TWSE MIS, portfolios, and other user-specific Deck logic belong in `%ProgramData%\VibeDeck\Decks` or a separately packaged extension.
 
 ## Debug order
 

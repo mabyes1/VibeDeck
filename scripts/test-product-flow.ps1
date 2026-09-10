@@ -221,6 +221,10 @@ if ($Source) {
     Assert-Product (Test-Path (Join-Path $repoRoot "install.bat")) "One-click install entry is missing."
     Assert-Product (Test-Path (Join-Path $repoRoot "update.bat")) "One-click update entry is missing."
     Assert-Product (-not (Get-ChildItem (Join-Path $repoRoot "src\VibeDeck.Host\wwwroot") -Recurse -File -Include "*.apk","*.ipa" -ErrorAction SilentlyContinue)) "Native mobile package found under wwwroot."
+    $hostSource = Get-ChildItem (Join-Path $repoRoot "src\VibeDeck.Host") -Recurse -File -Include "*.cs","*.json" |
+        ForEach-Object { Get-Content $_.FullName -Raw }
+    Assert-Product (($hostSource -join "`n") -notmatch "MitakeQuoteService|MapStockEndpoints|/api/(?:deck-data/)?stock-quotes") `
+        "A personal Stock Watch backend was compiled into the public Host. Keep Custom Deck logic outside src/VibeDeck.Host."
     $webSource = Get-ChildItem (Join-Path $repoRoot "src\VibeDeck.Host\wwwroot") -Recurse -File -Include "*.js","*.css","*.html" |
         ForEach-Object { Get-Content $_.FullName -Raw }
     Assert-Product (($webSource -join "`n") -notmatch "native-shell") "Deprecated native-shell branch still exists in the browser/PWA client."
