@@ -49,21 +49,18 @@ function Get-VibeDeckDataUserSid {
         return @{ Sid = $sid; FromService = $false }
     }
 
+    # Win32_ComputerSystem.UserName identifies the user on the physical console.
+    # Do not pick the first explorer.exe: on Fast User Switching / RDP machines
+    # enumeration order can grant VibeDeck secrets to the wrong signed-in user.
     $ownerSid = $null
-    $explorer = Get-CimInstance Win32_Process -Filter "Name = 'explorer.exe'" -ErrorAction SilentlyContinue |
-        Where-Object { $_.SessionId -ne 0 } |
-        Select-Object -First 1
-    if ($explorer) {
-        $owner = Invoke-CimMethod -InputObject $explorer -MethodName GetOwner -ErrorAction SilentlyContinue
-        if ($owner -and $owner.User) {
-            try {
-                $accountName = if ($owner.Domain) { "{0}\{1}" -f $owner.Domain, $owner.User } else { $owner.User }
-                $ownerSid = [System.Security.Principal.NTAccount]::new($accountName).
-                    Translate([System.Security.Principal.SecurityIdentifier]).Value
-            }
-            catch {
-                $ownerSid = $null
-            }
+    $consoleUser = (Get-CimInstance Win32_ComputerSystem -ErrorAction SilentlyContinue).UserName
+    if (-not [string]::IsNullOrWhiteSpace($consoleUser)) {
+        try {
+            $ownerSid = [System.Security.Principal.NTAccount]::new($consoleUser).
+                Translate([System.Security.Principal.SecurityIdentifier]).Value
+        }
+        catch {
+            $ownerSid = $null
         }
     }
 

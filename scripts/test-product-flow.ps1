@@ -26,23 +26,64 @@ function Write-Check([string]$message) {
     Write-Host "[product-check] $message" -ForegroundColor Cyan
 }
 
-function Test-AclSidPresent {
+function Get-AclSid {
+    param([Parameter(Mandatory = $true)]$Rule)
+
+    if ($null -eq $Rule.IdentityReference) { return $null }
+    try {
+        return $Rule.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value
+    }
+    catch {
+        return $null
+    }
+}
+
+function Test-AclAllowsRights {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
-        [Parameter(Mandatory = $true)][string]$Sid
+        [Parameter(Mandatory = $true)][string]$Sid,
+        [Parameter(Mandatory = $true)][System.Security.AccessControl.FileSystemRights]$RequiredRights
     )
     $acl = Get-Acl -LiteralPath $Path
     foreach ($rule in $acl.Access) {
-        if ($null -eq $rule.IdentityReference) { continue }
-        try {
-            $ruleSid = $rule.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value
+        $ruleSid = Get-AclSid -Rule $rule
+        if ($ruleSid -eq $Sid -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and
+            ($rule.FileSystemRights -band $RequiredRights) -eq $RequiredRights) {
+            return $true
         }
-        catch {
-            continue
-        }
-        if ($ruleSid -eq $Sid) { return $true }
     }
     return $false
+}
+
+function Test-AclHasAllowForSid {
+    param(
+        [Parameter(Mandatory = $true)]$Acl,
+        [Parameter(Mandatory = $true)][string]$Sid
+    )
+    foreach ($rule in $Acl.Access) {
+        if ((Get-AclSid -Rule $rule) -eq $Sid -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow) {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Get-SignedInDesktopUserSid {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $serviceSids = @("S-1-5-18", "S-1-5-19", "S-1-5-20")
+    if ($identity.User.Value -notin $serviceSids) { return $identity.User.Value }
+
+    $consoleUser = (Get-CimInstance Win32_ComputerSystem -ErrorAction SilentlyContinue).UserName
+    if ([string]::IsNullOrWhiteSpace($consoleUser)) { return $null }
+    try {
+        return [System.Security.Principal.NTAccount]::new($consoleUser).
+            Translate([System.Security.Principal.SecurityIdentifier]).Value
+    }
+    catch {
+        return $null
+    }
 }
 
 function Assert-VibeDeckDataAcl {
@@ -50,20 +91,40 @@ function Assert-VibeDeckDataAcl {
         [Parameter(Mandatory = $true)][string]$DataRoot
     )
     Assert-Product (Test-Path -LiteralPath $DataRoot) "ProgramData root missing: $DataRoot"
-    foreach ($sid in @("S-1-5-32-545", "S-1-1-0", "S-1-5-11")) {
-        Assert-Product (-not (Test-AclSidPresent -Path $DataRoot -Sid $sid)) `
-            "ProgramData ACL still grants well-known SID $sid on $DataRoot. Users/Everyone/Authenticated Users must be removed."
+    $rootAcl = Get-Acl -LiteralPath $DataRoot
+    Assert-Product $rootAcl.AreAccessRulesProtected "ProgramData root still inherits permissions from its parent: $DataRoot"
+
+    $fullControl = [System.Security.AccessControl.FileSystemRights]::FullControl
+    $modify = [System.Security.AccessControl.FileSystemRights]::Modify
+    Assert-Product (Test-AclAllowsRights -Path $DataRoot -Sid "S-1-5-18" -RequiredRights $fullControl) `
+        "ProgramData ACL must allow SYSTEM full control on $DataRoot"
+    Assert-Product (Test-AclAllowsRights -Path $DataRoot -Sid "S-1-5-32-544" -RequiredRights $fullControl) `
+        "ProgramData ACL must allow Administrators full control on $DataRoot"
+
+    $interactiveCanModify = Test-AclAllowsRights -Path $DataRoot -Sid "S-1-5-4" -RequiredRights $modify
+    $desktopSid = Get-SignedInDesktopUserSid
+    $desktopUserCanModify = $desktopSid -and (Test-AclAllowsRights -Path $DataRoot -Sid $desktopSid -RequiredRights $modify)
+    Assert-Product ($interactiveCanModify -or $desktopUserCanModify) `
+        "ProgramData ACL must allow modify to the signed-in desktop user or INTERACTIVE (S-1-5-4). DesktopSid=$desktopSid"
+
+    $forbiddenSids = @("S-1-5-32-545", "S-1-1-0", "S-1-5-11")
+    $aclPaths = @($DataRoot) + @(Get-ChildItem -LiteralPath $DataRoot -Force -Recurse -ErrorAction Stop | ForEach-Object FullName)
+    foreach ($path in $aclPaths) {
+        $acl = Get-Acl -LiteralPath $path
+        foreach ($sid in $forbiddenSids) {
+            Assert-Product (-not (Test-AclHasAllowForSid -Acl $acl -Sid $sid)) `
+                "ACL grants Users/Everyone/Authenticated Users ($sid) on $path"
+        }
+
+        if (-not [string]::Equals($path, $DataRoot, [StringComparison]::OrdinalIgnoreCase)) {
+            Assert-Product (-not $acl.AreAccessRulesProtected) "Child ACL does not inherit from the hardened root: $path"
+            $explicitRules = @($acl.Access | Where-Object { -not $_.IsInherited })
+            Assert-Product ($explicitRules.Count -eq 0) "Child ACL still contains explicit rules instead of inheriting the hardened root: $path"
+        }
     }
-    Assert-Product (Test-AclSidPresent -Path $DataRoot -Sid "S-1-5-18") "ProgramData ACL missing SYSTEM (S-1-5-18) on $DataRoot"
-    Assert-Product (Test-AclSidPresent -Path $DataRoot -Sid "S-1-5-32-544") "ProgramData ACL missing Administrators (S-1-5-32-544) on $DataRoot"
+    Write-Check "ProgramData ACL verified across $($aclPaths.Count) paths"
 
-    $interactive = Test-AclSidPresent -Path $DataRoot -Sid "S-1-5-4"
-    $currentSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-    $currentUser = Test-AclSidPresent -Path $DataRoot -Sid $currentSid
-    Assert-Product ($interactive -or $currentUser) `
-        "ProgramData ACL must grant modify to the signed-in user or INTERACTIVE (S-1-5-4). CurrentSid=$currentSid"
-
-    # Write probe as the current identity (desktop Host identity in -Installed runs).
+    # Write probe as the current identity (desktop Host identity in normal -Installed runs).
     $probe = Join-Path $DataRoot (".acl-probe-" + [Guid]::NewGuid().ToString("N"))
     try {
         [IO.File]::WriteAllText($probe, "probe")
