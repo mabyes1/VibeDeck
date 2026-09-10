@@ -24,8 +24,10 @@ namespace VibeDeck.Host.Security
         }
 
         /// <summary>
-        /// True when the caller is a browser acting for another site. Callers that send neither
-        /// Sec-Fetch-Site nor Origin are not browsers driven by a hostile page, so they pass.
+        /// True when the caller is a browser acting for another site.
+        /// Callers that send neither Sec-Fetch-Site nor Origin are non-browser local
+        /// clients and pass. An explicit <c>Origin: null</c> is always cross-site:
+        /// sandboxed/opaque origins must never inherit local-console privilege.
         /// </summary>
         public static bool IsCrossSite(string secFetchSite, string origin, ICollection<string> localHostNames)
         {
@@ -34,8 +36,13 @@ namespace VibeDeck.Host.Security
                 return true;
             }
 
-            if (string.IsNullOrWhiteSpace(origin) ||
-                string.Equals(origin, "null", StringComparison.OrdinalIgnoreCase))
+            // Opaque / sandboxed origin. Not "missing Origin" — the browser named it.
+            if (string.Equals(origin, "null", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (string.IsNullOrWhiteSpace(origin))
             {
                 return false;
             }

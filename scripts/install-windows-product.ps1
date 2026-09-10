@@ -38,6 +38,49 @@ function Test-IsAdministrator {
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
+function Get-VibeDeckDataUserSid {
+    # Returns @{ Sid = <user-sid-or-null>; FromService = <bool> }
+    # When the installer runs as SYSTEM (silent deploy), never treat SYSTEM as the
+    # interactive user — resolve the signed-in desktop account instead.
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $sid = $identity.User.Value
+    $serviceSids = @("S-1-5-18", "S-1-5-19", "S-1-5-20")
+    if ($sid -notin $serviceSids) {
+        return @{ Sid = $sid; FromService = $false }
+    }
+
+    $ownerSid = $null
+    $explorer = Get-CimInstance Win32_Process -Filter "Name = 'explorer.exe'" -ErrorAction SilentlyContinue |
+        Where-Object { $_.SessionId -ne 0 } |
+        Select-Object -First 1
+    if ($explorer) {
+        $owner = Invoke-CimMethod -InputObject $explorer -MethodName GetOwner -ErrorAction SilentlyContinue
+        if ($owner -and $owner.User) {
+            try {
+                $accountName = if ($owner.Domain) { "{0}\{1}" -f $owner.Domain, $owner.User } else { $owner.User }
+                $ownerSid = [System.Security.Principal.NTAccount]::new($accountName).
+                    Translate([System.Security.Principal.SecurityIdentifier]).Value
+            }
+            catch {
+                $ownerSid = $null
+            }
+        }
+    }
+
+    return @{ Sid = $ownerSid; FromService = $true }
+}
+
+function Invoke-IcaclsChecked {
+    param(
+        [Parameter(Mandatory = $true)][string[]]$ArgumentList,
+        [Parameter(Mandatory = $true)][string]$FailureMessage
+    )
+    & icacls.exe @ArgumentList | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "$FailureMessage (icacls exit $LASTEXITCODE): icacls $($ArgumentList -join ' ')"
+    }
+}
+
 if (-not (Test-IsAdministrator)) {
     throw "Run this script in an elevated PowerShell (Administrator)."
 }
@@ -147,23 +190,37 @@ New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
 Copy-Item -Path (Join-Path $PayloadPath "*") -Destination $InstallDir -Recurse -Force
 
 $productData = Join-Path $env:ProgramData "VibeDeck"
-# Match Setup's HardenDataDirectoryAcl (VibeDeck.iss): do NOT grant Users:Modify.
-# Product data holds CA keys, trusted-device store, and quota secrets. Only
-# SYSTEM / Administrators / the signed-in user (or INTERACTIVE as fallback)
-# may write. Granting BUILTIN\Users was a pre-0.1.31 defect that this script
-# used to reintroduce.
+# Match Setup's HardenDataDirectoryAcl (VibeDeck.iss): SYSTEM + Administrators
+# (full) + signed-in desktop user (modify). Never grant BUILTIN\Users.
+# Every icacls invocation is checked; any failure aborts the install.
 New-Item -ItemType Directory -Path $productData -Force | Out-Null
-$userSid = ([System.Security.Principal.WindowsIdentity]::GetCurrent()).User.Value
-$userGrant = if ($userSid) { "*{0}:(OI)(CI)M" -f $userSid } else { "*S-1-5-4:(OI)(CI)M" }
-& icacls.exe $productData /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" $userGrant | Out-Null
-if ($LASTEXITCODE -ne 0) {
-    throw "Could not harden ACLs on $productData."
+$userInfo = Get-VibeDeckDataUserSid
+$userGrant = if ($userInfo.Sid) {
+    "*{0}:(OI)(CI)M" -f $userInfo.Sid
 }
-& icacls.exe $productData /remove:g *S-1-5-32-545 /remove:g *S-1-1-0 /remove:g *S-1-5-11 | Out-Null
-if ($userSid) {
-    & icacls.exe $productData /remove:g *S-1-5-4 | Out-Null
+else {
+    # Silent deploy from SYSTEM without a resolvable interactive user.
+    "*S-1-5-4:(OI)(CI)M"
 }
-& icacls.exe "$productData\*" /reset /T /C /Q | Out-Null
+Write-Host "[install] ProgramData user grant: $userGrant (fromService=$($userInfo.FromService))"
+
+Invoke-IcaclsChecked -ArgumentList @(
+    $productData,
+    "/inheritance:r",
+    "/grant:r", "*S-1-5-18:(OI)(CI)F",
+    "/grant:r", "*S-1-5-32-544:(OI)(CI)F",
+    "/grant:r", $userGrant
+) -FailureMessage "Could not harden ACLs on $productData"
+
+$staleRemovals = @("/remove:g", "*S-1-5-32-545", "/remove:g", "*S-1-1-0", "/remove:g", "*S-1-5-11")
+if ($userInfo.Sid) {
+    $staleRemovals += @("/remove:g", "*S-1-5-4")
+}
+Invoke-IcaclsChecked -ArgumentList (@($productData) + $staleRemovals) `
+    -FailureMessage "Could not remove stale Users/Everyone/Authenticated Users ACEs on $productData"
+
+Invoke-IcaclsChecked -ArgumentList @("$productData\*", "/reset", "/T", "/C", "/Q") `
+    -FailureMessage "Could not reset child ACLs under $productData"
 
 $iconPath = Join-Path $InstallDir "vibedeck.ico"
 $hostExe = Join-Path $InstallDir $hostExeName

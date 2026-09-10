@@ -75,22 +75,27 @@ namespace VibeDeck.Host.Tests
         }
 
         [Fact]
-        public void OpaqueOriginIsTreatedAsSameSite()
+        public void OpaqueOriginIsRejected()
         {
-            // A sandboxed local page sends Origin: null; it is not evidence of another site.
-            Assert.False(LocalOriginGuard.IsCrossSite(null, "null", LocalNames()));
+            // Origin: null is an explicit opaque/sandboxed origin. It must never
+            // inherit local-console privilege for /ws/* or RequireTrustedDevice.
+            Assert.True(LocalOriginGuard.IsCrossSite(null, "null", LocalNames()));
+            Assert.True(LocalOriginGuard.IsCrossSite("none", "null", LocalNames()));
+            Assert.True(LocalOriginGuard.IsCrossSite(null, "NULL", LocalNames()));
         }
 
         [Fact]
         public void DriveByWebSocketFromForeignSiteIsCrossSite()
         {
-            // RequireTrustedDeviceAsync now uses IsTrustedLocalConsole, which rejects
+            // RequireTrustedDeviceAsync uses IsTrustedLocalConsole, which rejects
             // a browser page that opens ws://127.0.0.1:5000/ws/input or /ws/display
             // from another origin. Loopback peer + local Host is not enough.
             Assert.True(LocalOriginGuard.IsCrossSite(null, "https://evil.example", LocalNames()));
             Assert.True(LocalOriginGuard.IsCrossSite("cross-site", "http://127.0.0.1:5000", LocalNames()));
             Assert.False(LocalOriginGuard.IsCrossSite(null, "http://127.0.0.1:5000", LocalNames()));
             Assert.False(LocalOriginGuard.IsCrossSite(null, "https://192.168.1.50:5443", LocalNames()));
+            Assert.False(LocalOriginGuard.IsCrossSite(null, null, LocalNames()));
+            Assert.False(LocalOriginGuard.IsCrossSite("", "", LocalNames()));
         }
 
         [Theory]

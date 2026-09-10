@@ -26,6 +26,54 @@ function Write-Check([string]$message) {
     Write-Host "[product-check] $message" -ForegroundColor Cyan
 }
 
+function Test-AclSidPresent {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Sid
+    )
+    $acl = Get-Acl -LiteralPath $Path
+    foreach ($rule in $acl.Access) {
+        if ($null -eq $rule.IdentityReference) { continue }
+        try {
+            $ruleSid = $rule.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value
+        }
+        catch {
+            continue
+        }
+        if ($ruleSid -eq $Sid) { return $true }
+    }
+    return $false
+}
+
+function Assert-VibeDeckDataAcl {
+    param(
+        [Parameter(Mandatory = $true)][string]$DataRoot
+    )
+    Assert-Product (Test-Path -LiteralPath $DataRoot) "ProgramData root missing: $DataRoot"
+    foreach ($sid in @("S-1-5-32-545", "S-1-1-0", "S-1-5-11")) {
+        Assert-Product (-not (Test-AclSidPresent -Path $DataRoot -Sid $sid)) `
+            "ProgramData ACL still grants well-known SID $sid on $DataRoot. Users/Everyone/Authenticated Users must be removed."
+    }
+    Assert-Product (Test-AclSidPresent -Path $DataRoot -Sid "S-1-5-18") "ProgramData ACL missing SYSTEM (S-1-5-18) on $DataRoot"
+    Assert-Product (Test-AclSidPresent -Path $DataRoot -Sid "S-1-5-32-544") "ProgramData ACL missing Administrators (S-1-5-32-544) on $DataRoot"
+
+    $interactive = Test-AclSidPresent -Path $DataRoot -Sid "S-1-5-4"
+    $currentSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $currentUser = Test-AclSidPresent -Path $DataRoot -Sid $currentSid
+    Assert-Product ($interactive -or $currentUser) `
+        "ProgramData ACL must grant modify to the signed-in user or INTERACTIVE (S-1-5-4). CurrentSid=$currentSid"
+
+    # Write probe as the current identity (desktop Host identity in -Installed runs).
+    $probe = Join-Path $DataRoot (".acl-probe-" + [Guid]::NewGuid().ToString("N"))
+    try {
+        [IO.File]::WriteAllText($probe, "probe")
+        Assert-Product (Test-Path -LiteralPath $probe) "Write probe failed to create $probe"
+    }
+    finally {
+        if (Test-Path -LiteralPath $probe) { Remove-Item -LiteralPath $probe -Force -ErrorAction SilentlyContinue }
+    }
+}
+
 function Get-SignedInUserRunValue([string]$name) {
     $userName = (Get-CimInstance Win32_ComputerSystem -ErrorAction SilentlyContinue).UserName
     if ([string]::IsNullOrWhiteSpace($userName)) { return $null }
@@ -43,7 +91,16 @@ function Get-SignedInUserRunValue([string]$name) {
 
 if ($Source) {
     Write-Check "Release tests"
-    & dotnet test $solution -c Release
+    $hostAssets = Join-Path $repoRoot "src\VibeDeck.Host\obj\project.assets.json"
+    if (Test-Path -LiteralPath $hostAssets) {
+        # Reuse an existing restore graph. Some machines have a broken NuGet
+        # ConfigurationDefaults path that makes even `dotnet restore` fail;
+        # CI and clean checkouts still restore on first run.
+        & dotnet test $solution -c Release --no-restore
+    }
+    else {
+        & dotnet test $solution -c Release
+    }
     if ($LASTEXITCODE -ne 0) { throw "dotnet test failed." }
 
     Write-Check "Browser JavaScript syntax"
@@ -156,6 +213,15 @@ if ($Payload) {
     $projectText = Get-Content $project -Raw
     Assert-Product ($projectText -match "<OutputType>WinExe</OutputType>") "Host must be a native Windows background application."
     Assert-Product (-not (Get-ChildItem (Join-Path $PayloadPath "wwwroot") -Recurse -File -Include "*.apk","*.ipa" -ErrorAction SilentlyContinue)) "Payload contains a native mobile package."
+
+    Write-Check "Fallback installer must not grant Users:Modify"
+    $installScript = Get-Content (Join-Path $repoRoot "scripts\install-windows-product.ps1") -Raw
+    Assert-Product ($installScript -notmatch "S-1-5-32-545:\(OI\)\(CI\)M") `
+        "install-windows-product.ps1 still grants BUILTIN\Users modify on ProgramData."
+    Assert-Product ($installScript -match "Get-VibeDeckDataUserSid") `
+        "install-windows-product.ps1 must resolve the original signed-in user SID when run as SYSTEM."
+    Assert-Product ($installScript -match "Invoke-IcaclsChecked") `
+        "install-windows-product.ps1 must check every icacls exit code."
 }
 
 if ($Installed) {
@@ -187,6 +253,10 @@ if ($Installed) {
     if ($RequireVirtualDisplay) {
         Assert-Product ($null -ne ($displays | Where-Object IsVibeDeckDisplay | Select-Object -First 1)) "VibeDeck virtual display was not found."
     }
+
+    Write-Check "ProgramData ACL hardening"
+    $installedDataRoot = Join-Path $env:ProgramData "VibeDeck"
+    Assert-VibeDeckDataAcl -DataRoot $installedDataRoot
 }
 
 Write-Host "Product flow checks passed." -ForegroundColor Green
