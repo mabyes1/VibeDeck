@@ -38,6 +38,46 @@ function Test-IsAdministrator {
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
+function Get-VibeDeckDataUserSid {
+    # Returns @{ Sid = <user-sid-or-null>; FromService = <bool> }
+    # When the installer runs as SYSTEM (silent deploy), never treat SYSTEM as the
+    # interactive user — resolve the signed-in desktop account instead.
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $sid = $identity.User.Value
+    $serviceSids = @("S-1-5-18", "S-1-5-19", "S-1-5-20")
+    if ($sid -notin $serviceSids) {
+        return @{ Sid = $sid; FromService = $false }
+    }
+
+    # Win32_ComputerSystem.UserName identifies the user on the physical console.
+    # Do not pick the first explorer.exe: on Fast User Switching / RDP machines
+    # enumeration order can grant VibeDeck secrets to the wrong signed-in user.
+    $ownerSid = $null
+    $consoleUser = (Get-CimInstance Win32_ComputerSystem -ErrorAction SilentlyContinue).UserName
+    if (-not [string]::IsNullOrWhiteSpace($consoleUser)) {
+        try {
+            $ownerSid = [System.Security.Principal.NTAccount]::new($consoleUser).
+                Translate([System.Security.Principal.SecurityIdentifier]).Value
+        }
+        catch {
+            $ownerSid = $null
+        }
+    }
+
+    return @{ Sid = $ownerSid; FromService = $true }
+}
+
+function Invoke-IcaclsChecked {
+    param(
+        [Parameter(Mandatory = $true)][string[]]$ArgumentList,
+        [Parameter(Mandatory = $true)][string]$FailureMessage
+    )
+    & icacls.exe @ArgumentList | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "$FailureMessage (icacls exit $LASTEXITCODE): icacls $($ArgumentList -join ' ')"
+    }
+}
+
 if (-not (Test-IsAdministrator)) {
     throw "Run this script in an elevated PowerShell (Administrator)."
 }
@@ -147,14 +187,37 @@ New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
 Copy-Item -Path (Join-Path $PayloadPath "*") -Destination $InstallDir -Recurse -Force
 
 $productData = Join-Path $env:ProgramData "VibeDeck"
-# The Host runs as the signed-in desktop user, not as this elevated installer.
-# Product state is shared under ProgramData, so every interactive user must be
-# able to update pairing, certificate, quota and dashboard files.
+# Match Setup's HardenDataDirectoryAcl (VibeDeck.iss): SYSTEM + Administrators
+# (full) + signed-in desktop user (modify). Never grant BUILTIN\Users.
+# Every icacls invocation is checked; any failure aborts the install.
 New-Item -ItemType Directory -Path $productData -Force | Out-Null
-& icacls.exe $productData /grant '*S-1-5-32-545:(OI)(CI)M' /T /C | Out-Null
-if ($LASTEXITCODE -ne 0) {
-    throw "Could not grant signed-in users modify access to $productData."
+$userInfo = Get-VibeDeckDataUserSid
+$userGrant = if ($userInfo.Sid) {
+    "*{0}:(OI)(CI)M" -f $userInfo.Sid
 }
+else {
+    # Silent deploy from SYSTEM without a resolvable interactive user.
+    "*S-1-5-4:(OI)(CI)M"
+}
+Write-Host "[install] ProgramData user grant: $userGrant (fromService=$($userInfo.FromService))"
+
+Invoke-IcaclsChecked -ArgumentList @(
+    $productData,
+    "/inheritance:r",
+    "/grant:r", "*S-1-5-18:(OI)(CI)F",
+    "/grant:r", "*S-1-5-32-544:(OI)(CI)F",
+    "/grant:r", $userGrant
+) -FailureMessage "Could not harden ACLs on $productData"
+
+$staleRemovals = @("/remove:g", "*S-1-5-32-545", "/remove:g", "*S-1-1-0", "/remove:g", "*S-1-5-11")
+if ($userInfo.Sid) {
+    $staleRemovals += @("/remove:g", "*S-1-5-4")
+}
+Invoke-IcaclsChecked -ArgumentList (@($productData) + $staleRemovals) `
+    -FailureMessage "Could not remove stale Users/Everyone/Authenticated Users ACEs on $productData"
+
+Invoke-IcaclsChecked -ArgumentList @("$productData\*", "/reset", "/T", "/C", "/Q") `
+    -FailureMessage "Could not reset child ACLs under $productData"
 
 $iconPath = Join-Path $InstallDir "vibedeck.ico"
 $hostExe = Join-Path $InstallDir $hostExeName

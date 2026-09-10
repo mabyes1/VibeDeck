@@ -26,6 +26,115 @@ function Write-Check([string]$message) {
     Write-Host "[product-check] $message" -ForegroundColor Cyan
 }
 
+function Get-AclSid {
+    param([Parameter(Mandatory = $true)]$Rule)
+
+    if ($null -eq $Rule.IdentityReference) { return $null }
+    try {
+        return $Rule.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value
+    }
+    catch {
+        return $null
+    }
+}
+
+function Test-AclAllowsRights {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Sid,
+        [Parameter(Mandatory = $true)][System.Security.AccessControl.FileSystemRights]$RequiredRights
+    )
+    $acl = Get-Acl -LiteralPath $Path
+    foreach ($rule in $acl.Access) {
+        $ruleSid = Get-AclSid -Rule $rule
+        if ($ruleSid -eq $Sid -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and
+            ($rule.FileSystemRights -band $RequiredRights) -eq $RequiredRights) {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Test-AclHasAllowForSid {
+    param(
+        [Parameter(Mandatory = $true)]$Acl,
+        [Parameter(Mandatory = $true)][string]$Sid
+    )
+    foreach ($rule in $Acl.Access) {
+        if ((Get-AclSid -Rule $rule) -eq $Sid -and
+            $rule.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow) {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Get-SignedInDesktopUserSid {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $serviceSids = @("S-1-5-18", "S-1-5-19", "S-1-5-20")
+    if ($identity.User.Value -notin $serviceSids) { return $identity.User.Value }
+
+    $consoleUser = (Get-CimInstance Win32_ComputerSystem -ErrorAction SilentlyContinue).UserName
+    if ([string]::IsNullOrWhiteSpace($consoleUser)) { return $null }
+    try {
+        return [System.Security.Principal.NTAccount]::new($consoleUser).
+            Translate([System.Security.Principal.SecurityIdentifier]).Value
+    }
+    catch {
+        return $null
+    }
+}
+
+function Assert-VibeDeckDataAcl {
+    param(
+        [Parameter(Mandatory = $true)][string]$DataRoot
+    )
+    Assert-Product (Test-Path -LiteralPath $DataRoot) "ProgramData root missing: $DataRoot"
+    $rootAcl = Get-Acl -LiteralPath $DataRoot
+    Assert-Product $rootAcl.AreAccessRulesProtected "ProgramData root still inherits permissions from its parent: $DataRoot"
+
+    $fullControl = [System.Security.AccessControl.FileSystemRights]::FullControl
+    $modify = [System.Security.AccessControl.FileSystemRights]::Modify
+    Assert-Product (Test-AclAllowsRights -Path $DataRoot -Sid "S-1-5-18" -RequiredRights $fullControl) `
+        "ProgramData ACL must allow SYSTEM full control on $DataRoot"
+    Assert-Product (Test-AclAllowsRights -Path $DataRoot -Sid "S-1-5-32-544" -RequiredRights $fullControl) `
+        "ProgramData ACL must allow Administrators full control on $DataRoot"
+
+    $interactiveCanModify = Test-AclAllowsRights -Path $DataRoot -Sid "S-1-5-4" -RequiredRights $modify
+    $desktopSid = Get-SignedInDesktopUserSid
+    $desktopUserCanModify = $desktopSid -and (Test-AclAllowsRights -Path $DataRoot -Sid $desktopSid -RequiredRights $modify)
+    Assert-Product ($interactiveCanModify -or $desktopUserCanModify) `
+        "ProgramData ACL must allow modify to the signed-in desktop user or INTERACTIVE (S-1-5-4). DesktopSid=$desktopSid"
+
+    $forbiddenSids = @("S-1-5-32-545", "S-1-1-0", "S-1-5-11")
+    $aclPaths = @($DataRoot) + @(Get-ChildItem -LiteralPath $DataRoot -Force -Recurse -ErrorAction Stop | ForEach-Object FullName)
+    foreach ($path in $aclPaths) {
+        $acl = Get-Acl -LiteralPath $path
+        foreach ($sid in $forbiddenSids) {
+            Assert-Product (-not (Test-AclHasAllowForSid -Acl $acl -Sid $sid)) `
+                "ACL grants Users/Everyone/Authenticated Users ($sid) on $path"
+        }
+
+        if (-not [string]::Equals($path, $DataRoot, [StringComparison]::OrdinalIgnoreCase)) {
+            Assert-Product (-not $acl.AreAccessRulesProtected) "Child ACL does not inherit from the hardened root: $path"
+            $explicitRules = @($acl.Access | Where-Object { -not $_.IsInherited })
+            Assert-Product ($explicitRules.Count -eq 0) "Child ACL still contains explicit rules instead of inheriting the hardened root: $path"
+        }
+    }
+    Write-Check "ProgramData ACL verified across $($aclPaths.Count) paths"
+
+    # Write probe as the current identity (desktop Host identity in normal -Installed runs).
+    $probe = Join-Path $DataRoot (".acl-probe-" + [Guid]::NewGuid().ToString("N"))
+    try {
+        [IO.File]::WriteAllText($probe, "probe")
+        Assert-Product (Test-Path -LiteralPath $probe) "Write probe failed to create $probe"
+    }
+    finally {
+        if (Test-Path -LiteralPath $probe) { Remove-Item -LiteralPath $probe -Force -ErrorAction SilentlyContinue }
+    }
+}
+
 function Get-SignedInUserRunValue([string]$name) {
     $userName = (Get-CimInstance Win32_ComputerSystem -ErrorAction SilentlyContinue).UserName
     if ([string]::IsNullOrWhiteSpace($userName)) { return $null }
@@ -43,7 +152,16 @@ function Get-SignedInUserRunValue([string]$name) {
 
 if ($Source) {
     Write-Check "Release tests"
-    & dotnet test $solution -c Release
+    $hostAssets = Join-Path $repoRoot "src\VibeDeck.Host\obj\project.assets.json"
+    if (Test-Path -LiteralPath $hostAssets) {
+        # Reuse an existing restore graph. Some machines have a broken NuGet
+        # ConfigurationDefaults path that makes even `dotnet restore` fail;
+        # CI and clean checkouts still restore on first run.
+        & dotnet test $solution -c Release --no-restore
+    }
+    else {
+        & dotnet test $solution -c Release
+    }
     if ($LASTEXITCODE -ne 0) { throw "dotnet test failed." }
 
     Write-Check "Browser JavaScript syntax"
@@ -156,6 +274,15 @@ if ($Payload) {
     $projectText = Get-Content $project -Raw
     Assert-Product ($projectText -match "<OutputType>WinExe</OutputType>") "Host must be a native Windows background application."
     Assert-Product (-not (Get-ChildItem (Join-Path $PayloadPath "wwwroot") -Recurse -File -Include "*.apk","*.ipa" -ErrorAction SilentlyContinue)) "Payload contains a native mobile package."
+
+    Write-Check "Fallback installer must not grant Users:Modify"
+    $installScript = Get-Content (Join-Path $repoRoot "scripts\install-windows-product.ps1") -Raw
+    Assert-Product ($installScript -notmatch "S-1-5-32-545:\(OI\)\(CI\)M") `
+        "install-windows-product.ps1 still grants BUILTIN\Users modify on ProgramData."
+    Assert-Product ($installScript -match "Get-VibeDeckDataUserSid") `
+        "install-windows-product.ps1 must resolve the original signed-in user SID when run as SYSTEM."
+    Assert-Product ($installScript -match "Invoke-IcaclsChecked") `
+        "install-windows-product.ps1 must check every icacls exit code."
 }
 
 if ($Installed) {
@@ -187,6 +314,10 @@ if ($Installed) {
     if ($RequireVirtualDisplay) {
         Assert-Product ($null -ne ($displays | Where-Object IsVibeDeckDisplay | Select-Object -First 1)) "VibeDeck virtual display was not found."
     }
+
+    Write-Check "ProgramData ACL hardening"
+    $installedDataRoot = Join-Path $env:ProgramData "VibeDeck"
+    Assert-VibeDeckDataAcl -DataRoot $installedDataRoot
 }
 
 Write-Host "Product flow checks passed." -ForegroundColor Green
