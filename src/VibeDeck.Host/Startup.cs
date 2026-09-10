@@ -1026,7 +1026,12 @@ namespace VibeDeck.Host
 
         private static async Task<bool> RequireTrustedDeviceAsync(HttpContext context)
         {
-            if (IsLocalRequest(context))
+            // Local console = local peer + expected Host + not cross-site. A loopback
+            // socket alone is not enough: a hostile page can open ws://127.0.0.1:5000/ws/*
+            // or call local read APIs from the same machine. /api/session already uses
+            // IsTrustedLocalConsole; this gate must match it for /ws/display, /ws/input,
+            // and every other RequireTrustedDevice path.
+            if (IsTrustedLocalConsole(context))
             {
                 return true;
             }
