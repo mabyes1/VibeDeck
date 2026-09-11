@@ -31,6 +31,7 @@
     <!-- Security floors for legacy NETStandard.Library 1.6.1 transitive chains
          still used by SharpDX and SIPSorcery's mDNS dependency. -->
     <PackageReference Include="System.Net.Http" Version="4.3.4" PrivateAssets="all" />
+    <PackageReference Include="System.Private.Uri" Version="4.3.2" PrivateAssets="all" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" PrivateAssets="all" />
     <PackageReference Include="SIPSorcery" Version="10.0.16" />
   </ItemGroup>

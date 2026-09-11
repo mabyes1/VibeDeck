@@ -30,3 +30,7 @@ jobs:
       - name: Run canonical source gate
         shell: pwsh
         run: .\scripts\test-product-flow.ps1 -Source
+
+      - name: Audit Windows release dependency graph
+        shell: pwsh
+        run: dotnet restore .\src\VibeDeck.Host\VibeDeck.Host.csproj -r win-x64 --force
