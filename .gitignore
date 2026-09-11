@@ -36,6 +36,10 @@ playwright-report/
 node_modules/
 *.user.json
 driver/*-capture.png
+.codex-remote-attachments/
+
+# Local product-planning draft
+docs/VibeDeck Portal MVP 規格.md
 
 # Local secrets templates may live under docs; real secrets stay out of git
 .env
