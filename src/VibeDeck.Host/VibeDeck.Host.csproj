@@ -3,12 +3,16 @@
   <PropertyGroup>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
-    <Version>0.1.60</Version>
+    <Version>0.1.61</Version>
     <AssemblyName>VibeDeck.Host</AssemblyName>
     <RootNamespace>VibeDeck.Host</RootNamespace>
     <Product>VibeDeck</Product>
     <Description>把閒置手機變成 Windows PC 的智慧副螢幕與資訊板。</Description>
     <OutputType>WinExe</OutputType>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>high</NuGetAuditLevel>
+    <WarningsAsErrors>$(WarningsAsErrors);NU1903;NU1904</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,7 +32,7 @@
          still used by SharpDX and SIPSorcery's mDNS dependency. -->
     <PackageReference Include="System.Net.Http" Version="4.3.4" PrivateAssets="all" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" PrivateAssets="all" />
-    <PackageReference Include="SIPSorcery" Version="10.0.9" />
+    <PackageReference Include="SIPSorcery" Version="10.0.16" />
   </ItemGroup>
 
   <ItemGroup>
